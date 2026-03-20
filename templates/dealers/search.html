@@ -1,15 +1,126 @@
-<form method="get">
-  <input name="city" placeholder="City" />
-  <button type="submit">Search</button>
-</form>
+{% extends "base.html" %}
 
-<hr>
+{% block title %}Dealer search — DealerFinder{% endblock %}
 
-{% for d in dealers %}
-  <div>
-    <strong>{{ d.name }}</strong><br>
-    Rating: {{ d.rating }} ({{ d.reviews }})
-  </div>
-{% empty %}
-  <p>No results</p>
-{% endfor %}
+{% block content %}
+<section class="bg-white border-bottom">
+    <div class="container py-4 py-lg-5">
+        <div class="mb-4">
+            <h1 class="section-title mb-2">Dealer search</h1>
+            <p class="section-subtitle mb-0">
+                Search, filter, and review reliable dealers with cache-first results.
+            </p>
+        </div>
+
+        {% include "dealers/includes/search_form.html" %}
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-lg-4 col-xl-3">
+                <div class="surface-card-muted p-4 sticky-panel">
+                    <div class="fw-semibold mb-2">Search summary</div>
+
+                    {% if city %}
+                        <div class="small text-secondary mb-3">
+                            Query for <span class="fw-semibold text-dark">{{ city }}</span>
+                        </div>
+                    {% else %}
+                        <div class="small text-secondary mb-3">
+                            Enter a city and launch your first search.
+                        </div>
+                    {% endif %}
+
+                    <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
+                        <li><span class="text-secondary">Radius:</span> {{ request.GET.radius|default:radius|default:"10" }} km</li>
+                        <li><span class="text-secondary">Min. rating:</span> {{ request.GET.min_rating|default:"Any" }}</li>
+                        <li><span class="text-secondary">Open now:</span> {% if request.GET.open_now %}Yes{% else %}No{% endif %}</li>
+                        <li><span class="text-secondary">Weekends:</span> {% if request.GET.weekends %}Yes{% else %}No{% endif %}</li>
+                        <li><span class="text-secondary">Has contacts:</span> {% if request.GET.has_contacts %}Yes{% else %}No{% endif %}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8 col-xl-9">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Results</h2>
+                        <div class="text-secondary">
+                            {% if dealers %}
+                                Found {{ dealers|length }} dealer{{ dealers|length|pluralize }}
+                            {% else %}
+                                No results yet
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if dealers %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for d in dealers %}
+                            <article class="dealer-card p-4">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                    <div class="flex-grow-1">
+                                        <div class="dealer-name">{{ d.name }}</div>
+
+                                        {% if d.address %}
+                                            <div class="dealer-meta mb-2">{{ d.address }}</div>
+                                        {% endif %}
+
+                                        <div class="d-flex flex-wrap gap-2 mb-3">
+                                            {% if d.rating %}
+                                                <span class="score-badge">
+                                                    Rating {{ d.rating }}{% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
+                                                </span>
+                                            {% endif %}
+
+                                            {% if d.website or d.phone %}
+                                                <span class="contact-badge">Contacts available</span>
+                                            {% endif %}
+
+                                            {% if d.open_now %}
+                                                <span class="status-badge">Open now</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="row g-2 small text-secondary">
+                                            {% if d.phone %}
+                                                <div class="col-12 col-md-6">
+                                                    <span class="fw-semibold text-dark">Phone:</span> {{ d.phone }}
+                                                </div>
+                                            {% endif %}
+                                            {% if d.website %}
+                                                <div class="col-12 col-md-6">
+                                                    <span class="fw-semibold text-dark">Website:</span>
+                                                    <a href="{{ d.website }}" target="_blank" rel="noopener noreferrer">
+                                                        Visit site
+                                                    </a>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-lg-column justify-content-between gap-2">
+                                        <a href="#" class="btn btn-primary rounded-pill px-4 disabled" aria-disabled="true">
+                                            Details soon
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state p-5 text-center">
+                        <h3 class="h4 mb-2">No dealers to display yet</h3>
+                        <p class="text-secondary mb-0">
+                            Start with a city search above. Results will appear here.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
