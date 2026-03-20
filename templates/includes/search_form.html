@@ -1,5 +1,5 @@
 <form method="get" action="{% url 'dealers:search' %}" class="row g-3">
-    <div class="col-md-6">
+    <div class="col-md-5">
         <label class="form-label">City</label>
         <input
             type="text"
@@ -10,7 +10,7 @@
         >
     </div>
 
-    <div class="col-md-3">
+    <div class="col-md-2">
         <label class="form-label">Radius (km)</label>
         <input
             type="number"
@@ -20,9 +20,39 @@
         >
     </div>
 
+    <div class="col-md-2">
+        <label class="form-label">Min. rating</label>
+        <input
+            type="number"
+            name="min_rating"
+            class="form-control"
+            step="0.1"
+            min="1"
+            max="5"
+            placeholder="e.g. 4.0"
+            value="{{ request.GET.min_rating }}"
+        >
+    </div>
+
     <div class="col-md-3 d-flex align-items-end">
-        <button class="btn btn-primary w-100">
-            Search
-        </button>
+        <button class="btn btn-primary w-100">Search</button>
+    </div>
+
+    <div class="col-12 d-flex flex-wrap gap-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="open_now" id="open_now" value="1"
+                {% if request.GET.open_now %}checked{% endif %}>
+            <label class="form-check-label" for="open_now">Open now</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="weekends" id="weekends" value="1"
+                {% if request.GET.weekends %}checked{% endif %}>
+            <label class="form-check-label" for="weekends">Open on weekends</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="has_contacts" id="has_contacts" value="1"
+                {% if request.GET.has_contacts %}checked{% endif %}>
+            <label class="form-check-label" for="has_contacts">Has contacts</label>
+        </div>
     </div>
 </form>

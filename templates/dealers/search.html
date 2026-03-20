@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dealer search — DealerFinder{% endblock %}
+{% block title %}Dealer search{% endblock %}
 
 {% block content %}
 <section class="bg-white border-bottom">
@@ -164,4 +164,12 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.form-check-input').forEach(cb => {
+        cb.addEventListener('change', () => cb.closest('form').submit());
+    });
+</script>
 {% endblock %}

@@ -9,6 +9,27 @@ def build_query_key(city, radius):
 
 def normalize(data):
     results = []
+    for place in data.get("places", []):
+        hours = place.get("regularOpeningHours", {})
+        weekday_descriptions = hours.get("weekdayDescriptions", [])
+        has_weekend = any(
+            day for day in weekday_descriptions
+            if day.startswith("Saturday") or day.startswith("Sunday")
+        )
+        results.append({
+            "place_id": place.get("id"),
+            "name": place.get("displayName", {}).get("text"),
+            "address": place.get("formattedAddress"),
+            "lat": place.get("location", {}).get("latitude"),
+            "lng": place.get("location", {}).get("longitude"),
+            "rating": place.get("rating"),
+            "reviews": place.get("userRatingCount"),
+            "phone": place.get("nationalPhoneNumber"),
+            "website": place.get("websiteUri"),
+            "open_now": place.get("currentOpeningHours", {}).get("openNow", False),
+            "has_weekend": has_weekend,
+        })
+    return results
 
     for place in data.get("places", []):
         results.append(

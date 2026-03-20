@@ -19,6 +19,10 @@ def search_places(city: str, radius: int | str, page_token: str = None):
             "places.location",
             "places.rating",
             "places.userRatingCount",
+            "places.currentOpeningHours.openNow",
+            "places.regularOpeningHours.weekdayDescriptions",
+            "places.nationalPhoneNumber",
+            "places.websiteUri",
             "nextPageToken",
         ]),
     }
