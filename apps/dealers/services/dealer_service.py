@@ -1,5 +1,6 @@
+import math
 from .cache_service import get_cache, set_cache
-from .google_places import search_places
+from .google_places import search_all_places
 
 
 def build_query_key(city, radius):
@@ -32,8 +33,14 @@ def search_dealers(city, radius):
     if cached:
         return cached
 
-    raw = search_places(city=city, radius=radius)
+    raw = search_all_places(city=city, radius=radius)
     normalized = normalize(raw)
-    set_cache(key, normalized)
 
+    normalized = sorted(
+        normalized,
+        key=lambda x: (x["rating"] or 0) * math.log1p(x["reviews"] or 0),
+        reverse=True
+    )
+
+    set_cache(key, normalized)
     return normalized
