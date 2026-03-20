@@ -3,7 +3,7 @@
 {% block title %}Dealer search{% endblock %}
 
 {% block content %}
-<section class="bg-white border-bottom">
+<section class="border-bottom">
     <div class="container py-4 py-lg-5">
         <div class="mb-4">
             <h1 class="section-title mb-2">Dealer search</h1>
@@ -25,7 +25,7 @@
 
     {% if city %}
         <div class="small text-secondary mb-3">
-            Query for <span class="fw-semibold text-dark">{{ city }}</span>
+            Query for <span class="fw-semibold">{{ city }}</span>
         </div>
     {% else %}
         <div class="small text-secondary mb-3">
@@ -127,12 +127,12 @@
                                         <div class="row g-2 small text-secondary">
                                             {% if d.phone %}
                                                 <div class="col-12 col-md-6">
-                                                    <span class="fw-semibold text-dark">Phone:</span> {{ d.phone }}
+                                                    <span class="fw-semibold">Phone:</span> {{ d.phone }}
                                                 </div>
                                             {% endif %}
                                             {% if d.website %}
                                                 <div class="col-12 col-md-6">
-                                                    <span class="fw-semibold text-dark">Website:</span>
+                                                    <span class="fw-semibold">Website:</span>
                                                     <a href="{{ d.website }}" target="_blank" rel="noopener noreferrer">
                                                         Visit site
                                                     </a>
