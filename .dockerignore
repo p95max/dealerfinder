@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Env files
+.env
+.env.*
+
+# Tests / dev stuff
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docs
+README.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+
+# Local DB / media
+db.sqlite3
+media/
+staticfiles/
+
+# Docker itself
+docker-compose.yml
+docker-compose.dev.yml
