@@ -9,14 +9,18 @@ def build_query_key(city, radius):
 def normalize(data):
     results = []
 
-    for p in data.get("places", []):
-        results.append({
-            "name": p.get("displayName", {}).get("text"),
-            "lat": p.get("location", {}).get("latitude"),
-            "lng": p.get("location", {}).get("longitude"),
-            "rating": p.get("rating"),
-            "reviews": p.get("userRatingCount"),
-        })
+    for place in data.get("places", []):
+        results.append(
+            {
+                "place_id": place.get("id"),
+                "name": place.get("displayName", {}).get("text"),
+                "address": place.get("formattedAddress"),
+                "lat": place.get("location", {}).get("latitude"),
+                "lng": place.get("location", {}).get("longitude"),
+                "rating": place.get("rating"),
+                "reviews": place.get("userRatingCount"),
+            }
+        )
 
     return results
 
@@ -28,9 +32,8 @@ def search_dealers(city, radius):
     if cached:
         return cached
 
-    raw = search_places(city, radius)
+    raw = search_places(city=city, radius=radius)
     normalized = normalize(raw)
-
     set_cache(key, normalized)
 
     return normalized

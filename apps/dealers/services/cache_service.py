@@ -1,5 +1,9 @@
-from django.utils import timezone
 from datetime import timedelta
+
+from django.utils import timezone
+
+from apps.dealers.models import SearchCache
+
 
 TTL = timedelta(hours=24)
 
