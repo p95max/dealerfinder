@@ -11,7 +11,6 @@
                 Search, filter, and review reliable dealers with cache-first results.
             </p>
         </div>
-
         {% include "includes/search_form.html" %}
     </div>
 </section>
@@ -48,13 +47,30 @@
                     <div>
                         <h2 class="h4 mb-1">Results</h2>
                         <div class="text-secondary">
-                            {% if dealers %}
-                                Found {{ dealers|length }} dealer{{ dealers|length|pluralize }}
+                            {% if total %}
+                                Found {{ total }} dealer{{ total|pluralize }}
                             {% else %}
                                 No results yet
                             {% endif %}
                         </div>
                     </div>
+
+                    {% if city %}
+                    <div class="d-flex gap-2">
+                        <a href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort=score"
+                           class="btn btn-sm {% if sort == 'score' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            Best match
+                        </a>
+                        <a href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort=rating"
+                           class="btn btn-sm {% if sort == 'rating' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            Rating
+                        </a>
+                        <a href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort=reviews"
+                           class="btn btn-sm {% if sort == 'reviews' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            Reviews
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
 
                 {% if dealers %}
@@ -111,6 +127,31 @@
                             </article>
                         {% endfor %}
                     </div>
+
+                    {% if page_obj.paginator.num_pages > 1 %}
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}">←</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                    <a class="page-link" href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort={{ sort }}&page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?city={{ city }}&radius={{ radius }}&min_rating={{ min_rating }}&sort={{ sort }}&page={{ page_obj.next_page_number }}">→</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
                 {% else %}
                     <div class="empty-state p-5 text-center">
                         <h3 class="h4 mb-2">No dealers to display yet</h3>
