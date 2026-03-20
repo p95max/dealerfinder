@@ -1,0 +1,15 @@
+<form method="get">
+  <input name="city" placeholder="City" />
+  <button type="submit">Search</button>
+</form>
+
+<hr>
+
+{% for d in dealers %}
+  <div>
+    <strong>{{ d.name }}</strong><br>
+    Rating: {{ d.rating }} ({{ d.reviews }})
+  </div>
+{% empty %}
+  <p>No results</p>
+{% endfor %}
