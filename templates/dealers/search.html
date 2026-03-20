@@ -19,27 +19,50 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-12 col-lg-4 col-xl-3">
+
                 <div class="surface-card-muted p-4 sticky-panel">
-                    <div class="fw-semibold mb-2">Search summary</div>
+    <div class="fw-semibold mb-2">Search summary</div>
 
-                    {% if city %}
-                        <div class="small text-secondary mb-3">
-                            Query for <span class="fw-semibold text-dark">{{ city }}</span>
-                        </div>
-                    {% else %}
-                        <div class="small text-secondary mb-3">
-                            Enter a city and launch your first search.
-                        </div>
-                    {% endif %}
+    {% if city %}
+        <div class="small text-secondary mb-3">
+            Query for <span class="fw-semibold text-dark">{{ city }}</span>
+        </div>
+    {% else %}
+        <div class="small text-secondary mb-3">
+            Enter a city and launch your first search.
+        </div>
+    {% endif %}
 
-                    <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
-                        <li><span class="text-secondary">Radius:</span> {{ request.GET.radius|default:radius|default:"10" }} km</li>
-                        <li><span class="text-secondary">Min. rating:</span> {{ request.GET.min_rating|default:"Any" }}</li>
-                        <li><span class="text-secondary">Open now:</span> {% if request.GET.open_now %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Weekends:</span> {% if request.GET.weekends %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Has contacts:</span> {% if request.GET.has_contacts %}Yes{% else %}No{% endif %}</li>
-                    </ul>
-                </div>
+    <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
+        <li><span class="text-secondary">Radius:</span> {{ request.GET.radius|default:radius|default:"10" }} km</li>
+        <li><span class="text-secondary">Min. rating:</span> {{ request.GET.min_rating|default:"Any" }}</li>
+        <li class="d-flex align-items-center gap-2">
+            <span class="text-secondary">Open now:</span>
+            {% if request.GET.open_now %}
+                <span class="badge rounded-pill bg-success">Yes</span>
+            {% else %}
+                <span class="badge rounded-pill bg-danger">No</span>
+            {% endif %}
+        </li>
+        <li class="d-flex align-items-center gap-2">
+            <span class="text-secondary">Weekends:</span>
+            {% if request.GET.weekends %}
+                <span class="badge rounded-pill bg-success">Yes</span>
+            {% else %}
+                <span class="badge rounded-pill bg-danger">No</span>
+            {% endif %}
+        </li>
+        <li class="d-flex align-items-center gap-2">
+            <span class="text-secondary">Has contacts:</span>
+            {% if request.GET.has_contacts %}
+                <span class="badge rounded-pill bg-success">Yes</span>
+            {% else %}
+                <span class="badge rounded-pill bg-danger">No</span>
+            {% endif %}
+        </li>
+    </ul>
+</div>
+
             </div>
 
             <div class="col-12 col-lg-8 col-xl-9">
