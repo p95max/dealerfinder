@@ -32,7 +32,7 @@
 - [x] Middleware или decorator для квоты (`used_today >= daily_quota → LimitExceeded`)
 - [x] Троттлинг: 5–10 req/min на пользователя
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
-- [ ] Чекбокс принятия AGB/Datenschutz при первом запросе
+- [ ] Чекбокс принятия AGB/Datenschutz при первом запросе/регистрации
 
 ## Anti-abuse
 - [ ] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
@@ -45,14 +45,14 @@
 - [ ] `depends_on` с `healthcheck` для db → web
 
 ## Шаблоны
-- [ ] Починить include в `home.html` (`dealers/search_form.html` → `includes/search_form.html`)
+- [x] Починить include в `home.html` (`dealers/search_form.html` → `includes/search_form.html`)
 - [ ] Страница деталей дилера `/dealer/{id}` — view + template
 - [ ] Django Messages (`success/error/warning`) для: поиск, квота, auth, удаление
 - [ ] Страницы: `/impressum`, `/datenschutz`, `/agb`
 - [ ] Cookie banner (опциональные cookies: Google Maps, Google OAuth)
 
 ## Прочее
-- [ ] `STATIC_ROOT` в settings (для `collectstatic`)
+- [x] `STATIC_ROOT` в settings (для `collectstatic`)
 - [ ] `static/js/home.js`
 - [ ] Заполнить `README.md`
 - [ ] `apps/dealers/selectors.py` — DB-запросы отдельно от сервисного слоя
