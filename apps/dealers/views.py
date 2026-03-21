@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render
 
@@ -20,6 +21,10 @@ def search_view(request):
     page_number = request.GET.get("page", 1)
 
     dealers = []
+
+    if getattr(request, "quota_exceeded", False):
+        messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
+        return render(request, "dealers/search.html", {"dealers": [], "quota_exceeded": True})
 
     if city:
         dealers = search_dealers(city=city, radius=radius)

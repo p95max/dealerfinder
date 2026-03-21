@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    "apps.users.middleware.QuotaMiddleware",
 ]
 
 ROOT_URLCONF = 'config.urls'
