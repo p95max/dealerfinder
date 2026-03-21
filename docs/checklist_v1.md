@@ -33,6 +33,7 @@
 - [x] Троттлинг: 5–10 req/min на пользователя
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
 - [ ] Чекбокс принятия AGB/Datenschutz при первом запросе/регистрации
+- [ ] удаление аккаунта сбрасывает квоту: повторная авторизация через тот же Google-аккаунт создаёт нового User с `used_today=0`.
 
 ## Anti-abuse
 - [ ] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
