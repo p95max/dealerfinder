@@ -22,11 +22,10 @@ class User(AbstractUser):
     )
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username"]
+    REQUIRED_FIELDS = []
 
     class Meta:
         indexes = [
-            models.Index(fields=["email"]),
             models.Index(fields=["google_sub"]),
         ]
 
