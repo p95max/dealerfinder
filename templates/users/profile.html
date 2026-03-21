@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — DealerFinder{% endblock %}
+
+{% block content %}
+<section class="container py-5" style="max-width: 560px;">
+
+    <h1 class="section-title mb-4">Profile</h1>
+
+    <div class="surface-card p-4 mb-3">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #1d4ed8;">
+                {{ user.email|slice:":2"|upper }}
+            </div>
+            <div>
+                <div class="fw-semibold">{{ user.email }}</div>
+                <div class="text-secondary small">
+                    Member since {{ user.date_joined|date:"F j, Y" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top pt-3 d-flex flex-column gap-2 small">
+            <div class="d-flex justify-content-between">
+                <span class="text-secondary">Plan</span>
+                <span class="fw-semibold text-capitalize">{{ user.plan }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-secondary">Searches today</span>
+                <span class="fw-semibold">{{ user.used_today }} / {{ user.daily_quota }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="surface-card p-4">
+        <div class="fw-semibold mb-1">Delete account</div>
+        <p class="text-secondary small mb-3">
+            All your data will be permanently removed. This action cannot be undone.
+        </p>
+        <form method="post" action="{% url 'users:delete_account' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                onclick="return confirm('Are you sure? This cannot be undone.')">
+                Delete my account
+            </button>
+        </form>
+    </div>
+
+</section>
+{% endblock %}

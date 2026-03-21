@@ -2,7 +2,7 @@
 
 ## Структура проекта
 - [x] Разбить `settings.py` → `config/settings/base.py`, `dev.py`, `prod.py`
-- [ ] Создать `apps/users/` (User model, OAuth views)
+- [x] Создать `apps/users/` (User model, OAuth views)
 - [ ] Создать `integrations/google_places.py`, `google_oauth.py`, `turnstile.py`
 - [ ] Создать `common/` (constants, enums, exceptions, utils)
 - [ ] Добавить `apps.py`, `admin.py` в `dealers`
@@ -26,8 +26,9 @@
 - [ ] Пагинация (20 на страницу)
 
 ## Auth + Rate Limiting
-- [ ] `integrations/google_oauth.py` — OAuth flow
-- [ ] `apps/users/views.py` — login / logout / delete account
+- [x] `integrations/google_oauth.py` — OAuth flow
+- [x] `apps/users/views.py` — delete account
+- [x] User profile
 - [ ] Middleware или decorator для квоты (`used_today >= daily_quota → LimitExceeded`)
 - [ ] Троттлинг: 5–10 req/min на пользователя
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим

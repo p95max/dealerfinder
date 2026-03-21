@@ -3,14 +3,13 @@
 
         {% if user.is_authenticated %}
 
-        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: 0.5px solid var(--df-border); border-radius: 999px; background: var(--df-surface-muted);">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1d4ed8;">
-                {{ user.email|slice:":2"|upper }}
-            </div>
-            <span style="font-size: 13px; font-weight: 500; color: var(--df-text);">{{ user.email }}</span>
-        </div>
-
-            <a class="btn btn-outline-secondary rounded-pill px-3" href="{% url 'account_logout' %}">Sign out</a>
+            <a href="{% url 'users:profile' %}" style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: 0.5px solid var(--df-border); border-radius: 999px; background: var(--df-surface-muted); text-decoration: none;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1d4ed8;">
+                    {{ user.email|slice:":2"|upper }}
+                </div>
+                <span style="font-size: 13px; font-weight: 500; color: var(--df-text);">{{ user.email }}</span>
+            </a>
+            <a class="btn btn-outline-secondary rounded-pill px-3" href="{% url 'account_logout' %}">🚪 Sign out</a>
         {% else %}
             <a class="btn btn-outline-secondary rounded-pill px-3" href="{% url 'socialaccount_signup' %}">Sign in with Google</a>
         {% endif %}
