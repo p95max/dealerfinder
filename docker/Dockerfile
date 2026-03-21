@@ -24,4 +24,8 @@ COPY . .
 
 ENV DJANGO_SETTINGS_MODULE=config.settings.dev
 
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

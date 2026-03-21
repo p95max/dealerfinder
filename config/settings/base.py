@@ -104,8 +104,8 @@ ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"
 
-LOGIN_REDIRECT_URL = "dealers:home"
-LOGOUT_REDIRECT_URL = "dealers:home"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
 
 SOCIALACCOUNT_ADAPTER = "integrations.google_oauth.GoogleOAuthAdapter"
 
@@ -115,6 +115,8 @@ SOCIALACCOUNT_PROVIDERS = {
         "AUTH_PARAMS": {"access_type": "online"},
     }
 }
+
+
 
 # =========================
 # GOOGLE

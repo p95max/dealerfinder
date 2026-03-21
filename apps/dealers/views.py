@@ -6,7 +6,7 @@ from .services.dealer_service import search_dealers
 DEALERS_PER_PAGE = 10
 
 def home_view(request):
-    return render(request, "dealers/home.html")
+    return render(request, "home.html")
 
 
 def search_view(request):
