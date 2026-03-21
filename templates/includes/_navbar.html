@@ -1,7 +1,14 @@
 <div id="mainNav" class="collapse navbar-collapse">
     <div class="ms-auto d-flex align-items-center gap-3">
         <a class="nav-link" href="{% url 'dealers:search' %}">Search</a>
-        <a class="btn btn-outline-secondary rounded-pill px-3" href="#">Sign in</a>
+
+        {% if user.is_authenticated %}
+            <span class="text-secondary small">{{ user.email }}</span>
+            <a class="btn btn-outline-secondary rounded-pill px-3" href="{% url 'account_logout' %}">Sign out</a>
+        {% else %}
+            <a class="btn btn-outline-secondary rounded-pill px-3" href="{% url 'socialaccount_signup' %}">Sign in with Google</a>
+        {% endif %}
+
         <button class="btn btn-sm btn-outline-secondary" id="theme-toggle">🌙</button>
     </div>
 </div>

@@ -1,8 +1,7 @@
 # DealerFinder — v1 Checklist
 
 ## Структура проекта
-- [ ] Разбить `settings.py` → `config/settings/base.py`, `dev.py`, `prod.py`
-- [ ] Создать `apps/core/` (home/about views, templates)
+- [x] Разбить `settings.py` → `config/settings/base.py`, `dev.py`, `prod.py`
 - [ ] Создать `apps/users/` (User model, OAuth views)
 - [ ] Создать `integrations/google_places.py`, `google_oauth.py`, `turnstile.py`
 - [ ] Создать `common/` (constants, enums, exceptions, utils)
