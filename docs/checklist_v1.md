@@ -19,18 +19,18 @@
 - [ ] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
 
 ## Фильтры и ранжирование
-- [ ] `dealers/filters.py` — `open_now`, `weekends`, `types`, `contacts`
-- [ ] `dealers/scoring.py` — weighted rating (confidence-adjusted), бонус за контакты, `open_now`
-- [ ] Исправить cache key: `{city}_{radius}_{rating}_{open_now}_{weekends}_{contacts}`
-- [ ] Добавить фильтры в форму (`search_form.html`): open_now, weekends, contacts
-- [ ] Пагинация (20 на страницу)
+- [x] `dealers/filters.py` — `open_now`, `weekends`, `types`, `contacts`
+- [x] `dealers/scoring.py` — weighted rating (confidence-adjusted), бонус за контакты, `open_now`
+- [x] Исправить cache key: `{city}_{radius}_{rating}_{open_now}_{weekends}_{contacts}`
+- [x] Добавить фильтры в форму (`search_form.html`): open_now, weekends, contacts
+- [x] Пагинация (20 на страницу)
 
 ## Auth + Rate Limiting
 - [x] `integrations/google_oauth.py` — OAuth flow
 - [x] `apps/users/views.py` — delete account
 - [x] User profile
-- [ ] Middleware или decorator для квоты (`used_today >= daily_quota → LimitExceeded`)
-- [ ] Троттлинг: 5–10 req/min на пользователя
+- [x] Middleware или decorator для квоты (`used_today >= daily_quota → LimitExceeded`)
+- [x] Троттлинг: 5–10 req/min на пользователя
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
 - [ ] Чекбокс принятия AGB/Datenschutz при первом запросе
 

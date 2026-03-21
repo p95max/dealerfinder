@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
+    'apps.users.middleware.ThrottleMiddleware',
     "apps.users.middleware.QuotaMiddleware",
 ]
 
@@ -129,3 +130,4 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # =========================
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
 MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
+SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
