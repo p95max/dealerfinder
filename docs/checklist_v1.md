@@ -32,7 +32,7 @@
 - [x] Middleware или decorator для квоты (`used_today >= daily_quota → LimitExceeded`)
 - [x] Троттлинг: 5–10 req/min на пользователя
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
-- [ ] Чекбокс принятия AGB/Datenschutz при первом запросе/регистрации
+- [ ] Чекбокс принятия AGB/Datenschutz при первом запросе от anon/при регистрации
 - [ ] удаление аккаунта сбрасывает квоту: повторная авторизация через тот же Google-аккаунт создаёт нового User с `used_today=0`.
 
 ## Anti-abuse
