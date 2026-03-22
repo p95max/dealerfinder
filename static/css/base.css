@@ -288,6 +288,11 @@ footer {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+.msg-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.msg-warning { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
+.msg-danger  { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+.msg-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+
 #scroll-top.visible {
     opacity: 1;
     transform: translateY(0);
