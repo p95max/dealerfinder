@@ -4,6 +4,10 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'search' %}active fw-semibold{% endif %}"
                href="{% url 'dealers:search' %}">Search dealers</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active fw-semibold{% endif %}"
+               href="{% url 'dealers:about' %}">About</a>
+        </li>
     </ul>
 
     <div class="d-flex align-items-center gap-2">
