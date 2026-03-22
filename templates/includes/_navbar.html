@@ -12,19 +12,41 @@
 
     <div class="d-flex align-items-center gap-2">
         {% if user.is_authenticated %}
-            <a href="{% url 'users:profile' %}"
-               style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: 0.5px solid var(--df-border); border-radius: 999px; background: var(--df-surface-muted); text-decoration: none; transition: opacity .15s ease;"
-               onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1d4ed8;">
-                    {{ user.email|slice:":2"|upper }}
-                </div>
-                <span style="font-size: 13px; font-weight: 500; color: var(--df-text);">{{ user.email }}</span>
-            </a>
 
-            <form method="post" action="{% url 'account_logout' %}" class="m-0">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">Sign out</button>
-            </form>
+            <div class="dropdown">
+                <button class="btn p-0 border-0 bg-transparent"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px !important; border: 0.5px solid var(--df-border) !important; border-radius: 999px; background: var(--df-surface-muted) !important; transition: opacity .15s ease;"
+                        onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #1d4ed8;">
+                        {{ user.email|slice:":2"|upper }}
+                    </div>
+                    <span style="font-size: 13px; font-weight: 500; color: var(--df-text);">{{ user.email }}</span>
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end mt-2" style="border-radius: 14px; border: 0.5px solid var(--df-border); min-width: 210px;">
+                    <li>
+                        <div class="px-3 py-2 border-bottom">
+                            <div class="small text-secondary mb-1">Searches today</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 4px; border-radius: 999px;">
+                                    <div class="progress-bar bg-primary" style="width: {% widthratio user.used_today user.daily_quota 100 %}%;"></div>
+                                </div>
+                                <span class="small fw-semibold">{{ user.used_today }}/{{ user.daily_quota }}</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>
+                    </li>
+                    <li>
+                        <form method="post" action="{% url 'account_logout' %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item py-2 text-danger">Sign out</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
 
         {% else %}
             <a class="btn btn-primary rounded-pill px-4 btn-sm" href="{% url 'google_login' %}">Sign in with Google</a>
