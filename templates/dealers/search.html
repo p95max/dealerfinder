@@ -46,7 +46,7 @@
                         <h2 class="h4 mb-1">Results</h2>
                         <div class="text-secondary">
                             {% if dealers %}
-                                Found {{ dealers|length }} dealer{{ dealers|length|pluralize }}
+                                Showing results for <span class="fw-semibold text-dark">{{ city }}</span>
                             {% else %}
                                 No results yet
                             {% endif %}
@@ -105,6 +105,32 @@
                     </div>
                 {% endif %}
             </div>
+
+            <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill me-1" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                            <a class="page-link rounded-pill me-1" href="{% querystring page=num %}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link rounded-pill" href="{% querystring page=page_obj.next_page_number %}">→</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+    {% endif %}
+
         </div>
     </div>
 </section>

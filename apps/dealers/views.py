@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 from .services.dealer_service import search_dealers
 
-DEALERS_PER_PAGE = 10
+DEALERS_PER_PAGE = 20
 
 def home_view(request):
     return render(request, "home.html")
@@ -26,8 +26,13 @@ def search_view(request):
     dealers = []
 
     if getattr(request, "quota_exceeded", False):
-        messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
-        return render(request, "dealers/search.html", {"dealers": [], "quota_exceeded": True})
+        messages.warning(request, "Daily search limit reached. Upgrade for more searches or try again tomorrow.")
+        return render(request, "dealers/search.html", {
+            "dealers": [],
+            "quota_exceeded": True,
+            "city": request.GET.get("city"),
+            "radius": request.GET.get("radius", "10"),
+        })
 
     if city:
         dealers = search_dealers(city=city, radius=radius)

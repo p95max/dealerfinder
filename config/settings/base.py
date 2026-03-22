@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from django.contrib.messages import constants as messages
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -131,3 +132,6 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
 MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
 SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+}
