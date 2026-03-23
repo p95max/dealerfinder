@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
+from .models import ContactMessage
 from .services.dealer_service import search_dealers
 from .services.geocoding_service import is_german_city
 
@@ -14,6 +15,22 @@ def home_view(request):
 
 def about_view(request):
     return render(request, "about.html")
+
+
+def contact_view(request):
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        email = request.POST.get("email", "").strip()
+        message = request.POST.get("message", "").strip()
+
+        if name and email and message:
+            ContactMessage.objects.create(name=name, email=email, message=message)
+            messages.success(request, "Your message has been sent. We'll get back to you soon.")
+            return redirect("dealers:contact")
+        else:
+            messages.warning(request, "Please fill in all fields.")
+
+    return render(request, "contact.html")
 
 
 def search_view(request):
