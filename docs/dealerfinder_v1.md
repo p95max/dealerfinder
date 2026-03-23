@@ -298,7 +298,9 @@ Google → внутренний формат:
 ### External APIs
 
 - Google Places API (New)
-- Google Maps JavaScript API
+- Google Geocoding API
+- Geolocation API
+
 - Google Auth
 
 ### Infra

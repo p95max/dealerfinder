@@ -28,9 +28,16 @@ def search_places(city: str, radius: int | str, page_token: str = None):
     }
 
     payload = {
-        "textQuery": f"car dealer in {city}",
+        "textQuery": f"car dealer in {city}, Germany",
         "maxResultCount": 20,
+        "locationRestriction": {
+            "rectangle": {
+                "low": {"latitude": 47.27, "longitude": 5.87},
+                "high": {"latitude": 55.06, "longitude": 15.04},
+            }
+        },
     }
+
     if page_token:
         payload["pageToken"] = page_token
 

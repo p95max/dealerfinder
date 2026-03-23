@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 
 from .services.dealer_service import search_dealers
+from .services.geocoding_service import is_german_city
 
 DEALERS_PER_PAGE = 20
 
@@ -39,6 +40,17 @@ def search_view(request):
     if city:
         dealers, from_cache = search_dealers(city=city, radius=radius)
         request.cache_hit = from_cache
+
+        if not is_german_city(city):
+            messages.warning(request, "Please enter a city located in Germany.")
+            return render(request, "dealers/search.html", {
+                "dealers": [], "city": city, "radius": radius,
+            })
+
+        dealers, from_cache = search_dealers(city=city, radius=radius)
+
+        if not dealers:
+            messages.warning(request, "No dealers found. Please enter a city in Germany.")
 
         if min_rating:
             try:

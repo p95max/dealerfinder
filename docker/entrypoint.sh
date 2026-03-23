@@ -4,6 +4,9 @@ set -e
 echo "==> Running migrations..."
 python manage.py migrate --noinput
 
+echo "==> Creating cache table..."
+python manage.py createcachetable
+
 echo "==> Creating superuser..."
 python manage.py shell -c "
 from apps.users.models import User

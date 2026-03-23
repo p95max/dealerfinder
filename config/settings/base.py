@@ -132,6 +132,12 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache_table",
+    }
+}
 
 # =========================
 # LIMITS
