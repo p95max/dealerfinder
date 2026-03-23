@@ -387,7 +387,7 @@ if user.used_today >= user.daily_quota:
 
 ## 🤖 AI Integration (enrichment layer)
 
-см. файл ai_integration.md
+см. [ai_integration.md](ai_integration.md)
 
 ---
 
@@ -431,7 +431,7 @@ Mobile-first:
 
 ## Datenschutz (DSGVO)/Nutzervereinbarung 
 
-см. файл legal_pages.md
+см. [legal_pages.md](legal_pages.md)
 
 --- 
 
