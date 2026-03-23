@@ -30,8 +30,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
 
-    "apps.users",
-    'apps.dealers',
+    "apps.users.apps.UsersConfig",
+    "apps.dealers.apps.DealersConfig",
 ]
 
 # =========================
