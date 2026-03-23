@@ -6,8 +6,10 @@ from .services.dealer_service import search_dealers
 
 DEALERS_PER_PAGE = 20
 
+
 def home_view(request):
     return render(request, "home.html")
+
 
 def about_view(request):
     return render(request, "about.html")
@@ -26,16 +28,17 @@ def search_view(request):
     dealers = []
 
     if getattr(request, "quota_exceeded", False):
-        messages.warning(request, "Daily search limit reached. Upgrade for more searches or try again tomorrow.")
+        messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
         return render(request, "dealers/search.html", {
             "dealers": [],
             "quota_exceeded": True,
-            "city": request.GET.get("city"),
-            "radius": request.GET.get("radius", "10"),
+            "city": city,
+            "radius": radius,
         })
 
     if city:
-        dealers = search_dealers(city=city, radius=radius)
+        dealers, from_cache = search_dealers(city=city, radius=radius)
+        request.cache_hit = from_cache
 
         if min_rating:
             try:

@@ -1,4 +1,5 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.conf import settings
 
 
 class GoogleOAuthAdapter(DefaultSocialAccountAdapter):
@@ -8,8 +9,11 @@ class GoogleOAuthAdapter(DefaultSocialAccountAdapter):
 
         extra_data = sociallogin.account.extra_data
         user.google_sub = extra_data.get("sub")
-        user.plan = "free"
-        user.daily_quota = 30
+
+        if user.plan in (None, "", "anon"):
+            user.plan = "free"
+            user.daily_quota = settings.FREE_DAILY_QUOTA
+
         user.save(update_fields=["google_sub", "plan", "daily_quota"])
 
         return user

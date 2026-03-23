@@ -3,18 +3,30 @@ import time
 from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
+from django.db.models import F
+
+from apps.users.models import User
+
+
+def _is_search_request(request) -> bool:
+    match = request.resolver_match
+    return (
+        match is not None
+        and match.url_name == "search"
+        and match.app_name == "dealers"
+        and request.method == "GET"
+        and bool(request.GET.get("city"))
+    )
 
 
 class QuotaMiddleware:
-    """Resets daily quota and increments used_today on search requests."""
-
-    SEARCH_PATH = "/search/"
+    """Resets daily quota and increments used_today on cache MISS search requests."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path == self.SEARCH_PATH and request.method == "GET" and request.GET.get("city"):
+        if _is_search_request(request):
             user = request.user
             if user.is_authenticated:
                 self._reset_if_new_day(user)
@@ -26,12 +38,11 @@ class QuotaMiddleware:
 
         response = self.get_response(request)
 
-        if request.path == self.SEARCH_PATH and request.method == "GET" and request.GET.get("city"):
+        if _is_search_request(request):
             user = request.user
-            if user.is_authenticated and not request.quota_exceeded:
-                user.used_today += 1
-                user.save(update_fields=["used_today"])
-
+            cache_hit = getattr(request, "cache_hit", False)
+            if user.is_authenticated and not request.quota_exceeded and not cache_hit:
+                User.objects.filter(pk=user.pk).update(used_today=F("used_today") + 1)
         return response
 
     @staticmethod
@@ -50,7 +61,6 @@ class ThrottleMiddleware:
     For multi-worker prod replace _store with Redis.
     """
 
-    SEARCH_PATH = "/search/"
     WINDOW = 60  # seconds
 
     _store: dict = {}
@@ -60,7 +70,7 @@ class ThrottleMiddleware:
         self.rate = getattr(settings, "SEARCH_THROTTLE_RATE", 8)
 
     def __call__(self, request):
-        if request.path == self.SEARCH_PATH and request.method == "GET" and request.GET.get("city"):
+        if _is_search_request(request):
             key = self._get_key(request)
             if self._is_throttled(key):
                 return HttpResponse("Too many requests. Please wait a moment.", status=429)

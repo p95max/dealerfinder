@@ -11,7 +11,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set")
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
 
 # =========================
 # APPS
@@ -129,9 +129,16 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # =========================
 # CUSTOM
 # =========================
-CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
-MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
-SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
+
+# =========================
+# LIMITS
+# =========================
+FREE_DAILY_QUOTA = int(os.getenv("FREE_DAILY_LIMIT", 30))
+ANON_DAILY_LIMIT = int(os.getenv("ANON_DAILY_LIMIT", 5))
+PREMIUM_DAILY_QUOTA = int(os.getenv("PREMIUM_DAILY_LIMIT", 500))
+CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
+MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
+SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
