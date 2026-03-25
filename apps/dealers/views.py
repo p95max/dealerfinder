@@ -6,6 +6,8 @@ from .models import ContactMessage
 from .services.dealer_service import search_dealers
 from .services.geocoding_service import is_german_city
 
+from integrations.turnstile import verify_turnstile
+
 DEALERS_PER_PAGE = 20
 
 
@@ -29,6 +31,11 @@ def contact_view(request):
             return redirect("dealers:contact")
         else:
             messages.warning(request, "Please fill in all fields.")
+
+    token = request.POST.get("cf-turnstile-response", "")
+    ip = request.META.get("REMOTE_ADDR")
+    if not verify_turnstile(token, ip):
+        messages.warning(request, "Please complete the security check.")
 
     return render(request, "contact.html")
 

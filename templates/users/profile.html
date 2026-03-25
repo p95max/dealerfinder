@@ -37,14 +37,28 @@
         <p class="text-secondary small mb-3">
             All your data will be permanently removed. This action cannot be undone.
         </p>
+
+        <div class="cf-turnstile mb-3"
+             data-sitekey="0x4AAAAAACv8vJfJNH4YnGDn"
+             data-callback="onTurnstileSuccess"
+             data-button-id="deleteBtn"></div>
+
         <form method="post" action="{% url 'users:delete_account' %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+            <button type="submit" id="deleteBtn" class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                disabled
                 onclick="return confirm('Are you sure? This cannot be undone.')">
                 Delete my account
             </button>
         </form>
+
+
     </div>
 
 </section>
+
+<script>
+
+</script>
+
 {% endblock %}

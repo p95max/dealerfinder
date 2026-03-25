@@ -13,6 +13,10 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
 
+TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
+if not TURNSTILE_SECRET_KEY:
+    raise ValueError("TURNSTILE_SECRET_KEY is not set")
+
 # =========================
 # APPS
 # =========================
@@ -118,8 +122,6 @@ SOCIALACCOUNT_PROVIDERS = {
         "AUTH_PARAMS": {"access_type": "online"},
     }
 }
-
-
 
 # =========================
 # GOOGLE
