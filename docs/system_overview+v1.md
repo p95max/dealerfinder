@@ -429,6 +429,12 @@ Mobile-first:
 
 ---
 
+## Testing 
+
+- [Testing](docs/testing.md)
+
+---
+
 ## Datenschutz (DSGVO)/Nutzervereinbarung 
 
 см. [legal_pages.md](legal_pages.md)
