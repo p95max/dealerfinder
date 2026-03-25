@@ -52,6 +52,7 @@ class QuotaMiddleware:
             user.used_today = 0
             user.last_quota_reset = today
             user.save(update_fields=["used_today", "last_quota_reset"])
+            user.refresh_from_db()
 
 
 class ThrottleMiddleware:

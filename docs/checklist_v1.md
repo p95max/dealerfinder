@@ -21,8 +21,8 @@
 - [ ] Исправить сброс квоты при повторной авторизации через тот же Google-аккаунт — перед prod
 
 ## Anti-abuse
-- [ ] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
-- [ ] Подключить Turnstile на: логин, удаление аккаунта, контактную форму
+- [x] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
+- [x] Подключить Turnstile на: логин, удаление аккаунта, контактную форму
 
 ## Инфраструктура
 - [ ] Redis в `docker-compose.yml`
