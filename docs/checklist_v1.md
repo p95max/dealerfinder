@@ -3,7 +3,7 @@
 ## Структура проекта
 - [x] Разбить `settings.py` → `config/settings/base.py`, `dev.py`, `prod.py`
 - [x] Создать `apps/users/` (User model, OAuth views)
-- [ ] Создать `integrations/turnstile.py`
+- [x] Создать `integrations/turnstile.py`
 
 ## Модели
 - [ ] `Dealer`: добавить `opening_hours` (JSONField), `types` (JSONField)
@@ -31,7 +31,7 @@
 - [ ] `depends_on` с `healthcheck` для db → web
 
 ## Шаблоны
-- [ ] Django Messages для: поиск, квота, auth, удаление (success/error/warning)
+- [x] Django Messages для: поиск, квота, auth, удаление (success/error/warning)
 - [ ] Страницы: `/impressum`, `/datenschutz`, `/agb`
 - [ ] Cookie banner (опциональные cookies: Google Maps, Google OAuth)
 
@@ -57,6 +57,6 @@
 
 ## Прочее
 - [x] `STATIC_ROOT` в settings (для `collectstatic`)
-- [ ] `static/js/home.js`
-- [ ] Заполнить `README.md`
+- [x] `static/js/base.js`
+- [x] Заполнить `README.md`
 - [ ] `apps/dealers/selectors.py` — DB-запросы отдельно от сервисного слоя
