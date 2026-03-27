@@ -16,6 +16,7 @@ pytest tests/tests_dealer_service.py
 pytest tests/tests_geocoding.py
 ```
 
+
 ### Покрытие
 
 | Модуль | Файл | Статус |
