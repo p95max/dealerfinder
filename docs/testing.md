@@ -3,17 +3,27 @@
 ### Запуск
 
 ```bash
-docker compose exec web python manage.py test
+# start all tests
+pytest
+```
+
+```bash
+# QuotaMiddleware & ThrottleMiddleware
+pytest tests/tests_middleware.py
+# dealer service 
+pytest tests/tests_dealer_service.py
+# geocoding 
+pytest tests/tests_geocoding.py
 ```
 
 ### Покрытие
 
 | Модуль | Файл | Статус |
-|--------|------|--------|
+|--------|------|-------|
 | `QuotaMiddleware` | `apps/users/tests_middleware.py` | ✅ |
 | `ThrottleMiddleware` | `apps/users/tests_middleware.py` | ✅ |
-| `geocoding_service` | `apps/dealers/tests_geocoding.py` | [ ] |
-| `dealer_service` (cache HIT/MISS) | `apps/dealers/tests_dealer_service.py` | [ ] |
+| `geocoding_service` | `apps/dealers/tests_geocoding.py` | [✅] |
+| `dealer_service` (cache HIT/MISS) | `apps/dealers/tests_dealer_service.py` | [✅] |
 | `contact_view` | `apps/dealers/tests_views.py` | [ ] |
 | `delete_account_view` | `apps/users/tests_views.py` | [ ] |
 | `GoogleOAuthAdapter` | `apps/users/tests_oauth.py` | [ ] |
