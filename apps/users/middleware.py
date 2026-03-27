@@ -6,6 +6,7 @@ from django.db.models import F
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
+from django.shortcuts import redirect
 
 from apps.users.models import User
 
@@ -140,3 +141,31 @@ class ContactThrottleMiddleware(MiddlewareMixin):
 
         cache.set(key, current + 1, timeout=self.window_seconds)
         return None
+
+
+
+class LoginGateMiddleware:
+    """Require Turnstile gate before starting Google OAuth flow."""
+
+    GOOGLE_LOGIN_PATH_PREFIX = "/accounts/google/login/"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        is_authenticated = bool(user and user.is_authenticated)
+
+        if (
+            request.path.startswith(self.GOOGLE_LOGIN_PATH_PREFIX)
+            and not is_authenticated
+            and not request.session.get("turnstile_login_ok")
+        ):
+            return redirect("account_login")
+
+        response = self.get_response(request)
+
+        if is_authenticated:
+            request.session.pop("turnstile_login_ok", None)
+
+        return response

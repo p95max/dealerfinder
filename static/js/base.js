@@ -167,3 +167,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     syncContactSubmitState();
 });
+
+function onLoginTurnstileSuccess() {
+    const button = document.getElementById("loginBtn");
+    if (button) {
+        button.disabled = false;
+    }
+}
+
+function onLoginTurnstileExpired() {
+    const button = document.getElementById("loginBtn");
+    if (button) {
+        button.disabled = true;
+    }
+}
+
+function onLoginTurnstileError() {
+    const button = document.getElementById("loginBtn");
+    if (button) {
+        button.disabled = true;
+    }
+}
