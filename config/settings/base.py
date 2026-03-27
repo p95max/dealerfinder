@@ -19,7 +19,7 @@ TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
 if not TURNSTILE_SECRET_KEY:
     raise ValueError("TURNSTILE_SECRET_KEY is not set")
 
-ADMIN_URL = os.getenv("ADMIN_URL", "admin").strip().strip("/") or "admin"
+DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin").strip().strip("/") or "admin"
 
 # =========================
 # APPS

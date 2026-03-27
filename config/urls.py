@@ -4,7 +4,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 
-admin_path = f'{getattr(settings, "ADMIN_URL", "admin").strip("/")}/'
+admin_path = f'{getattr(settings, "DJANGO_ADMIN_URL", "admin").strip("/")}/'
 
 urlpatterns = [
     path(admin_path, admin.site.urls),
