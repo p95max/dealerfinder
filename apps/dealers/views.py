@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 
+from common.http import _get_client_ip
 from .models import ContactMessage
 from .services.dealer_service import search_dealers
 from .services.geocoding_service import is_german_city
@@ -25,17 +26,39 @@ def contact_view(request):
         email = request.POST.get("email", "").strip()
         message = request.POST.get("message", "").strip()
 
-        if name and email and message:
-            ContactMessage.objects.create(name=name, email=email, message=message)
-            messages.success(request, "Your message has been sent. We'll get back to you soon.")
-            return redirect("dealers:contact")
-        else:
+        if not name or not email or not message:
             messages.warning(request, "Please fill in all fields.")
+            return render(
+                request,
+                "contact.html",
+                {
+                    "form_data": {
+                        "name": name,
+                        "email": email,
+                        "message": message,
+                    }
+                },
+            )
 
-    token = request.POST.get("cf-turnstile-response", "")
-    ip = request.META.get("REMOTE_ADDR")
-    if not verify_turnstile(token, ip):
-        messages.warning(request, "Please complete the security check.")
+        token = request.POST.get("cf-turnstile-response", "")
+        ip = _get_client_ip(request)
+        if not verify_turnstile(token, ip):
+            messages.warning(request, "Please complete the security check.")
+            return render(
+                request,
+                "contact.html",
+                {
+                    "form_data": {
+                        "name": name,
+                        "email": email,
+                        "message": message,
+                    }
+                },
+            )
+
+        ContactMessage.objects.create(name=name, email=email, message=message)
+        messages.success(request, "Your message has been sent. We'll get back to you soon.")
+        return redirect("dealers:contact")
 
     return render(request, "contact.html")
 

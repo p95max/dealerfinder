@@ -43,14 +43,23 @@
              data-callback="onTurnstileSuccess"
              data-button-id="deleteBtn"></div>
 
-        <form method="post" action="{% url 'users:delete_account' %}">
-            {% csrf_token %}
-            <button type="submit" id="deleteBtn" class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                disabled
-                onclick="return confirm('Are you sure? This cannot be undone.')">
-                Delete my account
-            </button>
-        </form>
+            <form method="post" action="{% url 'users:delete_account' %}">
+                {% csrf_token %}
+
+                <div class="cf-turnstile mb-3"
+                     data-sitekey="{{ TURNSTILE_SITE_KEY }}"
+                     data-callback="onTurnstileSuccess"
+                     data-button-id="deleteBtn"></div>
+
+                <button
+                    type="submit"
+                    id="deleteBtn"
+                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                    disabled
+                    onclick="return confirm('Are you sure? This cannot be undone.')">
+                    Delete my account
+                </button>
+            </form>
 
 
     </div>

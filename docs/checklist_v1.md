@@ -6,14 +6,14 @@
 - [x] Создать `integrations/turnstile.py`
 
 ## Модели
-- [ ] `Dealer`: добавить `opening_hours` (JSONField), `types` (JSONField)
-- [ ] DB-индексы: `city`, `lat`, `lng`, `last_synced_at`
-- [ ] Сгенерировать и применить миграции
+- [x] `Dealer`: добавить `opening_hours` (JSONField), `types` (JSONField)
+- [x] DB-индексы: `city`, `lat`, `lng`, `last_synced_at`
+- [x] Сгенерировать и применить миграции
 
 ## Google Places API
 - [ ] Добавить `locationRestriction` с radius в payload
-- [ ] Добавить в FieldMask: `regularOpeningHours`, `currentOpeningHours`, `nationalPhoneNumber`, `websiteUri`, `types`
-- [ ] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
+- [~] Добавить в FieldMask: `regularOpeningHours`, `currentOpeningHours`, `nationalPhoneNumber`, `websiteUri`, `types`
+- [~] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
 
 ## Auth + Rate Limiting
 - [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
@@ -22,7 +22,8 @@
 
 ## Anti-abuse
 - [x] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
-- [x] Подключить Turnstile на: логин, удаление аккаунта, контактную форму
+- [ ] Проверять Turnstile ДО выполнения действия в `contact_view` и `delete_account_view`
+- [ ] Подключить Turnstile на login flow
 
 ## Инфраструктура
 - [ ] Redis в `docker-compose.yml`
@@ -60,3 +61,34 @@
 - [x] `static/js/base.js`
 - [x] Заполнить `README.md`
 - [ ] `apps/dealers/selectors.py` — DB-запросы отдельно от сервисного слоя
+
+## UX / Forms
+- [ ] Ограничить количество символов в строке поиска до длины самого длинного названия населённого пункта в Германии
+- [ ] Добавить live counter для поля поиска (`current / max`)
+- [ ] Добавить suggestions/autocomplete населённых пунктов Германии при вводе в строке поиска
+- [ ] Ограничить количество символов во всех полях формы обратной связи (`name`, `email`, `message`)
+- [ ] Показать пользователю ошибки валидации длины полей до submit (client-side) и продублировать на backend
+
+## Config / Security
+- [ ] Вынести URL админки в `.env` (`ADMIN_URL`) и использовать в `config/urls.py`
+- [ ] Убедиться, что `/admin/` не светится в production по умолчанию
+- [ ] Проверять наличие всех обязательных env-переменных через единый config-layer
+
+## Branding / Templates
+- [ ] Добавить favicon
+- [ ] Переопределить стандартные шаблоны `allauth` под единый UI проекта
+- [ ] Добавить кастомные страницы ошибок `403`, `404`, `500`
+
+## Notifications
+- [ ] Отправлять уведомление в Telegram о новых `ContactMessage`
+- [ ] Логировать неуспешную отправку Telegram-уведомления без падения запроса
+
+## Validation / Hardening
+- [ ] Валидировать `radius` на backend (min/max/allowed values), а не доверять input
+- [ ] Нормализовать `city` before search: trim, collapse spaces, case normalization
+- [ ] Защититься от пустых/мусорных запросов (`---`, 1 символ, только цифры)
+
+## Search / Architecture
+- [ ] Включить `radius` и фильтры в cache key, чтобы кэш соответствовал фактическому запросу
+- [ ] Убрать двойной вызов `search_dealers()` в `search_view`
+- [ ] Сначала валидировать город через geocoding, потом только вызывать search API

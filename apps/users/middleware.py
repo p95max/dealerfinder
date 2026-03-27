@@ -20,39 +20,39 @@ def _is_search_request(request) -> bool:
 
 
 class QuotaMiddleware:
-    """Resets daily quota and increments used_today on cache MISS search requests."""
+    """Reset daily quota and increment used_today on cache MISS search requests."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if _is_search_request(request):
-            user = request.user
-            if user.is_authenticated:
-                self._reset_if_new_day(user)
-                request.quota_exceeded = user.used_today >= user.daily_quota
-            else:
-                request.quota_exceeded = False
-        else:
-            request.quota_exceeded = False
+        request.quota_exceeded = False
+
+        is_search = _is_search_request(request)
+
+        if is_search and request.user.is_authenticated:
+            self._reset_if_new_day(request.user)
+            request.user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
+            request.quota_exceeded = request.user.used_today >= request.user.daily_quota
 
         response = self.get_response(request)
 
-        if _is_search_request(request):
-            user = request.user
+        if is_search and request.user.is_authenticated:
             cache_hit = getattr(request, "cache_hit", False)
-            if user.is_authenticated and not request.quota_exceeded and not cache_hit:
-                User.objects.filter(pk=user.pk).update(used_today=F("used_today") + 1)
+            if not request.quota_exceeded and not cache_hit:
+                User.objects.filter(pk=request.user.pk).update(used_today=F("used_today") + 1)
+
         return response
 
     @staticmethod
     def _reset_if_new_day(user):
-        today = timezone.now().date()
+        today = timezone.localdate()
         if user.last_quota_reset != today:
-            user.used_today = 0
-            user.last_quota_reset = today
-            user.save(update_fields=["used_today", "last_quota_reset"])
-            user.refresh_from_db()
+            User.objects.filter(pk=user.pk).update(
+                used_today=0,
+                last_quota_reset=today,
+            )
+
 
 
 class ThrottleMiddleware:
