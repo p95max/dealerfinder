@@ -14,6 +14,8 @@ pytest tests/tests_middleware.py
 pytest tests/tests_dealer_service.py
 # geocoding 
 pytest tests/tests_geocoding.py
+# contact view 
+pytest tests/tests_contact_view.py
 ```
 
 

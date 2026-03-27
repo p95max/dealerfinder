@@ -21,5 +21,6 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 [dependency-groups]
 dev = [
-    "pytest-django (>=4.12.0,<5.0.0)"
+    "pytest-django (>=4.12.0,<5.0.0)",
+    "pytest-mock (>=3.15.1,<4.0.0)"
 ]

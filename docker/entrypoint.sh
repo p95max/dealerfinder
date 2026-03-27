@@ -15,10 +15,10 @@ password = '$DJANGO_SUPERUSER_PASSWORD'
 if not email or not password:
     print('DJANGO_SUPERUSER_EMAIL or DJANGO_SUPERUSER_PASSWORD not set, skipping.')
 elif User.objects.filter(email=email).exists():
-    print(f'Superuser {email} already exists, skipping.')
+    print(f'Superuser already exists, skipping.')
 else:
     User.objects.create_superuser(username='admin', email=email, password=password)
-    print(f'Superuser {email} created.')
+    print(f'Superuser created.')
 "
 
 echo "==> Setting up Google SocialApp..."
