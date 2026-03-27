@@ -38,18 +38,17 @@
             All your data will be permanently removed. This action cannot be undone.
         </p>
 
-        <div class="cf-turnstile mb-3"
-             data-sitekey="0x4AAAAAACv8vJfJNH4YnGDn"
-             data-callback="onTurnstileSuccess"
-             data-button-id="deleteBtn"></div>
-
             <form method="post" action="{% url 'users:delete_account' %}">
                 {% csrf_token %}
 
-                <div class="cf-turnstile mb-3"
-                     data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-                     data-callback="onTurnstileSuccess"
-                     data-button-id="deleteBtn"></div>
+                <div
+                    class="cf-turnstile mb-3"
+                    data-sitekey="{{ TURNSTILE_SITE_KEY }}"
+                    data-callback="onTurnstileSuccess"
+                    data-expired-callback="onTurnstileExpired"
+                    data-error-callback="onTurnstileError"
+                    data-button-id="deleteBtn">
+                </div>
 
                 <button
                     type="submit"

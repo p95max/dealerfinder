@@ -15,6 +15,10 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
 
+TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")
+if not TURNSTILE_SITE_KEY:
+    raise ValueError("TURNSTILE_SITE_KEY is not set")
+
 TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
 if not TURNSTILE_SECRET_KEY:
     raise ValueError("TURNSTILE_SECRET_KEY is not set")
@@ -73,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'config.context_processors.turnstile',
             ],
         },
     },

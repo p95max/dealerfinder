@@ -16,3 +16,6 @@ PASSWORD_HASHERS = [
 ]
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+TURNSTILE_SITE_KEY = "test-site-key"
+TURNSTILE_SECRET_KEY = "test-secret-key"
