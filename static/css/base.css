@@ -303,16 +303,18 @@ footer {
 }
 
 .upgrade-link {
-    color: #d4af37 !important; /* золото */
-    font-weight: 600;
-    transition: all 0.2s ease;
+    background: linear-gradient(90deg, #d4af37, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
 }
 
-.upgrade-link:hover {
-    color: #ffd700 !important;
-    text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+.disabled-upgrade {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
-.upgrade-link.active {
-    color: #ffd700 !important;
+.disabled-upgrade:hover {
+    text-shadow: none;
 }
