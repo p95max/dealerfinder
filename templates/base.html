@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="{% static 'css/badges.css' %}">
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
 
+    <script src="{% static 'js/base.js' %}" defer></script>
     <script src="{% static 'js/theme.js' %}" defer></script>
     <script src="{% static 'js/turnstile.js' %}"></script>
     <script src="{% static 'js/quota.js' %}" defer></script>
@@ -54,20 +55,20 @@
 
 <main>
 
-        {% if messages %}
-            <div class="container mt-3 d-flex flex-column gap-2">
-                {% for message in messages %}
-                    <div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 flash-message
-                        {% if message.tags == 'success' %}msg-success
-                        {% elif message.tags == 'warning' %}msg-warning
-                        {% elif message.tags == 'danger' %}msg-danger
-                        {% else %}msg-info{% endif %}">
-                        <span>{{ message }}</span>
-                        <button onclick="this.parentElement.remove()" class="flash-message-close">×</button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+    {% if messages %}
+        <div class="container mt-3 d-flex flex-column gap-2">
+            {% for message in messages %}
+                <div class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 flash-message
+                    {% if message.tags == 'success' %}msg-success
+                    {% elif message.tags == 'warning' %}msg-warning
+                    {% elif message.tags == 'danger' %}msg-danger
+                    {% else %}msg-info{% endif %}">
+                    <span>{{ message }}</span>
+                    <button onclick="this.parentElement.remove()" class="flash-message-close">×</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     {% block content %}{% endblock %}
 </main>
