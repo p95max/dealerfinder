@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
@@ -86,11 +87,11 @@ def search_view(request):
 
     if getattr(request, "quota_exceeded", False):
         if request.user.is_authenticated:
-            messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
+            messages.warning(request, f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.")
         else:
             messages.warning(
                 request,
-                'Daily limit reached. Create a free account for 30 searches/day.'
+                f'Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.'
             )
 
         return render(
