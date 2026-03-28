@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -28,6 +29,14 @@ def login_gate_view(request):
 @login_required
 def profile_view(request):
     return render(request, "users/profile.html")
+
+
+def pricing_view(request):
+    return render(request, "users/pricing.html", {
+        "anon_limit": settings.ANON_DAILY_LIMIT,
+        "free_limit": settings.FREE_DAILY_LIMIT,
+        "premium_limit": settings.PREMIUM_DAILY_LIMIT,
+    })
 
 
 @login_required

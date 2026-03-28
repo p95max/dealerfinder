@@ -301,3 +301,18 @@ footer {
 #scroll-top:hover {
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
 }
+
+.upgrade-link {
+    color: #d4af37 !important; /* золото */
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.upgrade-link:hover {
+    color: #ffd700 !important;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+}
+
+.upgrade-link.active {
+    color: #ffd700 !important;
+}

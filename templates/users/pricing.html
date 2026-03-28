@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}Pricing — DealerFinder{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    .pricing-wrap {
+        padding: 80px 0 100px;
+    }
+
+    .pricing-eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: var(--df-text-muted, #888);
+        margin-bottom: 12px;
+    }
+
+    .pricing-title {
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: clamp(2.2rem, 5vw, 3.4rem);
+        line-height: 1.1;
+        letter-spacing: -.02em;
+        margin-bottom: 16px;
+    }
+
+    .pricing-sub {
+        font-size: 1rem;
+        color: var(--df-text-muted, #888);
+        max-width: 420px;
+        margin: 0 auto 64px;
+    }
+
+    /* Cards */
+    .plan-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .plan-grid { grid-template-columns: 1fr; max-width: 380px; }
+    }
+
+    .plan-card {
+        position: relative;
+        border-radius: 20px;
+        padding: 32px 28px 36px;
+        border: 1px solid var(--df-border, rgba(0,0,0,.1));
+        background: var(--df-surface, #fff);
+        transition: transform .25s ease, box-shadow .25s ease;
+        overflow: hidden;
+    }
+
+    .plan-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity .3s ease;
+        pointer-events: none;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 50px rgba(0,0,0,.08);
+    }
+
+    /* Featured card */
+    .plan-card.featured {
+        border-color: transparent;
+        background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+        color: #fff;
+        box-shadow: 0 16px 48px rgba(14, 165, 233, .35);
+    }
+
+    .plan-card.featured:hover {
+        box-shadow: 0 24px 64px rgba(14, 165, 233, .45);
+    }
+
+    .plan-card.featured .plan-label,
+    .plan-card.featured .plan-price-note,
+    .plan-card.featured .feature-item {
+        color: rgba(255,255,255,.75);
+    }
+
+    .plan-card.featured .feature-item::before {
+        background: rgba(255,255,255,.3);
+    }
+
+    /* Badge */
+    .plan-badge {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.2);
+        color: #fff;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+
+    .plan-badge.dark {
+        background: var(--df-surface-muted, #f5f5f5);
+        color: var(--df-text-muted, #888);
+    }
+
+    .plan-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--df-text-muted, #aaa);
+        margin-bottom: 6px;
+    }
+
+    .plan-price {
+        font-family: 'Syne', sans-serif;
+        font-weight: 800;
+        font-size: 2.6rem;
+        line-height: 1;
+        letter-spacing: -.03em;
+        margin-bottom: 4px;
+    }
+
+    .plan-price-note {
+        font-size: 12px;
+        color: var(--df-text-muted, #aaa);
+        margin-bottom: 28px;
+    }
+
+    /* Feature list */
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 32px;
+    }
+
+    .feature-item {
+        font-size: 13.5px;
+        color: var(--df-text-muted, #666);
+        padding: 9px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--df-border, rgba(0,0,0,.06));
+    }
+
+    .feature-item:last-child { border-bottom: none; }
+
+    .feature-item .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .4;
+        flex-shrink: 0;
+    }
+
+    .plan-card.featured .feature-item {
+        border-bottom-color: rgba(255,255,255,.12);
+    }
+
+    .feature-highlight {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 500;
+        color: inherit;
+        opacity: 1;
+    }
+
+    /* CTA */
+    .plan-cta {
+        display: block;
+        width: 100%;
+        padding: 11px 0;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        transition: all .2s ease;
+        letter-spacing: .01em;
+    }
+
+    .plan-cta.cta-outline {
+        border: 1px solid var(--df-border, rgba(0,0,0,.15));
+        color: var(--df-text, #222);
+        background: transparent;
+    }
+
+    .plan-cta.cta-outline:hover {
+        background: var(--df-surface-muted, #f5f5f5);
+    }
+
+    .plan-cta.cta-white {
+        background: #fff;
+        color: #0284c7;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    }
+
+    .plan-cta.cta-white:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,.18);
+        transform: translateY(-1px);
+    }
+
+    .plan-cta.cta-disabled {
+        border: 1px solid var(--df-border, rgba(0,0,0,.1));
+        color: var(--df-text-muted, #aaa);
+        background: transparent;
+        cursor: default;
+        opacity: .6;
+    }
+
+    /* Divider note */
+    .compare-note {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--df-text-muted, #aaa);
+        margin: 64px 0 24px;
+    }
+
+    /* Animated number */
+    @keyframes countUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .plan-price {
+        animation: countUp .5s ease both;
+    }
+
+    .plan-card:nth-child(1) .plan-price { animation-delay: .1s; }
+    .plan-card:nth-child(2) .plan-price { animation-delay: .2s; }
+    .plan-card:nth-child(3) .plan-price { animation-delay: .3s; }
+
+    /* Glow orb on featured */
+    .plan-card.featured .orb {
+        position: absolute;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.08);
+        top: -60px;
+        right: -40px;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pricing-wrap">
+    <div class="container text-center">
+
+        <p class="pricing-eyebrow">Simple, transparent</p>
+        <h1 class="pricing-title">No surprises.<br>Just searches.</h1>
+        <p class="pricing-sub">Start free, no card required. Every plan gets full access to search features.</p>
+
+        <div class="plan-grid">
+
+            <!-- Guest -->
+            <div class="plan-card">
+                <span class="plan-badge dark">Guest</span>
+                <p class="plan-label">searches / day</p>
+                <div class="plan-price">{{ anon_limit }}</div>
+                <p class="plan-price-note">No account needed</p>
+                <ul class="feature-list">
+                    <li class="feature-item"><span class="dot"></span> Cache-first results</li>
+                    <li class="feature-item"><span class="dot"></span> All filters available</li>
+                    <li class="feature-item"><span class="dot"></span><span class="feature-highlight">{{ anon_limit }} searches / day</span></li>
+                </ul>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'account_login' %}" class="plan-cta cta-outline">Get started free</a>
+                {% else %}
+                <span class="plan-cta cta-disabled">Current plan</span>
+                {% endif %}
+            </div>
+
+            <!-- Registered — featured -->
+            <div class="plan-card featured">
+                <div class="orb"></div>
+                <span class="plan-badge">Free tier</span>
+                <p class="plan-label">searches / day</p>
+                <div class="plan-price">{{ free_limit }}</div>
+                <p class="plan-price-note">Free account</p>
+                <ul class="feature-list">
+                    <li class="feature-item"><span class="dot"></span> Everything in Guest</li>
+                    <li class="feature-item"><span class="dot"></span> Google sign-in</li>
+                    <li class="feature-item"><span class="dot"></span><span class="feature-highlight">{{ free_limit }} searches / day</span></li>
+                </ul>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'account_login' %}" class="plan-cta cta-white">Sign in with Google</a>
+                {% else %}
+                <span class="plan-cta cta-disabled" style="color:rgba(255,255,255,.5); border-color:rgba(255,255,255,.2);">Active</span>
+                {% endif %}
+            </div>
+
+            <!-- Premium -->
+            <div class="plan-card">
+                <span class="plan-badge dark">Premium</span>
+                <p class="plan-label">searches / day</p>
+                <div class="plan-price">{{ premium_limit }}</div>
+                <p class="plan-price-note">Coming soon</p>
+                <ul class="feature-list">
+                    <li class="feature-item"><span class="dot"></span> Everything in Free</li>
+                    <li class="feature-item"><span class="dot"></span> Fresh data priority</li>
+                    <li class="feature-item"><span class="dot"></span><span class="feature-highlight">{{ premium_limit }} searches / day</span></li>
+                </ul>
+                <span class="plan-cta cta-disabled">Soon...</span>
+            </div>
+
+        </div>
+
+        <p class="compare-note">All plans · Full feature access · No ads</p>
+
+    </div>
+</div>
+{% endblock %}
