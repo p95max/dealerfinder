@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}DealerFinder — Find dealers{% endblock %}
 
@@ -57,4 +58,8 @@
     </div>
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/search.js' %}" defer></script>
 {% endblock %}

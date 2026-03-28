@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Contact — DealerFinder{% endblock %}
 
@@ -51,9 +52,9 @@
                     <div
                         class="cf-turnstile mb-3"
                         data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-                        data-callback="onTurnstileSuccess"
-                        data-expired-callback="onTurnstileExpired"
-                        data-error-callback="onTurnstileError"
+                        data-callback="onContactTurnstileSuccess"
+                        data-expired-callback="onContactTurnstileExpired"
+                        data-error-callback="onContactTurnstileError"
                         data-button-id="submitBtn"></div>
 
                     <button
@@ -94,4 +95,8 @@
 
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/contact-form.js' %}" defer></script>
 {% endblock %}

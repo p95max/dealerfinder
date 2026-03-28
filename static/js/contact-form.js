@@ -1,21 +1,23 @@
-function toggleTurnstileButtonState(isEnabled) {
-    document.querySelectorAll(".cf-turnstile").forEach((widget) => {
-        const btnId = widget.dataset.buttonId;
-        if (!btnId) {
-            return;
-        }
-
-        const button = document.getElementById(btnId);
-        if (!button) {
-            return;
-        }
-
-        button.disabled = !isEnabled;
-    });
-}
-
 function getContactForm() {
     return document.querySelector("form[action*='contact']");
+}
+
+function getTurnstileButton(widget) {
+    const btnId = widget?.dataset.buttonId;
+    if (!btnId) {
+        return null;
+    }
+
+    return document.getElementById(btnId);
+}
+
+function setWidgetButtonState(isEnabled) {
+    document.querySelectorAll(".cf-turnstile").forEach((widget) => {
+        const button = getTurnstileButton(widget);
+        if (button) {
+            button.disabled = !isEnabled;
+        }
+    });
 }
 
 function isContactFormValid(form) {
@@ -43,34 +45,20 @@ function syncContactSubmitState() {
     const turnstileResponse = form.querySelector('input[name="cf-turnstile-response"]');
     const hasTurnstileToken = Boolean(turnstileResponse && turnstileResponse.value);
 
-    toggleTurnstileButtonState(hasTurnstileToken && isContactFormValid(form));
+    setWidgetButtonState(hasTurnstileToken && isContactFormValid(form));
 }
 
-function onTurnstileSuccess() {
+function onContactTurnstileSuccess() {
     syncContactSubmitState();
 }
 
-function onTurnstileExpired() {
-    toggleTurnstileButtonState(false);
+function onContactTurnstileExpired() {
+    setWidgetButtonState(false);
 }
 
-function onTurnstileError() {
-    toggleTurnstileButtonState(false);
+function onContactTurnstileError() {
+    setWidgetButtonState(false);
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const textarea = document.querySelector('textarea[name="message"]');
-    const counter = document.getElementById("messageCounter");
-
-    if (textarea && counter) {
-        const updateCounter = () => {
-            counter.textContent = textarea.value.length;
-        };
-
-        textarea.addEventListener("input", updateCounter);
-        updateCounter();
-    }
-});
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = getContactForm();
@@ -81,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nameInput = form.querySelector('input[name="name"]');
     const emailInput = form.querySelector('input[name="email"]');
     const messageInput = form.querySelector('textarea[name="message"]');
+    const counter = document.getElementById("messageCounter");
 
     function setError(input, message, errorId) {
         const errorEl = document.getElementById(errorId);
@@ -135,11 +124,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function validateForm() {
-        const nameValid = validateName();
-        const emailValid = validateEmail();
-        const messageValid = validateMessage();
+        const isValid = validateName() && validateEmail() && validateMessage();
+        syncContactSubmitState();
+        return isValid;
+    }
 
-        return nameValid && emailValid && messageValid;
+    function updateCounter() {
+        if (counter) {
+            counter.textContent = messageInput.value.length;
+        }
     }
 
     nameInput.addEventListener("input", () => {
@@ -154,55 +147,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     messageInput.addEventListener("input", () => {
         validateMessage();
+        updateCounter();
         syncContactSubmitState();
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", (event) => {
         if (!validateForm()) {
-            e.preventDefault();
+            event.preventDefault();
         }
-
-        syncContactSubmitState();
     });
 
+    updateCounter();
     syncContactSubmitState();
-});
-
-function onLoginTurnstileSuccess() {
-    const button = document.getElementById("loginBtn");
-    if (button) {
-        button.disabled = false;
-    }
-}
-
-function onLoginTurnstileExpired() {
-    const button = document.getElementById("loginBtn");
-    if (button) {
-        button.disabled = true;
-    }
-}
-
-function onLoginTurnstileError() {
-    const button = document.getElementById("loginBtn");
-    if (button) {
-        button.disabled = true;
-    }
-}
-
-function refreshQuota() {
-    fetch("{% url 'users:quota_status' %}")
-        .then(r => r.json())
-        .then(data => {
-            const el = document.getElementById("quota-counter");
-            if (el) el.textContent = `${data.used} / ${data.limit}`;
-        });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.querySelector("form[action*='search']");
-    if (form) {
-        form.addEventListener("submit", () => {
-            setTimeout(refreshQuota, 500);
-        });
-    }
 });

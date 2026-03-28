@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Profile — DealerFinder{% endblock %}
 
@@ -44,9 +45,9 @@
                 <div
                     class="cf-turnstile mb-3"
                     data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-                    data-callback="onTurnstileSuccess"
-                    data-expired-callback="onTurnstileExpired"
-                    data-error-callback="onTurnstileError"
+                    data-callback="onDeleteTurnstileSuccess"
+                    data-expired-callback="onDeleteTurnstileExpired"
+                    data-error-callback="onDeleteTurnstileError"
                     data-button-id="deleteBtn">
                 </div>
 
@@ -69,4 +70,8 @@
 
 </script>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/delete-account.js' %}" defer></script>
 {% endblock %}
