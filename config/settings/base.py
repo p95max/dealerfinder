@@ -25,6 +25,9 @@ if not TURNSTILE_SECRET_KEY:
 
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin").strip().strip("/") or "admin"
 
+TIME_ZONE = "Europe/Berlin"
+USE_TZ = True
+
 # =========================
 # APPS
 # =========================
