@@ -14,6 +14,8 @@ if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set")
 
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
+if not os.getenv("DEBUG", "False") == "True" and not ALLOWED_HOSTS:
+    raise ValueError("ALLOWED_HOSTS is not set")
 
 TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")
 if not TURNSTILE_SITE_KEY:
@@ -137,7 +139,9 @@ SOCIALACCOUNT_PROVIDERS = {
 # =========================
 # GOOGLE
 # =========================
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_API_KEY is not set")
 
 # =========================
 # CUSTOM
