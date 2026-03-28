@@ -26,39 +26,34 @@ def _is_search_request(request) -> bool:
     )
 
 
-class QuotaMiddleware:
-    """Reset daily quota and increment used_today on cache MISS."""
+def _looks_like_search(request) -> bool:
+    return (
+        request.method == "GET"
+        and request.path == "/search/"
+        and bool(request.GET.get("city"))
+    )
 
+
+class QuotaMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         request.quota_exceeded = False
 
-        is_search = _is_search_request(request)
-
-        if is_search and request.user.is_authenticated:
+        if _looks_like_search(request) and request.user.is_authenticated:
             self._reset_if_new_day(request.user)
             request.user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
-
             request.quota_exceeded = request.user.used_today >= request.user.daily_quota
-
-            # === Добавлено для отладки ===
-            if getattr(settings, "DEBUG", False):
-                print(f"DEBUG Quota: user={request.user.email}, used={request.user.used_today}, "
-                      f"limit={request.user.daily_quota}, exceeded={request.quota_exceeded}")
 
         response = self.get_response(request)
 
-        # Инкремент только после успешного выполнения view
-        if is_search and request.user.is_authenticated:
+        if _is_search_request(request) and request.user.is_authenticated:
             cache_hit = getattr(request, "cache_hit", True)
             if not request.quota_exceeded and not cache_hit:
                 User.objects.filter(pk=request.user.pk).update(
                     used_today=F("used_today") + 1
                 )
-                if getattr(settings, "DEBUG", False):
-                    print(f"DEBUG Quota: +1 applied for user {request.user.email}")
 
         return response
 
