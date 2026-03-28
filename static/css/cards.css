@@ -1,0 +1,29 @@
+.dealer-card {
+    border: 1px solid var(--df-border);
+    border-radius: 18px;
+    background: var(--df-surface);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.dealer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--df-shadow);
+    border-color: #cbd5e1;
+}
+
+[data-bs-theme="dark"] .dealer-card:hover {
+    border-color: #475569;
+}
+
+.dealer-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--df-text);
+}
+
+.dealer-meta {
+    color: var(--df-text-muted);
+    font-size: 0.95rem;
+}

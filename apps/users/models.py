@@ -4,7 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     google_sub = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    plan = models.CharField(max_length=20, default="anon")  # anon / free / premium
+    plan = models.CharField(max_length=20, default="free")
     daily_quota = models.IntegerField(default=10)
     used_today = models.IntegerField(default=0)
     last_quota_reset = models.DateField(null=True, blank=True)

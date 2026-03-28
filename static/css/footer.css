@@ -1,0 +1,13 @@
+footer {
+    background: var(--df-surface) !important;
+    border-color: var(--df-border) !important;
+}
+
+.footer-link {
+    color: var(--df-text-muted);
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    color: var(--df-primary);
+}

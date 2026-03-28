@@ -19,7 +19,8 @@
     --df-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-html, body {
+html,
+body {
     min-height: 100%;
     background: var(--df-surface-muted);
     color: var(--df-text);
@@ -34,67 +35,17 @@ main {
     flex: 1;
 }
 
-/* Navbar & Footer */
-.navbar,
-footer {
-    background: var(--df-surface) !important;
-    border-color: var(--df-border) !important;
-}
-
-.navbar-brand {
+.section-title {
+    font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--df-text) !important;
+    letter-spacing: -0.03em;
+    color: var(--df-text);
 }
 
-.navbar .btn-link {
-    color: var(--df-text) !important;
-}
-
-.footer-link {
+.section-subtitle {
     color: var(--df-text-muted);
-    text-decoration: none;
 }
 
-.footer-link:hover {
-    color: var(--df-primary);
-}
-
-/* Hero */
-.hero {
-    background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(22, 163, 74, 0.10), transparent 25%),
-        linear-gradient(135deg, #0f172a 0%, #111827 100%);
-    color: #fff;
-    border-radius: 0 0 28px 28px;
-}
-
-.hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    font-size: 0.9rem;
-}
-
-.hero-title {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-    line-height: 1.05;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-}
-
-.hero-text {
-    color: rgba(255, 255, 255, 0.82);
-    max-width: 720px;
-    font-size: 1.05rem;
-}
-
-/* Surfaces */
 .surface-card {
     background: var(--df-surface);
     border: 1px solid var(--df-border);
@@ -108,100 +59,6 @@ footer {
     border-radius: var(--df-radius);
 }
 
-/* Typography */
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--df-text);
-}
-
-.section-subtitle {
-    color: var(--df-text-muted);
-}
-
-/* Search panel */
-.search-panel {
-    margin-top: -56px;
-    position: relative;
-    z-index: 5;
-}
-
-/* Dealer card */
-.dealer-card {
-    border: 1px solid var(--df-border);
-    border-radius: 18px;
-    background: var(--df-surface);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.dealer-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--df-shadow);
-    border-color: #cbd5e1;
-}
-
-[data-bs-theme="dark"] .dealer-card:hover {
-    border-color: #475569;
-}
-
-.dealer-name {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin-bottom: 6px;
-    color: var(--df-text);
-}
-
-.dealer-meta {
-    color: var(--df-text-muted);
-    font-size: 0.95rem;
-}
-
-/* Badges */
-.score-badge,
-.contact-badge,
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 0.82rem;
-    font-weight: 600;
-}
-
-.score-badge {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-.contact-badge {
-    background: #f0fdf4;
-    color: #15803d;
-}
-
-.status-badge {
-    background: #fff7ed;
-    color: #c2410c;
-}
-
-[data-bs-theme="dark"] .score-badge {
-    background: #1e3a8a;
-    color: #93c5fd;
-}
-
-[data-bs-theme="dark"] .contact-badge {
-    background: #14532d;
-    color: #86efac;
-}
-
-[data-bs-theme="dark"] .status-badge {
-    background: #7c2d12;
-    color: #fdba74;
-}
-
-/* Feature icon */
 .feature-icon {
     width: 46px;
     height: 46px;
@@ -214,45 +71,19 @@ footer {
     font-weight: 700;
 }
 
-/* Empty state */
 .empty-state {
     border: 1px dashed var(--df-border);
     border-radius: 18px;
     background: var(--df-surface);
 }
 
-/* Form */
 .form-label {
     font-weight: 600;
 }
 
-/* Sticky sidebar */
 .sticky-panel {
     position: sticky;
     top: 24px;
-}
-
-@media (max-width: 991.98px) {
-    .search-panel {
-        margin-top: -36px;
-    }
-
-    .sticky-panel {
-        position: static;
-    }
-}
-
-.navbar {
-    position: sticky;
-    top: 0;
-    z-index: 1030;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.75) !important;
-}
-
-[data-bs-theme="dark"] .navbar {
-    background: rgba(15, 23, 42, 0.75) !important;
 }
 
 #scroll-top {
@@ -288,33 +119,8 @@ footer {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-.msg-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-.msg-warning { background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; }
-.msg-danger  { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-.msg-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-
-#scroll-top.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-#scroll-top:hover {
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
-}
-
-.upgrade-link {
-    background: linear-gradient(90deg, #d4af37, #ffd700);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 700;
-}
-
-.disabled-upgrade {
-    opacity: 0.6;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.disabled-upgrade:hover {
-    text-shadow: none;
+@media (max-width: 991.98px) {
+    .sticky-panel {
+        position: static;
+    }
 }
