@@ -5,7 +5,12 @@ from .google_places import search_all_places
 
 
 def build_query_key(city, radius):
-    return f"{city}_{radius}"
+    city = (city or "").strip().lower()
+    try:
+        radius_int = int(float(radius or 20))
+    except (TypeError, ValueError):
+        radius_int = 20
+    return f"dealers:{city}:{radius_int}"
 
 
 def normalize(data):
