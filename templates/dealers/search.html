@@ -11,6 +11,7 @@
                 Search, filter, and review reliable dealers with cache-first results.
             </p>
         </div>
+
         {% include "includes/search_form.html" %}
     </div>
 </section>
@@ -18,164 +19,161 @@
 <section class="py-5">
     <div class="container">
         <div class="row g-4">
+
+            <!-- Sidebar -->
             <div class="col-12 col-lg-4 col-xl-3">
                 <div class="surface-card-muted p-4 sticky-panel">
                     <div class="fw-semibold mb-2">Search summary</div>
+
                     {% if city %}
                         <div class="small text-secondary mb-3">
                             Query for <span class="fw-semibold text-dark">{{ city }}</span>
                         </div>
-                    {% else %}
-                        <div class="small text-secondary mb-3">
-                            Enter a city and launch your first search.
-                        </div>
                     {% endif %}
+
                     <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
-                        <li><span class="text-secondary">Radius:</span> {{ request.GET.radius|default:radius|default:"10" }} km</li>
-                        <li><span class="text-secondary">Min. rating:</span> {{ request.GET.min_rating|default:"Any" }}</li>
-                        <li><span class="text-secondary">Open now:</span> {% if request.GET.open_now %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Weekends:</span> {% if request.GET.weekends %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Has contacts:</span> {% if request.GET.has_contacts %}Yes{% else %}No{% endif %}</li>
+                        <li><span class="text-secondary">Radius:</span> {{ radius }} km</li>
+                        <li><span class="text-secondary">Min. rating:</span> {{ min_rating|default:"Any" }}</li>
+                        <li><span class="text-secondary">Max distance:</span> {{ request.GET.max_distance_km|default:"Any" }}</li>
+                        <li><span class="text-secondary">Open now:</span> {% if open_now %}Yes{% else %}No{% endif %}</li>
+                        <li><span class="text-secondary">Weekends:</span> {% if weekends %}Yes{% else %}No{% endif %}</li>
+                        <li><span class="text-secondary">Has contacts:</span> {% if has_contacts %}Yes{% else %}No{% endif %}</li>
                     </ul>
                 </div>
             </div>
 
+            <!-- Results -->
             <div class="col-12 col-lg-8 col-xl-9">
+
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                         <h2 class="h4 mb-1">Results</h2>
-                        <div class="text-secondary">
-                            {% if dealers %}
-                                Showing results for <span class="fw-semibold text-dark">{{ city }}</span>
-                            {% else %}
-                                No results yet
-                            {% endif %}
-                        </div>
                     </div>
                 </div>
 
                 {% if dealers %}
                     <div class="d-flex flex-column gap-3">
+
                         {% for d in dealers %}
-                            <article class="dealer-card p-4">
-                                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-                                    <div class="flex-grow-1">
-                                        <div class="dealer-name">{{ d.name }}</div>
-                                        {% if d.address %}
-                                            <div class="dealer-meta mb-2">{{ d.address }}</div>
+                        <article class="dealer-card p-4">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+
+                                <div class="flex-grow-1">
+                                    <div class="dealer-name">{{ d.name }}</div>
+
+                                    {% if d.address %}
+                                        <div class="dealer-meta mb-2">{{ d.address }}</div>
+                                    {% endif %}
+
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+
+                                        {% if d.rating %}
+                                            <span class="score-badge">
+                                                ⭐ {{ d.rating }}
+                                                {% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
+                                            </span>
                                         {% endif %}
-                                        <div class="d-flex flex-wrap gap-2 mb-3">
-                                            {% if d.rating %}
-                                                <span class="score-badge">
-                                                    Rating {{ d.rating }}{% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
-                                                </span>
-                                            {% endif %}
-                                            {% if d.website or d.phone %}
-                                                <span class="contact-badge">Contacts available</span>
-                                            {% endif %}
-                                            {% if d.open_now %}
-                                                <span class="status-badge">Open now</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="d-flex flex-lg-column justify-content-between gap-2">
-                                        <button class="btn btn-primary rounded-pill px-4"
-                                            data-dealer-name="{{ d.name|escapejs }}"
-                                            data-dealer-address="{{ d.address|default:''|escapejs }}"
-                                            data-dealer-phone="{{ d.phone|default:''|escapejs }}"
-                                            data-dealer-website="{{ d.website|default:''|escapejs }}"
-                                            data-dealer-rating="{{ d.rating|default:'' }}"
-                                            data-dealer-reviews="{{ d.reviews|default:'' }}"
-                                            data-dealer-lat="{{ d.lat|default:'' }}"
-                                            data-dealer-lng="{{ d.lng|default:'' }}"
-                                            onclick="openDealerModal(this)">
-                                            Details
-                                        </button>
+
+                                        {% if d.distance_km %}
+                                            <span class="score-badge">
+                                                📍 {{ d.distance_km }} km
+                                            </span>
+                                        {% endif %}
+
+                                        {% if d.website or d.phone %}
+                                            <span class="contact-badge">Contacts</span>
+                                        {% endif %}
+
+                                        {% if d.open_now %}
+                                            <span class="status-badge">Open now</span>
+                                        {% endif %}
+
                                     </div>
                                 </div>
-                            </article>
+
+                                <div class="d-flex flex-lg-column justify-content-between gap-2">
+                                    <button
+                                        class="btn btn-primary rounded-pill px-4"
+                                        data-dealer-name="{{ d.name|escapejs }}"
+                                        data-dealer-address="{{ d.address|default:''|escapejs }}"
+                                        data-dealer-phone="{{ d.phone|default:''|escapejs }}"
+                                        data-dealer-website="{{ d.website|default:''|escapejs }}"
+                                        data-dealer-rating="{{ d.rating|default:'' }}"
+                                        data-dealer-reviews="{{ d.reviews|default:'' }}"
+                                        data-dealer-lat="{{ d.lat|default:'' }}"
+                                        data-dealer-lng="{{ d.lng|default:'' }}"
+                                        data-dealer-distance="{{ d.distance_km|default:'' }}"
+                                        onclick="openDealerModal(this)">
+                                        Details
+                                    </button>
+                                </div>
+
+                            </div>
+                        </article>
                         {% endfor %}
+
                     </div>
                 {% else %}
                     <div class="empty-state p-5 text-center">
-                        <h3 class="h4 mb-2">No dealers to display yet</h3>
+                        <h3 class="h4 mb-2">No dealers found</h3>
                         <p class="text-secondary mb-0">
-                            Start with a city search above. Results will appear here.
+                            Try adjusting filters or search for another city.
                         </p>
                     </div>
                 {% endif %}
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                <a class="page-link" href="{% querystring page=num %}">{{ num }}</a>
+                            </li>
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{% querystring page=page_obj.next_page_number %}">→</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
             </div>
-
-            <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link rounded-pill me-1" href="{% querystring page=page_obj.previous_page_number %}">←</a>
-                        </li>
-                    {% endif %}
-
-                    {% for num in page_obj.paginator.page_range %}
-                        <li class="page-item {% if num == page_obj.number %}active{% endif %}">
-                            <a class="page-link rounded-pill me-1" href="{% querystring page=num %}">{{ num }}</a>
-                        </li>
-                    {% endfor %}
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link rounded-pill" href="{% querystring page=page_obj.next_page_number %}">→</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-    {% endif %}
-
         </div>
     </div>
 </section>
 
-<!-- Dealer Modal -->
-<div class="modal fade" id="dealerModal" tabindex="-1" aria-hidden="true">
+<!-- Modal -->
+<div class="modal fade" id="dealerModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0" style="border-radius: 20px; overflow: hidden;">
+        <div class="modal-content p-4">
 
-            <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold" id="modalDealerName"></h5>
+            <div class="modal-header border-0">
+                <h5 class="fw-bold" id="modalDealerName"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body px-4 pb-4">
+            <div class="modal-body">
 
-                <div class="mb-3" style="border-radius: 14px; overflow: hidden; height: 220px; background: #f1f5f9;">
-                    <iframe id="modalMap" width="100%" height="220" style="border: 0;" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <div id="modalInfo" class="small mb-3"></div>
+
+                <div style="height: 250px;" class="mb-3">
+                    <iframe id="modalMap" width="100%" height="100%" style="border:0;"></iframe>
                 </div>
 
-                <div class="d-flex flex-column gap-2 small mb-3" id="modalInfo"></div>
+                <a id="modalRouteBtn" class="btn btn-primary" target="_blank">
+                    Get directions
+                </a>
 
-                <!-- AI Summary placeholder (v2) -->
-                <div class="surface-card-muted p-3 mb-3" style="border-radius: 14px;">
-                    <div class="d-flex align-items-center gap-2">
-                        <span style="font-size: 14px;">✨</span>
-                        <span class="fw-semibold small">AI review summary</span>
-                        <span class="text-secondary" style="font-size: 11px;">— coming in v2</span>
-                    </div>
-                </div>
-
-                <div class="d-flex flex-wrap gap-2">
-                    <a id="modalRouteBtn" href="#" target="_blank" rel="noopener noreferrer"
-                        class="btn btn-primary rounded-pill px-4 btn-sm">
-                        Get directions
-                    </a>
-                    <button class="btn btn-outline-secondary rounded-pill px-4 btn-sm" onclick="shareDealerEmail()">
-                        Share via email
-                    </button>
-                    <button class="btn btn-outline-secondary rounded-pill px-4 btn-sm" onclick="copyDealerInfo()">
-                        Copy info
-                    </button>
-                </div>
-
-                <div id="copyConfirm" class="text-success small mt-2" style="display:none;">Copied!</div>
             </div>
 
         </div>
@@ -185,65 +183,39 @@
 
 {% block extra_js %}
 <script>
-let currentDealer = {};
-
 function openDealerModal(btn) {
     const d = {
-        name:    btn.dataset.dealerName,
+        name: btn.dataset.dealerName,
         address: btn.dataset.dealerAddress,
-        phone:   btn.dataset.dealerPhone,
+        phone: btn.dataset.dealerPhone,
         website: btn.dataset.dealerWebsite,
-        rating:  btn.dataset.dealerRating,
+        rating: btn.dataset.dealerRating,
         reviews: btn.dataset.dealerReviews,
-        lat:     btn.dataset.dealerLat,
-        lng:     btn.dataset.dealerLng,
+        lat: btn.dataset.dealerLat,
+        lng: btn.dataset.dealerLng,
+        distance: btn.dataset.dealerDistance,
     };
-    currentDealer = d;
 
     document.getElementById('modalDealerName').textContent = d.name;
 
     const info = document.getElementById('modalInfo');
     info.innerHTML = '';
-    if (d.address) info.innerHTML += `<div><span class="text-secondary">Address:</span> ${d.address}</div>`;
-    if (d.phone)   info.innerHTML += `<div><span class="text-secondary">Phone:</span> <a href="tel:${d.phone}">${d.phone}</a></div>`;
-    if (d.website) info.innerHTML += `<div><span class="text-secondary">Website:</span> <a href="${d.website}" target="_blank" rel="noopener noreferrer">${d.website}</a></div>`;
-    if (d.rating)  info.innerHTML += `<div><span class="text-secondary">Rating:</span> ${d.rating}${d.reviews ? ' &middot; ' + d.reviews + ' reviews' : ''}</div>`;
+
+    if (d.address) info.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
+    if (d.phone) info.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
+    if (d.website) info.innerHTML += `<div><b>Website:</b> ${d.website}</div>`;
+    if (d.rating) info.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
+    if (d.distance) info.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
 
     if (d.lat && d.lng) {
         document.getElementById('modalMap').src =
             `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
+
         document.getElementById('modalRouteBtn').href =
             `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
     }
 
-    document.getElementById('copyConfirm').style.display = 'none';
     new bootstrap.Modal(document.getElementById('dealerModal')).show();
-}
-
-function copyDealerInfo() {
-    const d = currentDealer;
-    const text = [
-        d.name, d.address, d.phone, d.website,
-        d.rating ? `Rating: ${d.rating}` : '',
-        d.lat && d.lng ? `Map: https://maps.google.com/maps?q=${d.lat},${d.lng}` : ''
-    ].filter(Boolean).join('\n');
-
-    navigator.clipboard.writeText(text).then(() => {
-        const el = document.getElementById('copyConfirm');
-        el.style.display = 'block';
-        setTimeout(() => el.style.display = 'none', 2000);
-    });
-}
-
-function shareDealerEmail() {
-    const d = currentDealer;
-    const subject = encodeURIComponent(`Car dealer: ${d.name}`);
-    const body = encodeURIComponent([
-        d.name, d.address, d.phone, d.website,
-        d.rating ? `Rating: ${d.rating}` : '',
-        d.lat && d.lng ? `Map: https://maps.google.com/maps?q=${d.lat},${d.lng}` : ''
-    ].filter(Boolean).join('\n'));
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 </script>
 {% endblock %}
