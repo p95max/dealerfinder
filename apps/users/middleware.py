@@ -45,7 +45,7 @@ class QuotaMiddleware:
         response = self.get_response(request)
 
         if is_search and request.user.is_authenticated:
-            cache_hit = getattr(request, "cache_hit", False)
+            cache_hit = getattr(request, "cache_hit", True)
             if not request.quota_exceeded and not cache_hit:
                 User.objects.filter(pk=request.user.pk).update(used_today=F("used_today") + 1)
 

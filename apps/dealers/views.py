@@ -60,6 +60,11 @@ def _is_valid_lat_lng(lat, lng):
         return False
     return -90 <= lat <= 90 and -180 <= lng <= 180
 
+def _run_search(request, city, radius):
+    dealers, from_cache = search_dealers(city=city, radius=radius)
+    request.cache_hit = from_cache
+    return dealers
+
 
 def search_view(request):
     city = (request.GET.get("city") or "").strip()
@@ -76,6 +81,8 @@ def search_view(request):
     max_distance_km = _parse_float(request.GET.get("max_distance_km"))
 
     dealers = []
+
+    request.cache_hit = True
 
     if getattr(request, "quota_exceeded", False):
         messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
@@ -117,8 +124,7 @@ def search_view(request):
                 },
             )
 
-        dealers, from_cache = search_dealers(city=city, radius=radius)
-        request.cache_hit = from_cache
+        dealers = _run_search(request, city, radius)
 
         if not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
@@ -172,6 +178,14 @@ def search_view(request):
 
     paginator = Paginator(dealers, DEALERS_PER_PAGE)
     page_obj = paginator.get_page(page_number)
+
+    dealers, from_cache = search_dealers(city=city, radius=radius)
+    request.cache_hit = from_cache
+
+    if from_cache:
+        messages.info(request, "Results served from cache. Daily quota was not used.")
+    else:
+        messages.info(request, "Fresh search executed. Daily quota used: +1.")
 
     context = {
         "dealers": page_obj,
