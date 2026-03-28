@@ -188,3 +188,21 @@ function onLoginTurnstileError() {
         button.disabled = true;
     }
 }
+
+function refreshQuota() {
+    fetch("{% url 'users:quota_status' %}")
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById("quota-counter");
+            if (el) el.textContent = `${data.used} / ${data.limit}`;
+        });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector("form[action*='search']");
+    if (form) {
+        form.addEventListener("submit", () => {
+            setTimeout(refreshQuota, 500);
+        });
+    }
+});

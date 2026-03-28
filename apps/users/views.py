@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.http import JsonResponse
 
 from common.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
@@ -45,3 +46,12 @@ def delete_account_view(request):
     user.delete()
     messages.success(request, "Your account has been deleted.")
     return redirect("dealers:home")
+
+
+@login_required
+def quota_status(request):
+    user = request.user
+    return JsonResponse({
+        "used": user.used_today,
+        "limit": user.daily_quota,
+    })
