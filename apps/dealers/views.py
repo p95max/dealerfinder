@@ -85,7 +85,14 @@ def search_view(request):
     request.cache_hit = True
 
     if getattr(request, "quota_exceeded", False):
-        messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
+        if request.user.is_authenticated:
+            messages.warning(request, "Daily search limit reached. Upgrade for more searches.")
+        else:
+            messages.warning(
+                request,
+                'Daily limit reached. Create a free account for 30 searches/day.'
+            )
+
         return render(
             request,
             "dealers/search.html",
@@ -191,10 +198,5 @@ def search_view(request):
         "has_contacts": has_contacts,
         "total": len(dealers),
     }
-
-    if request.cache_hit:
-        messages.info(request, "Results served from cache. Daily quota was not used.")
-    else:
-        messages.info(request, "Fresh search executed. Daily quota used: +1.")
 
     return render(request, "dealers/search.html", context)

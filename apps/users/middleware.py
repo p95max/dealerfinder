@@ -9,9 +9,6 @@ from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import redirect
 
 from apps.users.models import User
-
-
-
 from common.http import _get_client_ip
 
 
@@ -46,14 +43,28 @@ class QuotaMiddleware:
             request.user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
             request.quota_exceeded = request.user.used_today >= request.user.daily_quota
 
+        elif _looks_like_search(request) and not request.user.is_authenticated:
+            today = str(timezone.localdate())
+            if request.session.get("anon_reset") != today:
+                request.session["anon_used"] = 0
+                request.session["anon_reset"] = today
+            used = request.session.get("anon_used", 0)
+            if used >= settings.ANON_DAILY_LIMIT:
+                request.quota_exceeded = True
+
         response = self.get_response(request)
 
+        cache_hit = getattr(request, "cache_hit", True)
+
         if _is_search_request(request) and request.user.is_authenticated:
-            cache_hit = getattr(request, "cache_hit", True)
             if not request.quota_exceeded and not cache_hit:
                 User.objects.filter(pk=request.user.pk).update(
                     used_today=F("used_today") + 1
                 )
+
+        elif _is_search_request(request) and not request.user.is_authenticated:
+            if not request.quota_exceeded and not cache_hit:
+                request.session["anon_used"] = request.session.get("anon_used", 0) + 1
 
         return response
 
@@ -67,7 +78,6 @@ class QuotaMiddleware:
             )
 
 
-
 class ThrottleMiddleware:
     """
     Limits search requests to SEARCH_THROTTLE_RATE per minute per user/IP.
@@ -76,7 +86,6 @@ class ThrottleMiddleware:
     """
 
     WINDOW = 60  # seconds
-
     _store: dict = {}
 
     def __init__(self, get_response):
@@ -119,7 +128,6 @@ class ThrottleMiddleware:
         return request.META.get("REMOTE_ADDR", "unknown")
 
 
-
 class ContactThrottleMiddleware(MiddlewareMixin):
     window_seconds = 600
     anon_limit = 3
@@ -147,7 +155,6 @@ class ContactThrottleMiddleware(MiddlewareMixin):
 
         cache.set(key, current + 1, timeout=self.window_seconds)
         return None
-
 
 
 class LoginGateMiddleware:
