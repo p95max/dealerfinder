@@ -7,6 +7,7 @@ from django.http import JsonResponse
 
 from common.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
+from apps.users.middleware import reset_quota_if_new_day
 
 def login_gate_view(request):
     """Show login gate page and verify Turnstile before Google OAuth."""
@@ -60,7 +61,6 @@ def delete_account_view(request):
 @login_required
 def quota_status(request):
     user = request.user
-    return JsonResponse({
-        "used": user.used_today,
-        "limit": user.daily_quota,
-    })
+    reset_quota_if_new_day(user)
+    user.refresh_from_db(fields=["used_today", "daily_quota"])
+    return JsonResponse({"used": user.used_today, "limit": user.daily_quota})

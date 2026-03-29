@@ -30,6 +30,14 @@ def _looks_like_search(request) -> bool:
         and bool(request.GET.get("city"))
     )
 
+def reset_quota_if_new_day(user):
+    today = timezone.localdate()
+    if user.last_quota_reset != today:
+        User.objects.filter(pk=user.pk).update(
+            used_today=0,
+            last_quota_reset=today,
+        )
+
 
 class QuotaMiddleware:
     def __init__(self, get_response):
@@ -39,7 +47,7 @@ class QuotaMiddleware:
         request.quota_exceeded = False
 
         if _looks_like_search(request) and request.user.is_authenticated:
-            self._reset_if_new_day(request.user)
+            reset_quota_if_new_day(request.user)
             request.user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
             request.quota_exceeded = request.user.used_today >= request.user.daily_quota
 
@@ -67,15 +75,6 @@ class QuotaMiddleware:
                 request.session["anon_used"] = request.session.get("anon_used", 0) + 1
 
         return response
-
-    @staticmethod
-    def _reset_if_new_day(user):
-        today = timezone.localdate()
-        if user.last_quota_reset != today:
-            User.objects.filter(pk=user.pk).update(
-                used_today=0,
-                last_quota_reset=today,
-            )
 
 
 class ThrottleMiddleware:
