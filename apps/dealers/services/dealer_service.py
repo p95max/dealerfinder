@@ -1,7 +1,7 @@
 import math
 
 from .cache_service import get_cache, set_cache
-from .google_places import search_all_places
+from .google_places import search_all_places, is_google_cap_reached
 
 
 def build_query_key(city, radius):
@@ -39,21 +39,21 @@ def normalize(data):
 
 
 def search_dealers(city, radius) -> tuple[list, bool]:
-    """Returns (dealers, from_cache). Quota should only be charged on cache MISS."""
     key = build_query_key(city, radius)
 
     cached = get_cache(key)
     if cached:
         return cached, True
 
+    if is_google_cap_reached():
+        return [], True
+
     raw = search_all_places(city=city, radius=radius)
     normalized = normalize(raw)
-
     normalized = sorted(
         normalized,
         key=lambda x: (x["rating"] or 0) * math.log1p(x["reviews"] or 0),
         reverse=True,
     )
-
     set_cache(key, normalized)
     return normalized, False

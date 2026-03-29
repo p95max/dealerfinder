@@ -6,8 +6,8 @@ from django.shortcuts import render
 from .services.dealer_service import search_dealers
 from .services.distance_service import attach_distance_to_dealers
 from .services.geocoding_service import is_german_city
+from .services.google_places import is_google_cap_reached
 
-from integrations.turnstile import verify_turnstile
 
 
 DEALERS_PER_PAGE = 20
@@ -110,6 +110,9 @@ def search_view(request):
             )
 
         dealers = _run_search(request, city, radius)
+
+        if not dealers and is_google_cap_reached():
+            messages.warning(request, "Live search is temporarily unavailable. Try a city that was searched before.")
 
         if not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")

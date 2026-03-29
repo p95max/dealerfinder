@@ -16,14 +16,13 @@
 - [~] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
 
 ## Auth + Rate Limiting
-- [ ] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
+- [x] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
 - [ ] Чекбокс принятия AGB/Datenschutz при первом запросе (anon и при регистрации)
-- [ ] Исправить сброс квоты при повторной авторизации через тот же Google-аккаунт — перед prod
 
 ## Anti-abuse
 - [x] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
-- [ ] Проверять Turnstile ДО выполнения действия в `contact_view` и `delete_account_view`
-- [ ] Подключить Turnstile на login flow
+- [x] Проверять Turnstile ДО выполнения действия в `contact_view` и `delete_account_view`
+- [x] Подключить Turnstile на login flow
 
 ## Инфраструктура
 - [ ] Redis в `docker-compose.yml`
@@ -37,7 +36,7 @@
 - [ ] Cookie banner (опциональные cookies: Google Maps, Google OAuth)
 
 ## Поиск
-- [ ] Геолокация пользователя по клику на Search — показывать расстояние до дилера на карточке и в деталях
+- [x] Геолокация пользователя по клику на Search — показывать расстояние до дилера на карточке и в деталях
 - [ ] Под кнопкой Search — уведомление о согласии с условиями использования и legal pages
 - [ ] Учесть геолокацию в Datenschutz (обработка координат пользователя)
 
@@ -63,11 +62,11 @@
 - [ ] `apps/dealers/selectors.py` — DB-запросы отдельно от сервисного слоя
 
 ## UX / Forms
-- [ ] Ограничить количество символов в строке поиска до длины самого длинного названия населённого пункта в Германии
-- [ ] Добавить live counter для поля поиска (`current / max`)
-- [ ] Добавить suggestions/autocomplete населённых пунктов Германии при вводе в строке поиска
-- [ ] Ограничить количество символов во всех полях формы обратной связи (`name`, `email`, `message`)
-- [ ] Показать пользователю ошибки валидации длины полей до submit (client-side) и продублировать на backend
+- [x] Ограничить количество символов в строке поиска до длины самого длинного названия населённого пункта в Германии
+- [x] Добавить live counter для поля поиска (`current / max`)
+- [x] Добавить suggestions/autocomplete населённых пунктов Германии при вводе в строке поиска
+- [x] Ограничить количество символов во всех полях формы обратной связи (`name`, `email`, `message`)
+- [x] Показать пользователю ошибки валидации длины полей до submit (client-side) и продублировать на backend
 
 ## Config / Security
 - [x] Вынести URL админки в `.env` (`ADMIN_URL`) и использовать в `config/urls.py`

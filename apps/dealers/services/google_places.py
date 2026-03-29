@@ -1,12 +1,34 @@
 import requests
 
 from django.conf import settings
+from django.core.cache import cache
+from django.utils import timezone
+
 
 
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
-
-
 MAX_PAGES = 3
+GOOGLE_CAP_CACHE_KEY = "google_api_calls_today"
+
+
+def _get_google_calls_today() -> int:
+    return cache.get(GOOGLE_CAP_CACHE_KEY, 0)
+
+
+
+def _increment_google_calls():
+    try:
+        cache.incr(GOOGLE_CAP_CACHE_KEY)
+    except ValueError:
+        now = timezone.localtime()
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + __import__('datetime').timedelta(days=1)
+        seconds_until_midnight = int((midnight - now).total_seconds())
+        cache.set(GOOGLE_CAP_CACHE_KEY, 1, timeout=seconds_until_midnight)
+
+
+def is_google_cap_reached() -> bool:
+    return _get_google_calls_today() >= settings.MAX_GOOGLE_CALLS_PER_DAY
+
 
 def search_places(city: str, radius: int | str, page_token: str = None):
     headers = {
@@ -41,6 +63,7 @@ def search_places(city: str, radius: int | str, page_token: str = None):
     if page_token:
         payload["pageToken"] = page_token
 
+    _increment_google_calls()
     response = requests.post(TEXT_SEARCH_URL, json=payload, headers=headers, timeout=20)
     response.raise_for_status()
     return response.json()
