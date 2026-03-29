@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
+from apps.users.middleware import reset_quota_if_new_day
 
 from apps.users.middleware import QuotaMiddleware, ThrottleMiddleware
 
@@ -124,7 +125,7 @@ class QuotaMiddlewareTests(TestCase):
             request.user = user
             request.cache_hit = False
             user.refresh_from_db()
-            QuotaMiddleware._reset_if_new_day(user)
+            reset_quota_if_new_day(user)
             request.quota_exceeded = user.used_today >= user.daily_quota
             if not request.quota_exceeded:
                 User.objects.filter(pk=user.pk).update(

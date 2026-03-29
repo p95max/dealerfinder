@@ -1,11 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 
-from common.http import _get_client_ip
-from .forms import ContactForm
-from .models import ContactMessage
 from .services.dealer_service import search_dealers
 from .services.distance_service import attach_distance_to_dealers
 from .services.geocoding_service import is_german_city
@@ -24,27 +21,7 @@ def about_view(request):
     return render(request, "about.html")
 
 
-def contact_view(request):
-    if request.method == "POST":
-        form = ContactForm(request.POST)
 
-        if not form.is_valid():
-            messages.warning(request, "Please correct the form and fill in all required fields.")
-            return render(request, "contact.html", {"form": form})
-
-        token = request.POST.get("cf-turnstile-response", "")
-        ip = _get_client_ip(request)
-
-        if not verify_turnstile(token, ip):
-            messages.warning(request, "Please complete the security check.")
-            return render(request, "contact.html", {"form": form})
-
-        ContactMessage.objects.create(**form.cleaned_data)
-        messages.success(request, "Your message has been sent. We'll get back to you soon.")
-        return redirect("dealers:contact")
-
-    form = ContactForm()
-    return render(request, "contact.html", {"form": form})
 
 
 def _parse_float(value):

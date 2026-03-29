@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 
     "apps.users.apps.UsersConfig",
     "apps.dealers.apps.DealersConfig",
+    "apps.contact.apps.ContactConfig",
 ]
 
 # =========================

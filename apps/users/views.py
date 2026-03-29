@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
 
-from common.http import _get_client_ip
+from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
 from apps.users.middleware import reset_quota_if_new_day
 
