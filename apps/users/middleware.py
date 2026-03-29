@@ -154,4 +154,12 @@ class LoginGateMiddleware:
         if is_authenticated:
             request.session.pop("turnstile_login_ok", None)
 
+        if (
+                is_authenticated
+                and not request.path.startswith("/users/accept-terms/")
+                and not request.path.startswith("/accounts/")
+                and not getattr(request.user, "terms_accepted", True)
+        ):
+            return redirect("users:accept_terms")
+
         return response

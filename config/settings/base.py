@@ -125,7 +125,7 @@ SITE_ID = 1
 AUTH_USER_MODEL = "users.User"
 
 ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/users/accept-terms/"
 LOGOUT_REDIRECT_URL = "/"
 
 SOCIALACCOUNT_ADAPTER = "integrations.google_oauth.GoogleOAuthAdapter"

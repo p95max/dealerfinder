@@ -9,6 +9,7 @@ class User(AbstractUser):
     used_today = models.IntegerField(default=0)
     last_quota_reset = models.DateField(null=True, blank=True)
     email = models.EmailField(unique=True)
+    terms_accepted = models.BooleanField(default=False)
 
     groups = models.ManyToManyField(
         "auth.Group",

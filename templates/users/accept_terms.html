@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service — DealerFinder{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 560px;">
+    <h1 class="fw-bold mb-2">Before you continue</h1>
+    <p class="text-secondary mb-4">Please review and accept our terms to use DealerFinder.</p>
+
+    {% if error %}
+    <div class="alert alert-warning">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" name="terms" id="terms" required>
+            <label class="form-check-label" for="terms">
+                I have read and accept the
+                <a href="{% url 'dealers:agb' %}" target="_blank">Terms of Service</a>
+                and
+                <a href="{% url 'dealers:datenschutz' %}" target="_blank">Privacy Policy</a>.
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary rounded-pill px-4">Continue</button>
+    </form>
+</div>
+{% endblock %}

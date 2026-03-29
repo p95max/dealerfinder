@@ -4,6 +4,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
@@ -30,6 +31,28 @@ def login_gate_view(request):
 @login_required
 def profile_view(request):
     return render(request, "users/profile.html")
+
+
+@login_required
+def accept_terms_view(request):
+    if request.user.terms_accepted:
+        return redirect("/")
+
+    error = None
+    if request.method == "POST":
+        if request.POST.get("terms"):
+            request.user.terms_accepted = True
+            request.user.save(update_fields=["terms_accepted"])
+            return redirect("/")
+        else:
+            error = "You must accept the terms to continue."
+
+    return render(request, "users/accept_terms.html", {"error": error})
+
+@require_POST
+def anon_accept_terms_view(request):
+    request.session["anon_terms"] = True
+    return JsonResponse({"ok": True})
 
 
 def pricing_view(request):

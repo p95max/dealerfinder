@@ -59,6 +59,9 @@ def search_view(request):
     user_lng = _parse_float(request.GET.get("user_lng"))
     max_distance_km = _parse_float(request.GET.get("max_distance_km"))
 
+    if request.GET.get("accept_terms") and not request.user.is_authenticated:
+        request.session["anon_terms"] = True
+
     dealers = []
     request.cache_hit = True
 
