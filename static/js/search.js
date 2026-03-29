@@ -119,3 +119,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+
+fetch("/static/data/cities_de.json")
+    .then(r => r.json())
+    .then(cities => {
+        const input = document.getElementById("city");
+        const datalist = document.getElementById("cities-list");
+        if (!input || !datalist) return;
+
+        input.addEventListener("input", () => {
+            const val = input.value.trim().toLowerCase();
+            datalist.innerHTML = "";
+            if (val.length < 2) return;
+
+            cities
+                .filter(c => c.toLowerCase().startsWith(val))
+                .slice(0, 10)
+                .forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c;
+                    datalist.appendChild(opt);
+                });
+        });
+    });

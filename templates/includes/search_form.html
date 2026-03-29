@@ -9,7 +9,10 @@
             placeholder="Enter city..."
             value="{{ request.GET.city }}"
             maxlength="100"
+            list="cities-list"
+            autocomplete="off"
         >
+        <datalist id="cities-list"></datalist>
     </div>
 
     <div class="col-md-2">
