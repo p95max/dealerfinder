@@ -17,7 +17,7 @@
 
 ## Auth + Rate Limiting
 - [x] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
-- [ ] Чекбокс принятия AGB/Datenschutz при первом запросе (anon и при регистрации)
+- [x] Чекбокс принятия AGB/Datenschutz при первом запросе (anon и при регистрации)
 
 ## Anti-abuse
 - [x] `integrations/turnstile.py` — верификация `cf-turnstile-response` через siteverify
