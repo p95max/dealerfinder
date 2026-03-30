@@ -7,6 +7,8 @@ function addFavorite(btn, d) {
     fd.append("rating", d.rating || "");
     fd.append("phone", d.phone || "");
     fd.append("website", d.website || "");
+    fd.append("lat", d.lat || "");
+    fd.append("lng", d.lng || "");
 
     fetch(window.FAVORITE_ADD_URL, {
         method: "POST",
@@ -17,8 +19,8 @@ function addFavorite(btn, d) {
             markDealerAsFavorite(d.place_id);
 
             if (btn) {
-                btn.disabled = true;
                 btn.classList.add("d-none");
+                btn.disabled = true;
             }
         }
     });
@@ -27,7 +29,25 @@ function addFavorite(btn, d) {
 function markDealerAsFavorite(placeId) {
     document.querySelectorAll(`[data-dealer-place-id="${placeId}"]`).forEach((el) => {
         el.dataset.dealerIsFavorite = "1";
+        ensureFavoriteBadge(el);
     });
+}
+
+function ensureFavoriteBadge(cardEl) {
+    const badgesRow = cardEl.querySelector(".dealer-badges");
+    if (!badgesRow) {
+        return;
+    }
+
+    const existing = badgesRow.querySelector(".js-favorite-badge");
+    if (existing) {
+        return;
+    }
+
+    const badge = document.createElement("span");
+    badge.className = "status-badge js-favorite-badge";
+    badge.textContent = "⭐ In favorites";
+    badgesRow.appendChild(badge);
 }
 
 function getCookie(name) {
