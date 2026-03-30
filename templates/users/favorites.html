@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block title %}Favorites — DealerFinder{% endblock %}
 {% block content %}
 <div class="container py-5" style="max-width: 900px;">
@@ -41,4 +43,9 @@ function removeFavorite(placeId) {
     }).then(() => document.getElementById(`fav-${placeId}`).remove());
 }
 </script>
+
+{% include "includes/_dealer_details.html" %}
+
+<script src="{% static 'js/search.js' %}" defer></script>
+
 {% endblock %}

@@ -191,12 +191,11 @@ function openDealerModal(btn) {
         routeBtn.classList.add("disabled");
     }
 
-    const favBtn = document.getElementById("modalFavoriteBtn");
-    if (favBtn && typeof addFavorite === "function") {
-        favBtn.onclick = () => addFavorite(favBtn, d);
-        favBtn.textContent = "♡ Save";
-        favBtn.disabled = false;
-    }
+        const favBtn = document.getElementById('modalFavoriteBtn');
+        if (favBtn) {
+            favBtn.onclick = () => addFavorite(favBtn, d);
+            favBtn.disabled = false;
+        }
 
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }

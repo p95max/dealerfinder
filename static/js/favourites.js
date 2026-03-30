@@ -7,6 +7,8 @@ function addFavorite(btn, d) {
     fd.append("rating", d.rating || "");
     fd.append("phone", d.phone || "");
     fd.append("website", d.website || "");
+    fd.append("lat", d.lat || "");
+    fd.append("lng", d.lng || "");
 
     fetch(window.FAVORITE_ADD_URL, {
         method: "POST",

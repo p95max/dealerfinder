@@ -1,4 +1,15 @@
-<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+<div class="card border-0 shadow-sm js-open-dealer-modal"
+     style="border-radius: 16px; cursor: pointer;"
+     data-dealer-place-id="{{ dealer.place_id }}"
+     data-dealer-name="{{ dealer.name|escapejs }}"
+     data-dealer-address="{{ dealer.address|escapejs }}"
+     data-dealer-phone="{{ dealer.phone|default:''|escapejs }}"
+     data-dealer-website="{{ dealer.website|default:''|escapejs }}"
+     data-dealer-rating="{{ dealer.rating|default:'' }}"
+     data-dealer-reviews="{{ dealer.user_ratings_total|default:'' }}"
+     data-dealer-lat="{{ dealer.lat|default:'' }}"
+     data-dealer-lng="{{ dealer.lng|default:'' }}">
+
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-start">
             <div>
@@ -17,10 +28,14 @@
             {% if user.is_authenticated %}
             {% if is_favorite %}
             <button class="btn btn-sm btn-outline-danger rounded-pill"
-                    onclick="removeFavorite('{{ dealer.place_id }}')">★ Remove</button>
+                    onclick="event.stopPropagation(); removeFavorite('{{ dealer.place_id }}')">
+                ★ Remove
+            </button>
             {% else %}
             <button class="btn btn-sm btn-outline-secondary rounded-pill"
-                    onclick="addFavorite(this, '{{ dealer.place_id }}', '{{ dealer.name|escapejs }}', '{{ dealer.address|escapejs }}', '{{ dealer.rating }}', '{{ dealer.phone|escapejs }}', '{{ dealer.website|escapejs }}')">☆ Save</button>
+                    onclick="event.stopPropagation(); addFavorite(this, '{{ dealer.place_id }}', '{{ dealer.name|escapejs }}', '{{ dealer.address|escapejs }}', '{{ dealer.rating }}', '{{ dealer.phone|escapejs }}', '{{ dealer.website|escapejs }}')">
+                ☆ Save
+            </button>
             {% endif %}
             {% endif %}
         </div>

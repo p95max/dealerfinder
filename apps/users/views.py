@@ -115,6 +115,8 @@ def favorite_add_view(request):
         "rating": request.POST.get("rating") or None,
         "phone": request.POST.get("phone", ""),
         "website": request.POST.get("website", ""),
+        "lat": request.POST.get("lat") or None,
+        "lng": request.POST.get("lng") or None,
     }
     if not data["place_id"]:
         return JsonResponse({"ok": False}, status=400)

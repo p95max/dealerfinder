@@ -44,6 +44,8 @@ class Favorite(models.Model):
     rating = models.FloatField(null=True, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     website = models.URLField(blank=True)
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
