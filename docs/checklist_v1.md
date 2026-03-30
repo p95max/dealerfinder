@@ -71,7 +71,7 @@
 ## Config / Security
 - [x] Вынести URL админки в `.env` (`ADMIN_URL`) и использовать в `config/urls.py`
 - [x] Убедиться, что `/admin/` не светится в production по умолчанию
-- [ ] Проверять наличие всех обязательных env-переменных через единый config-layer
+- [x] Проверять наличие всех обязательных env-переменных через единый config-layer
 
 ## Branding / Templates
 - [x] Добавить favicon
@@ -83,9 +83,9 @@
 - [ ] Логировать неуспешную отправку Telegram-уведомления без падения запроса
 
 ## Validation / Hardening
-- [ ] Валидировать `radius` на backend (min/max/allowed values), а не доверять input
-- [ ] Нормализовать `city` before search: trim, collapse spaces, case normalization
-- [ ] Защититься от пустых/мусорных запросов (`---`, 1 символ, только цифры)
+- [x] Валидировать `radius` на backend (min/max/allowed values), а не доверять input
+- [x] Нормализовать `city` before search: trim, collapse spaces, case normalization
+- [x] Защититься от пустых/мусорных запросов (`---`, 1 символ, только цифры)
 
 ## Search / Architecture
 - [ ] Включить `radius` и фильтры в cache key, чтобы кэш соответствовал фактическому запросу

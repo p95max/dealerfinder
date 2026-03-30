@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -9,8 +11,9 @@ from .services.geocoding_service import is_german_city
 from .services.google_places import is_google_cap_reached
 
 
-
 DEALERS_PER_PAGE = 20
+ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
+DEFAULT_RADIUS = 20
 
 
 def home_view(request):
@@ -19,9 +22,6 @@ def home_view(request):
 
 def about_view(request):
     return render(request, "about.html")
-
-
-
 
 
 def _parse_float(value):
@@ -39,15 +39,51 @@ def _is_valid_lat_lng(lat, lng):
     return -90 <= lat <= 90 and -180 <= lng <= 180
 
 
+def _normalize_city(city: str) -> str:
+    return re.sub(r"\s+", " ", city.strip()).title()
+
+
+def _is_valid_city(city: str) -> bool:
+    if not city or len(city) < 2:
+        return False
+    if re.fullmatch(r"[\d\s\-_.,:;!?@#$%^&*()]+", city):
+        return False
+    return True
+
+
+def _parse_radius(value) -> int:
+    try:
+        r = int(float(value))
+        return r if r in ALLOWED_RADIUS else DEFAULT_RADIUS
+    except (TypeError, ValueError):
+        return DEFAULT_RADIUS
+
+
 def _run_search(request, city, radius):
     dealers, from_cache = search_dealers(city=city, radius=radius)
     request.cache_hit = from_cache
     return dealers
 
 
+def _search_context(city, radius, min_rating, sort, open_now, weekends, has_contacts, **extra):
+    return {
+        "dealers": [],
+        "page_obj": [],
+        "city": city,
+        "radius": radius,
+        "min_rating": min_rating,
+        "sort": sort,
+        "open_now": open_now,
+        "weekends": weekends,
+        "has_contacts": has_contacts,
+        "total": 0,
+        **extra,
+    }
+
+
 def search_view(request):
-    city = (request.GET.get("city") or "").strip()
-    radius = request.GET.get("radius", "10")
+    city = _normalize_city(request.GET.get("city") or "")
+    radius = _parse_radius(request.GET.get("radius"))
     min_rating = request.GET.get("min_rating")
     sort = request.GET.get("sort", "score")
     open_now = request.GET.get("open_now")
@@ -65,59 +101,31 @@ def search_view(request):
     dealers = []
     request.cache_hit = True
 
+    ctx = lambda **extra: _search_context(
+        city, radius, min_rating, sort, open_now, weekends, has_contacts, **extra
+    )
+
     if getattr(request, "quota_exceeded", False):
         if request.user.is_authenticated:
             messages.warning(request, f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.")
         else:
-            messages.warning(
-                request,
-                f'Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.'
-            )
-
-        return render(
-            request,
-            "dealers/search.html",
-            {
-                "dealers": [],
-                "page_obj": [],
-                "quota_exceeded": True,
-                "city": city,
-                "radius": radius,
-                "min_rating": min_rating,
-                "sort": sort,
-                "open_now": open_now,
-                "weekends": weekends,
-                "has_contacts": has_contacts,
-                "total": 0,
-            },
-        )
+            messages.warning(request, f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.")
+        return render(request, "dealers/search.html", ctx(quota_exceeded=True))
 
     if city:
+        if not _is_valid_city(city):
+            messages.warning(request, "Please enter a valid city name.")
+            return render(request, "dealers/search.html", ctx())
+
         if not is_german_city(city):
             messages.warning(request, "Please enter a city located in Germany.")
-            return render(
-                request,
-                "dealers/search.html",
-                {
-                    "dealers": [],
-                    "page_obj": [],
-                    "city": city,
-                    "radius": radius,
-                    "min_rating": min_rating,
-                    "sort": sort,
-                    "open_now": open_now,
-                    "weekends": weekends,
-                    "has_contacts": has_contacts,
-                    "total": 0,
-                },
-            )
+            return render(request, "dealers/search.html", ctx())
 
         dealers = _run_search(request, city, radius)
 
         if not dealers and is_google_cap_reached():
             messages.warning(request, "Live search is temporarily unavailable. Try a city that was searched before.")
-
-        if not dealers:
+        elif not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
 
         if min_rating:
@@ -142,7 +150,6 @@ def search_view(request):
                 user_lat=user_lat,
                 user_lng=user_lng,
             )
-
             if max_distance_km is not None and max_distance_km > 0:
                 dealers = [
                     d for d in dealers
@@ -150,17 +157,9 @@ def search_view(request):
                 ]
 
         if sort == "rating":
-            dealers = sorted(
-                dealers,
-                key=lambda x: x.get("rating") or 0,
-                reverse=True,
-            )
+            dealers = sorted(dealers, key=lambda x: x.get("rating") or 0, reverse=True)
         elif sort == "reviews":
-            dealers = sorted(
-                dealers,
-                key=lambda x: x.get("reviews") or 0,
-                reverse=True,
-            )
+            dealers = sorted(dealers, key=lambda x: x.get("reviews") or 0, reverse=True)
         elif sort == "distance" and _is_valid_lat_lng(user_lat, user_lng):
             dealers = sorted(
                 dealers,
@@ -170,7 +169,7 @@ def search_view(request):
     paginator = Paginator(dealers, DEALERS_PER_PAGE)
     page_obj = paginator.get_page(page_number)
 
-    context = {
+    return render(request, "dealers/search.html", {
         "dealers": page_obj,
         "page_obj": page_obj,
         "city": city,
@@ -181,6 +180,4 @@ def search_view(request):
         "weekends": weekends,
         "has_contacts": has_contacts,
         "total": len(dealers),
-    }
-
-    return render(request, "dealers/search.html", context)
+    })
