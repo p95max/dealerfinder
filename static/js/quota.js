@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    const quotaUrl = quotaCounter.dataset-url;
+    const quotaUrl = quotaCounter.dataset.url;
     if (!quotaUrl) {
         return;
     }

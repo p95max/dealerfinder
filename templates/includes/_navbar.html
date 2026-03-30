@@ -41,7 +41,7 @@
             <div class="progress flex-grow-1" style="height: 4px; border-radius: 999px;">
                 <div class="progress-bar bg-primary" style="width: {% widthratio user.used_today user.daily_quota 100 %}%;"></div>
             </div>
-            <span id="quota-counter">{{ user.used_today }} / {{ user.daily_quota }}</span>
+            <span id="quota-counter" data-url="{% url 'users:quota_status' %}">{{ user.used_today }} / {{ user.daily_quota }}</span>
         </div>
     </div>
 </li>
