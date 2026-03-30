@@ -7,8 +7,6 @@ function addFavorite(btn, d) {
     fd.append("rating", d.rating || "");
     fd.append("phone", d.phone || "");
     fd.append("website", d.website || "");
-    fd.append("lat", d.lat || "");
-    fd.append("lng", d.lng || "");
 
     fetch(window.FAVORITE_ADD_URL, {
         method: "POST",
@@ -16,9 +14,19 @@ function addFavorite(btn, d) {
         body: fd,
     }).then(r => {
         if (r.ok) {
-            btn.textContent = "★ Saved";
-            btn.disabled = true;
+            markDealerAsFavorite(d.place_id);
+
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add("d-none");
+            }
         }
+    });
+}
+
+function markDealerAsFavorite(placeId) {
+    document.querySelectorAll(`[data-dealer-place-id="${placeId}"]`).forEach((el) => {
+        el.dataset.dealerIsFavorite = "1";
     });
 }
 

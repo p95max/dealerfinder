@@ -82,6 +82,12 @@ def _search_context(city, radius, min_rating, sort, open_now, weekends, has_cont
 
 
 def search_view(request):
+    if request.method == "GET" and request.GET.get("city"):
+        request.session["last_search_params"] = request.GET.urlencode()
+    elif request.method == "GET" and not request.GET and request.session.get("last_search_params"):
+        from django.shortcuts import redirect
+        return redirect(f"{request.path}?{request.session['last_search_params']}")
+
     city = _normalize_city(request.GET.get("city") or "")
     radius = _parse_radius(request.GET.get("radius"))
     min_rating = request.GET.get("min_rating")
