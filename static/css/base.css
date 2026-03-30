@@ -129,3 +129,11 @@ rect { fill: #2563eb; }
 @media (prefers-color-scheme: dark) {
 rect { fill: #1e40af; }
 }
+
+.navbar-brand img {
+  transition: transform 0.15s ease;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.1);
+}
