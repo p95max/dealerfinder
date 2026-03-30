@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
+
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
+
+from config.env import require_env
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -9,47 +12,36 @@ load_dotenv(BASE_DIR / ".env")
 # =========================
 # CORE
 # =========================
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY is not set")
 
+SECRET_KEY = require_env("SECRET_KEY")
+DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "").split(",") if h]
-if not os.getenv("DEBUG", "False") == "True" and not ALLOWED_HOSTS:
+if not DEBUG and not ALLOWED_HOSTS:
     raise ValueError("ALLOWED_HOSTS is not set")
-
-TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")
-if not TURNSTILE_SITE_KEY:
-    raise ValueError("TURNSTILE_SITE_KEY is not set")
-
-TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
-if not TURNSTILE_SECRET_KEY:
-    raise ValueError("TURNSTILE_SECRET_KEY is not set")
 
 DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin").strip().strip("/") or "admin"
 
 TIME_ZONE = "Europe/Berlin"
 USE_TZ = True
+SITE_ID = 1
 
 # =========================
 # APPS
 # =========================
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     "django.contrib.sites",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
-
     "apps.users.apps.UsersConfig",
     "apps.dealers.apps.DealersConfig",
-    "apps.contact.apps.ContactConfig",
 ]
 
 # =========================
@@ -69,87 +61,47 @@ MIDDLEWARE = [
     "apps.users.middleware.QuotaMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
+WSGI_APPLICATION = "config.wsgi.application"
 
 # =========================
 # TEMPLATES
 # =========================
+
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'config.context_processors.turnstile',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "config.context_processors.turnstile",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+# =========================
+# DATABASE
+# =========================
 
-# =========================
-# DATABASE (POSTGRES)
-# =========================
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("POSTGRES_DB"),
-        'USER': os.getenv("POSTGRES_USER"),
-        'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
-        'HOST': os.getenv("POSTGRES_HOST", "db"),
-        'PORT': os.getenv("POSTGRES_PORT", "5432"),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("POSTGRES_USER"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST", "db"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
 
 # =========================
-# STATIC
+# CACHE
 # =========================
-STATIC_URL = "/static/"
-
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-SITE_ID = 1
-
-# =========================
-# ALLAUTH
-# =========================
-AUTH_USER_MODEL = "users.User"
-
-ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = "/users/accept-terms/"
-LOGOUT_REDIRECT_URL = "/"
-
-SOCIALACCOUNT_ADAPTER = "integrations.google_oauth.GoogleOAuthAdapter"
-
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "SCOPE": ["profile", "email"],
-        "AUTH_PARAMS": {"access_type": "online"},
-    }
-}
-
-# =========================
-# GOOGLE
-# =========================
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
-if not GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY is not set")
-
-# =========================
-# CUSTOM
-# =========================
-MESSAGE_TAGS = {
-    messages.ERROR: 'danger',
-}
 
 CACHES = {
     "default": {
@@ -159,10 +111,49 @@ CACHES = {
 }
 
 # =========================
+# STATIC
+# =========================
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# =========================
+# AUTH & ALLAUTH
+# =========================
+
+AUTH_USER_MODEL = "users.User"
+LOGIN_REDIRECT_URL = "/users/accept-terms/"
+LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_ADAPTER = "integrations.google_oauth.GoogleOAuthAdapter"
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    }
+}
+
+# =========================
+# THIRD-PARTY KEYS
+# =========================
+GOOGLE_API_KEY = require_env("GOOGLE_API_KEY")
+TURNSTILE_SITE_KEY = require_env("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = require_env("TURNSTILE_SECRET_KEY")
+
+# =========================
+# MESSAGES
+# =========================
+
+MESSAGE_TAGS = {
+    messages.ERROR: "danger",
+}
+
+# =========================
 # LIMITS
 # =========================
-FREE_DAILY_LIMIT = int(os.getenv("FREE_DAILY_LIMIT", 30))
 ANON_DAILY_LIMIT = int(os.getenv("ANON_DAILY_LIMIT", 5))
+FREE_DAILY_LIMIT = int(os.getenv("FREE_DAILY_LIMIT", 30))
 PREMIUM_DAILY_LIMIT = int(os.getenv("PREMIUM_DAILY_LIMIT", 200))
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
 MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
