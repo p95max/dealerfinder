@@ -75,10 +75,6 @@
 - [x] Переопределить стандартные шаблоны `allauth` под единый UI проекта
 - [X] Добавить кастомные страницы ошибок `403`, `404`, `500`
 
-## Notifications
-- [ ] Отправлять уведомление в Telegram о новых `ContactMessage`
-- [ ] Логировать неуспешную отправку Telegram-уведомления без падения запроса
-
 ## Validation / Hardening
 - [x] Валидировать `radius` на backend (min/max/allowed values), а не доверять input
 - [x] Нормализовать `city` before search: trim, collapse spaces, case normalization
@@ -88,3 +84,10 @@
 - [x] Включить `radius` и фильтры в cache key, чтобы кэш соответствовал фактическому запросу
 - [x] Убрать двойной вызов `search_dealers()` в `search_view`
 - [x] Сначала валидировать город через geocoding, потом только вызывать search API
+
+## Notifications
+- [ ] Отправлять уведомление в Telegram о новых `ContactMessage`
+- [ ] Логировать неуспешную отправку Telegram-уведомления без падения запроса
+
+# Other
+- [ ] Заполнить Legal pages под текущий билд
