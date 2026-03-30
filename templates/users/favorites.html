@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Favorites — DealerFinder{% endblock %}
+{% block title %}My Favorites — DealerFinder{% endblock %}
 {% block content %}
 <div class="container py-5" style="max-width: 900px;">
     <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="fw-bold mb-0">Favorites</h1>
+        <h1 class="fw-bold mb-0">My Favorites</h1>
         {% if favorites %}
         <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="confirmClearAll()">
             🗑️ Clear all
