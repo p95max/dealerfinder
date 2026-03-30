@@ -11,9 +11,9 @@
 - [x] Сгенерировать и применить миграции
 
 ## Google Places API
-- [ ] Добавить `locationRestriction` с radius в payload
-- [~] Добавить в FieldMask: `regularOpeningHours`, `currentOpeningHours`, `nationalPhoneNumber`, `websiteUri`, `types`
-- [~] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
+- [x] Добавить `locationRestriction` с radius в payload
+- [x] Добавить в FieldMask: `regularOpeningHours`, `currentOpeningHours`, `nationalPhoneNumber`, `websiteUri`, `types`
+- [x] Нормализовать `open_now`, `opening_hours`, `types` в `normalize()`
 
 ## Auth + Rate Limiting
 - [x] Global cap: `MAX_GOOGLE_CALLS_PER_DAY` + fallback only-cache режим
@@ -32,7 +32,7 @@
 
 ## Шаблоны
 - [x] Django Messages для: поиск, квота, auth, удаление (success/error/warning)
-- [ ] Страницы: `/impressum`, `/datenschutz`, `/agb`
+- [x] Страницы: `/impressum`, `/datenschutz`, `/agb`
 - [ ] Cookie banner (опциональные cookies: Google Maps, Google OAuth)
 
 ## Поиск

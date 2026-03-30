@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
+from .geocoding_service import geocode_city
 
 
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
@@ -15,13 +16,13 @@ def _get_google_calls_today() -> int:
     return cache.get(GOOGLE_CAP_CACHE_KEY, 0)
 
 
-
 def _increment_google_calls():
     try:
         cache.incr(GOOGLE_CAP_CACHE_KEY)
     except ValueError:
+        import datetime
         now = timezone.localtime()
-        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + __import__('datetime').timedelta(days=1)
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(days=1)
         seconds_until_midnight = int((midnight - now).total_seconds())
         cache.set(GOOGLE_CAP_CACHE_KEY, 1, timeout=seconds_until_midnight)
 
@@ -49,15 +50,32 @@ def search_places(city: str, radius: int | str, page_token: str = None):
         ]),
     }
 
-    payload = {
-        "textQuery": f"car dealer in {city}, Germany",
-        "maxResultCount": 20,
-        "locationRestriction": {
+    try:
+        radius_m = int(float(radius or 20)) * 1000
+    except (TypeError, ValueError):
+        radius_m = 20_000
+
+    geo = geocode_city(city)
+
+    if geo:
+        location_restriction = {
+            "circle": {
+                "center": {"latitude": geo["lat"], "longitude": geo["lng"]},
+                "radius": radius_m,
+            }
+        }
+    else:
+        location_restriction = {
             "rectangle": {
                 "low": {"latitude": 47.27, "longitude": 5.87},
                 "high": {"latitude": 55.06, "longitude": 15.04},
             }
-        },
+        }
+
+    payload = {
+        "textQuery": f"car dealer in {city}, Germany",
+        "maxResultCount": 20,
+        "locationRestriction": location_restriction,
     }
 
     if page_token:

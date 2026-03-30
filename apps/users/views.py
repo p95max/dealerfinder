@@ -54,6 +54,11 @@ def anon_accept_terms_view(request):
     request.session["anon_terms"] = True
     return JsonResponse({"ok": True})
 
+@require_POST
+def cookie_consent_view(request):
+    request.session["cookie_consent"] = True
+    return JsonResponse({"ok": True})
+
 
 def pricing_view(request):
     return render(request, "users/pricing.html", {
