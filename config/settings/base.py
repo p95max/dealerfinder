@@ -150,10 +150,11 @@ if not GOOGLE_API_KEY:
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
+
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "cache_table",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
     }
 }
 

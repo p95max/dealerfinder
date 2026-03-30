@@ -25,10 +25,10 @@
 - [x] Подключить Turnstile на login flow
 
 ## Инфраструктура
-- [ ] Redis в `docker-compose.yml`
-- [ ] Gunicorn вместо `runserver` в production
-- [ ] Nginx сервис в compose
-- [ ] `depends_on` с `healthcheck` для db → web
+- [x] Redis в `docker-compose.yml`
+- [x] Gunicorn вместо `runserver` в production
+- [x] Nginx сервис в compose
+- [x] `depends_on` с `healthcheck` для db → web
 
 ## Шаблоны
 - [x] Django Messages для: поиск, квота, auth, удаление (success/error/warning)
