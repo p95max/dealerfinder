@@ -49,53 +49,19 @@
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                         <h2 class="h4 mb-1">Results</h2>
+                                    <div class="small text-muted">
+                                        👆 Click card to view details
+                                    </div>
                     </div>
                 </div>
 
                 {% if dealers %}
                     <div class="d-flex flex-column gap-3">
 
-                        {% for d in dealers %}
-                        <article class="dealer-card p-4">
-                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-
-                                <div class="flex-grow-1">
-                                    <div class="dealer-name">{{ d.name }}</div>
-
-                                    {% if d.address %}
-                                        <div class="dealer-meta mb-2">{{ d.address }}</div>
-                                    {% endif %}
-
-                                    <div class="d-flex flex-wrap gap-2 mb-3">
-
-                                        {% if d.rating %}
-                                            <span class="score-badge">
-                                                ⭐ {{ d.rating }}
-                                                {% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
-                                            </span>
-                                        {% endif %}
-
-                                        {% if d.distance_km %}
-                                            <span class="score-badge">
-                                                📍 {{ d.distance_km }} km
-                                            </span>
-                                        {% endif %}
-
-                                        {% if d.website or d.phone %}
-                                            <span class="contact-badge">Contacts</span>
-                                        {% endif %}
-
-                                        {% if d.open_now %}
-                                            <span class="status-badge">Open now</span>
-                                        {% endif %}
-
-                                    </div>
-                                </div>
-
-                                <div class="d-flex flex-lg-column justify-content-between gap-2">
-<button
-    type="button"
-    class="btn btn-primary rounded-pill px-4 js-open-dealer-modal"
+                {% for d in dealers %}
+                <article
+    class="dealer-card p-4 js-open-dealer-modal"
+    style="cursor: pointer;"
     data-dealer-place-id="{{ d.place_id|default:'' }}"
     data-dealer-city="{{ city|escapejs }}"
     data-dealer-name="{{ d.name|escapejs }}"
@@ -106,14 +72,48 @@
     data-dealer-reviews="{{ d.reviews|default:'' }}"
     data-dealer-lat="{{ d.lat|default:'' }}"
     data-dealer-lng="{{ d.lng|default:'' }}"
-    data-dealer-distance="{{ d.distance_km|default:'' }}">
-    Details
-</button>
-                                </div>
+    data-dealer-distance="{{ d.distance_km|default:'' }}"
+    data-dealer-is-favorite="{% if d.is_favorite %}1{% else %}0{% endif %}"
+>
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+        <div class="flex-grow-1">
+            <div class="dealer-name">{{ d.name }}</div>
 
-                            </div>
-                        </article>
-                        {% endfor %}
+            {% if d.address %}
+                <div class="dealer-meta mb-2">{{ d.address }}</div>
+            {% endif %}
+
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                {% if d.rating %}
+                    <span class="score-badge">
+                        ⭐ {{ d.rating }}
+                        {% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
+                    </span>
+                {% endif %}
+
+                {% if d.distance_km %}
+                    <span class="score-badge">
+                        📍 {{ d.distance_km }} km
+                    </span>
+                {% endif %}
+
+                {% if d.website or d.phone %}
+                    <span class="contact-badge">Contacts</span>
+                {% endif %}
+
+                {% if d.open_now %}
+                    <span class="status-badge">Open now</span>
+                {% endif %}
+
+                {% if d.is_favorite %}
+                    <span class="status-badge">⭐ In favorites</span>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</article>
+                {% endfor %}
 
                     </div>
                 {% else %}

@@ -166,6 +166,16 @@ def search_view(request):
                 key=lambda x: x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
             )
 
+    if request.user.is_authenticated and dealers:
+        favorite_place_ids = set(
+            request.user.favorites.values_list("place_id", flat=True)
+        )
+        for dealer in dealers:
+            dealer["is_favorite"] = dealer.get("place_id") in favorite_place_ids
+    else:
+        for dealer in dealers:
+            dealer["is_favorite"] = False
+
     paginator = Paginator(dealers, DEALERS_PER_PAGE)
     page_obj = paginator.get_page(page_number)
 
