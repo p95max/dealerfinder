@@ -143,3 +143,46 @@ fetch("/static/data/cities_de.json")
                 });
         });
     });
+
+
+function openDealerModal(btn) {
+    const d = {
+        place_id: btn.dataset.dealerPlaceId,
+        name: btn.dataset.dealerName,
+        address: btn.dataset.dealerAddress,
+        phone: btn.dataset.dealerPhone,
+        website: btn.dataset.dealerWebsite,
+        rating: btn.dataset.dealerRating,
+        reviews: btn.dataset.dealerReviews,
+        lat: btn.dataset.dealerLat,
+        lng: btn.dataset.dealerLng,
+        distance: btn.dataset.dealerDistance,
+        city: btn.dataset.dealerCity,
+    };
+
+    document.getElementById('modalDealerName').textContent = d.name;
+
+    const info = document.getElementById('modalInfo');
+    info.innerHTML = '';
+    if (d.address) info.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
+    if (d.phone)   info.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
+    if (d.website) info.innerHTML += `<div><b>Website:</b> <a href="${d.website}" target="_blank">${d.website}</a></div>`;
+    if (d.rating)  info.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
+    if (d.distance) info.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
+
+    if (d.lat && d.lng) {
+        document.getElementById('modalMap').src =
+            `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
+        document.getElementById('modalRouteBtn').href =
+            `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
+    }
+
+    const favBtn = document.getElementById('modalFavoriteBtn');
+    if (favBtn) {
+        favBtn.onclick = () => addFavorite(favBtn, d);
+        favBtn.textContent = '♡ Save';
+        favBtn.disabled = false;
+    }
+
+    new bootstrap.Modal(document.getElementById('dealerModal')).show();
+}

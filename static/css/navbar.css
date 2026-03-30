@@ -82,3 +82,38 @@
     border: 0.5px solid var(--df-border);
     min-width: 210px;
 }
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.favorites-btn {
+    background: transparent;
+    border-color: var(--df-border);
+}
+
+.favorites-btn:hover {
+    background: var(--df-primary-soft);
+    border-color: #bfdbfe;
+}
+
+.favorites-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.favorites-btn.active {
+    background: linear-gradient(135deg, #d4af37, #ffd700);
+    border: none;
+    color: #1f2937;
+}
+
+.favorites-btn.active:hover {
+    filter: brightness(1.05);
+}

@@ -32,3 +32,23 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorites")
+    place_id = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    rating = models.FloatField(null=True, blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    website = models.URLField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "place_id")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.email} → {self.name}"

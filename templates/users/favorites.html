@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Favorites — DealerFinder{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 900px;">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="fw-bold mb-0">Favorites</h1>
+        {% if favorites %}
+        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="confirmClearAll()">
+            Clear all
+        </button>
+        {% endif %}
+    </div>
+
+    {% if not favorites %}
+    <p class="text-secondary">No favorites yet. Add dealers from search results.</p>
+    {% else %}
+    <div class="row g-3">
+        {% for fav in favorites %}
+        <div class="col-12" id="fav-{{ fav.place_id }}">
+            {% include "includes/_dealer_card.html" with dealer=fav is_favorite=True %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function confirmClearAll() {
+    if (!confirm("Remove all favorites?")) return;
+    fetch("{% url 'users:favorites_clear' %}", {
+        method: "POST",
+        headers: {"X-CSRFToken": "{{ csrf_token }}"},
+    }).then(() => location.reload());
+}
+
+function removeFavorite(placeId) {
+    if (!confirm("Remove from favorites?")) return;
+    fetch(`/users/favorites/remove/${placeId}/`, {
+        method: "POST",
+        headers: {"X-CSRFToken": "{{ csrf_token }}"},
+    }).then(() => document.getElementById(`fav-${placeId}`).remove());
+}
+</script>
+{% endblock %}

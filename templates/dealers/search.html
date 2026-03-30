@@ -93,20 +93,22 @@
                                 </div>
 
                                 <div class="d-flex flex-lg-column justify-content-between gap-2">
-                                    <button
-                                        class="btn btn-primary rounded-pill px-4"
-                                        data-dealer-name="{{ d.name|escapejs }}"
-                                        data-dealer-address="{{ d.address|default:''|escapejs }}"
-                                        data-dealer-phone="{{ d.phone|default:''|escapejs }}"
-                                        data-dealer-website="{{ d.website|default:''|escapejs }}"
-                                        data-dealer-rating="{{ d.rating|default:'' }}"
-                                        data-dealer-reviews="{{ d.reviews|default:'' }}"
-                                        data-dealer-lat="{{ d.lat|default:'' }}"
-                                        data-dealer-lng="{{ d.lng|default:'' }}"
-                                        data-dealer-distance="{{ d.distance_km|default:'' }}"
-                                        onclick="openDealerModal(this)">
-                                        Details
-                                    </button>
+                                <button
+                                    class="btn btn-primary rounded-pill px-4"
+                                    data-dealer-place-id="{{ d.place_id|default:'' }}"
+                                    data-dealer-city="{{ city|escapejs }}"
+                                    data-dealer-name="{{ d.name|escapejs }}"
+                                    data-dealer-address="{{ d.address|default:''|escapejs }}"
+                                    data-dealer-phone="{{ d.phone|default:''|escapejs }}"
+                                    data-dealer-website="{{ d.website|default:''|escapejs }}"
+                                    data-dealer-rating="{{ d.rating|default:'' }}"
+                                    data-dealer-reviews="{{ d.reviews|default:'' }}"
+                                    data-dealer-lat="{{ d.lat|default:'' }}"
+                                    data-dealer-lng="{{ d.lng|default:'' }}"
+                                    data-dealer-distance="{{ d.distance_km|default:'' }}"
+                                    onclick="openDealerModal(this)">
+                                    Details
+                                </button>
                                 </div>
 
                             </div>
@@ -153,73 +155,13 @@
     </div>
 </section>
 
-<!-- Modal -->
-<div class="modal fade" id="dealerModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content p-4">
+{% include "includes/_dealer_details.html" %}
 
-            <div class="modal-header border-0">
-                <h5 class="fw-bold" id="modalDealerName"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-
-                <div id="modalInfo" class="small mb-3"></div>
-
-                <div style="height: 250px;" class="mb-3">
-                    <iframe id="modalMap" width="100%" height="100%" style="border:0;"></iframe>
-                </div>
-
-                <a id="modalRouteBtn" class="btn btn-primary" target="_blank">
-                    Get directions
-                </a>
-
-            </div>
-
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-function openDealerModal(btn) {
-    const d = {
-        name: btn.dataset.dealerName,
-        address: btn.dataset.dealerAddress,
-        phone: btn.dataset.dealerPhone,
-        website: btn.dataset.dealerWebsite,
-        rating: btn.dataset.dealerRating,
-        reviews: btn.dataset.dealerReviews,
-        lat: btn.dataset.dealerLat,
-        lng: btn.dataset.dealerLng,
-        distance: btn.dataset.dealerDistance,
-    };
 
-    document.getElementById('modalDealerName').textContent = d.name;
-
-    const info = document.getElementById('modalInfo');
-    info.innerHTML = '';
-
-    if (d.address) info.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
-    if (d.phone) info.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
-    if (d.website) info.innerHTML += `<div><b>Website:</b> ${d.website}</div>`;
-    if (d.rating) info.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
-    if (d.distance) info.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
-
-    if (d.lat && d.lng) {
-        document.getElementById('modalMap').src =
-            `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
-
-        document.getElementById('modalRouteBtn').href =
-            `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
-    }
-
-    new bootstrap.Modal(document.getElementById('dealerModal')).show();
-}
-</script>
-
-<script src="{% static 'js/search.js' %}" defer></script>
+<script src="{% static 'js/search.js' %}"></script>
+<script src="{% static 'js/favourites.js' %}" defer></script>
 
 {% endblock %}

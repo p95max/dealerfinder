@@ -1,0 +1,34 @@
+{% load static %}
+<div class="modal fade" id="dealerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content p-4">
+
+            <div class="modal-header border-0">
+                <h5 class="fw-bold" id="modalDealerName"></h5>
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                            id="modalFavoriteBtn"
+                            style="min-width: 90px;">
+                        ♡ Save
+                    </button>
+                    {% endif %}
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div id="modalInfo" class="small mb-3"></div>
+
+                <div style="height: 250px;" class="mb-3">
+                    <iframe id="modalMap" width="100%" height="100%" style="border:0;"></iframe>
+                </div>
+
+                <a id="modalRouteBtn" class="btn btn-primary" target="_blank">
+                    Get directions
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>

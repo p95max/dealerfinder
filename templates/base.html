@@ -96,6 +96,12 @@
 
     document.addEventListener("DOMContentLoaded", refreshQuota);
 </script>
+{% if user.is_authenticated %}
+<script>
+    window.FAVORITE_ADD_URL = "{% url 'users:favorite_add' %}";
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+</script>
+{% endif %}
 {% block extra_js %}{% endblock %}
 
 </body>

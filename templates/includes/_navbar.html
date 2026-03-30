@@ -64,6 +64,16 @@
             </a>
         {% endif %}
 
+        {% if user.is_authenticated %}
+        <a href="{% url 'users:favorites' %}"
+           class="btn btn-icon btn-outline-secondary favorites-btn
+                  {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"
+           aria-label="Favorites">
+            <span class="favorites-icon">★</span>
+        </a>
+        {% endif %}
+
         <button class="btn btn-sm btn-outline-secondary" id="theme-toggle" style="width: 34px; height: 34px; padding: 0;">🌙</button>
+
     </div>
 </div>
