@@ -168,6 +168,7 @@ function openDealerModal(btn) {
         lng: btn.dataset.dealerLng || "",
         distance: btn.dataset.dealerDistance || "",
         city: btn.dataset.dealerCity || "",
+        is_favorite: btn.dataset.dealerIsFavorite === "1",
     };
 
     nameEl.textContent = d.name;
@@ -191,12 +192,19 @@ function openDealerModal(btn) {
         routeBtn.classList.add("disabled");
     }
 
-        const favBtn = document.getElementById('modalFavoriteBtn');
-        if (favBtn) {
-            favBtn.onclick = () => addFavorite(favBtn, d);
-            favBtn.disabled = false;
-        }
+    const favBtn = document.getElementById("modalFavoriteBtn");
 
+    if (favBtn) {
+        if (d.is_favorite) {
+            favBtn.classList.add("d-none");
+            favBtn.disabled = true;
+            favBtn.onclick = null;
+        } else {
+            favBtn.classList.remove("d-none");
+            favBtn.disabled = false;
+            favBtn.onclick = () => addFavorite(favBtn, d);
+        }
+    }
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 

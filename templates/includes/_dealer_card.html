@@ -8,7 +8,8 @@
      data-dealer-rating="{{ dealer.rating|default:'' }}"
      data-dealer-reviews="{{ dealer.user_ratings_total|default:'' }}"
      data-dealer-lat="{{ dealer.lat|default:'' }}"
-     data-dealer-lng="{{ dealer.lng|default:'' }}">
+     data-dealer-lng="{{ dealer.lng|default:'' }}"
+     data-dealer-is-favorite="{% if is_favorite %}1{% else %}0{% endif %}">
 
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-start">
@@ -29,7 +30,7 @@
             {% if is_favorite %}
             <button class="btn btn-sm btn-outline-danger rounded-pill"
                     onclick="event.stopPropagation(); removeFavorite('{{ dealer.place_id }}')">
-                ★ Remove
+                ✖️ Remove
             </button>
             {% else %}
             <button class="btn btn-sm btn-outline-secondary rounded-pill"
