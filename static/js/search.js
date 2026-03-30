@@ -146,43 +146,66 @@ fetch("/static/data/cities_de.json")
 
 
 function openDealerModal(btn) {
-    const d = {
-        place_id: btn.dataset.dealerPlaceId,
-        name: btn.dataset.dealerName,
-        address: btn.dataset.dealerAddress,
-        phone: btn.dataset.dealerPhone,
-        website: btn.dataset.dealerWebsite,
-        rating: btn.dataset.dealerRating,
-        reviews: btn.dataset.dealerReviews,
-        lat: btn.dataset.dealerLat,
-        lng: btn.dataset.dealerLng,
-        distance: btn.dataset.dealerDistance,
-        city: btn.dataset.dealerCity,
-    };
+    const modalEl = document.getElementById("dealerModal");
+    const nameEl = document.getElementById("modalDealerName");
+    const infoEl = document.getElementById("modalInfo");
+    const mapEl = document.getElementById("modalMap");
+    const routeBtn = document.getElementById("modalRouteBtn");
 
-    document.getElementById('modalDealerName').textContent = d.name;
-
-    const info = document.getElementById('modalInfo');
-    info.innerHTML = '';
-    if (d.address) info.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
-    if (d.phone)   info.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
-    if (d.website) info.innerHTML += `<div><b>Website:</b> <a href="${d.website}" target="_blank">${d.website}</a></div>`;
-    if (d.rating)  info.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
-    if (d.distance) info.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
-
-    if (d.lat && d.lng) {
-        document.getElementById('modalMap').src =
-            `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
-        document.getElementById('modalRouteBtn').href =
-            `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
+    if (!modalEl || !nameEl || !infoEl || !mapEl || !routeBtn) {
+        return;
     }
 
-    const favBtn = document.getElementById('modalFavoriteBtn');
-    if (favBtn) {
+    const d = {
+        place_id: btn.dataset.dealerPlaceId || "",
+        name: btn.dataset.dealerName || "",
+        address: btn.dataset.dealerAddress || "",
+        phone: btn.dataset.dealerPhone || "",
+        website: btn.dataset.dealerWebsite || "",
+        rating: btn.dataset.dealerRating || "",
+        reviews: btn.dataset.dealerReviews || "",
+        lat: btn.dataset.dealerLat || "",
+        lng: btn.dataset.dealerLng || "",
+        distance: btn.dataset.dealerDistance || "",
+        city: btn.dataset.dealerCity || "",
+    };
+
+    nameEl.textContent = d.name;
+    infoEl.innerHTML = "";
+
+    if (d.address) infoEl.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
+    if (d.phone) infoEl.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
+    if (d.website) {
+        infoEl.innerHTML += `<div><b>Website:</b> <a href="${d.website}" target="_blank" rel="noopener noreferrer">${d.website}</a></div>`;
+    }
+    if (d.rating) infoEl.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
+    if (d.distance) infoEl.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
+
+    if (d.lat && d.lng) {
+        mapEl.src = `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
+        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
+        routeBtn.classList.remove("disabled");
+    } else {
+        mapEl.src = "";
+        routeBtn.href = "#";
+        routeBtn.classList.add("disabled");
+    }
+
+    const favBtn = document.getElementById("modalFavoriteBtn");
+    if (favBtn && typeof addFavorite === "function") {
         favBtn.onclick = () => addFavorite(favBtn, d);
-        favBtn.textContent = '♡ Save';
+        favBtn.textContent = "♡ Save";
         favBtn.disabled = false;
     }
 
-    new bootstrap.Modal(document.getElementById('dealerModal')).show();
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
+
+document.addEventListener("click", (event) => {
+    const btn = event.target.closest(".js-open-dealer-modal");
+    if (!btn) {
+        return;
+    }
+
+    openDealerModal(btn);
+});

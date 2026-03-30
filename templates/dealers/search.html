@@ -93,22 +93,22 @@
                                 </div>
 
                                 <div class="d-flex flex-lg-column justify-content-between gap-2">
-                                <button
-                                    class="btn btn-primary rounded-pill px-4"
-                                    data-dealer-place-id="{{ d.place_id|default:'' }}"
-                                    data-dealer-city="{{ city|escapejs }}"
-                                    data-dealer-name="{{ d.name|escapejs }}"
-                                    data-dealer-address="{{ d.address|default:''|escapejs }}"
-                                    data-dealer-phone="{{ d.phone|default:''|escapejs }}"
-                                    data-dealer-website="{{ d.website|default:''|escapejs }}"
-                                    data-dealer-rating="{{ d.rating|default:'' }}"
-                                    data-dealer-reviews="{{ d.reviews|default:'' }}"
-                                    data-dealer-lat="{{ d.lat|default:'' }}"
-                                    data-dealer-lng="{{ d.lng|default:'' }}"
-                                    data-dealer-distance="{{ d.distance_km|default:'' }}"
-                                    onclick="openDealerModal(this)">
-                                    Details
-                                </button>
+<button
+    type="button"
+    class="btn btn-primary rounded-pill px-4 js-open-dealer-modal"
+    data-dealer-place-id="{{ d.place_id|default:'' }}"
+    data-dealer-city="{{ city|escapejs }}"
+    data-dealer-name="{{ d.name|escapejs }}"
+    data-dealer-address="{{ d.address|default:''|escapejs }}"
+    data-dealer-phone="{{ d.phone|default:''|escapejs }}"
+    data-dealer-website="{{ d.website|default:''|escapejs }}"
+    data-dealer-rating="{{ d.rating|default:'' }}"
+    data-dealer-reviews="{{ d.reviews|default:'' }}"
+    data-dealer-lat="{{ d.lat|default:'' }}"
+    data-dealer-lng="{{ d.lng|default:'' }}"
+    data-dealer-distance="{{ d.distance_km|default:'' }}">
+    Details
+</button>
                                 </div>
 
                             </div>
