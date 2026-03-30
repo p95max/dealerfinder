@@ -58,31 +58,38 @@ def search_places(city: str, radius: int | str, page_token: str = None):
     geo = geocode_city(city)
 
     if geo:
-        location_restriction = {
+        location_bias = {
             "circle": {
                 "center": {"latitude": geo["lat"], "longitude": geo["lng"]},
-                "radius": radius_m,
+                "radius": float(radius_m),
             }
+        }
+        payload = {
+            "textQuery": f"car dealer in {city}, Germany",
+            "maxResultCount": 20,
+            "locationBias": location_bias,
         }
     else:
-        location_restriction = {
-            "rectangle": {
-                "low": {"latitude": 47.27, "longitude": 5.87},
-                "high": {"latitude": 55.06, "longitude": 15.04},
-            }
+        payload = {
+            "textQuery": f"car dealer in {city}, Germany",
+            "maxResultCount": 20,
+            "locationRestriction": {
+                "rectangle": {
+                    "low": {"latitude": 47.27, "longitude": 5.87},
+                    "high": {"latitude": 55.06, "longitude": 15.04},
+                }
+            },
         }
-
-    payload = {
-        "textQuery": f"car dealer in {city}, Germany",
-        "maxResultCount": 20,
-        "locationRestriction": location_restriction,
-    }
 
     if page_token:
         payload["pageToken"] = page_token
 
     _increment_google_calls()
     response = requests.post(TEXT_SEARCH_URL, json=payload, headers=headers, timeout=20)
+
+    # print("Google API status:", response.status_code)
+    # print("Google API response:", response.text)
+
     response.raise_for_status()
     return response.json()
 
