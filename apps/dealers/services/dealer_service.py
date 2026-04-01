@@ -1,6 +1,7 @@
 import math
 
 from .cache_service import get_cache, set_cache
+from .distance_service import attach_distance_to_dealers
 from .google_places import search_all_places, is_google_cap_reached
 
 
@@ -57,3 +58,54 @@ def search_dealers(city, radius) -> tuple[list, bool]:
     )
     set_cache(key, normalized)
     return normalized, False
+
+
+def _is_valid_lat_lng(lat, lng) -> bool:
+    if lat is None or lng is None:
+        return False
+    return -90 <= lat <= 90 and -180 <= lng <= 180
+
+
+def filter_and_sort_dealers(
+    dealers: list,
+    *,
+    min_rating: float | None = None,
+    open_now: bool = False,
+    weekends: bool = False,
+    has_contacts: bool = False,
+    user_lat: float | None = None,
+    user_lng: float | None = None,
+    max_distance_km: float | None = None,
+    sort: str = "score",
+) -> list:
+    if min_rating is not None:
+        dealers = [d for d in dealers if (d.get("rating") or 0) >= min_rating]
+
+    if open_now:
+        dealers = [d for d in dealers if d.get("open_now")]
+
+    if weekends:
+        dealers = [d for d in dealers if d.get("has_weekend")]
+
+    if has_contacts:
+        dealers = [d for d in dealers if d.get("phone") or d.get("website")]
+
+    if _is_valid_lat_lng(user_lat, user_lng):
+        dealers = attach_distance_to_dealers(dealers, user_lat, user_lng)
+        if max_distance_km is not None and max_distance_km > 0:
+            dealers = [
+                d for d in dealers
+                if d.get("distance_km") is not None and d["distance_km"] <= max_distance_km
+            ]
+
+    if sort == "rating":
+        dealers = sorted(dealers, key=lambda x: x.get("rating") or 0, reverse=True)
+    elif sort == "reviews":
+        dealers = sorted(dealers, key=lambda x: x.get("reviews") or 0, reverse=True)
+    elif sort == "distance" and _is_valid_lat_lng(user_lat, user_lng):
+        dealers = sorted(
+            dealers,
+            key=lambda x: x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
+        )
+
+    return dealers

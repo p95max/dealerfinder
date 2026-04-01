@@ -5,13 +5,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
-from .services.dealer_service import search_dealers
-from .services.distance_service import attach_distance_to_dealers
+from .services.dealer_service import search_dealers, filter_and_sort_dealers
 from .services.geocoding_service import is_german_city
 from .services.google_places import is_google_cap_reached
 from .services.search_tracking_service import (
-    get_anon_search_history,
-    get_popular_cities,
     track_anon_search_history,
     track_popular_city,
     track_user_search_history,
@@ -24,9 +21,9 @@ ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
 DEFAULT_RADIUS = 20
 
 
-
 def _should_track_search(request) -> bool:
     return bool(request.GET.get("city")) and not request.GET.get("page")
+
 
 def _parse_float(value):
     try:
@@ -35,12 +32,6 @@ def _parse_float(value):
         return float(value)
     except (TypeError, ValueError):
         return None
-
-
-def _is_valid_lat_lng(lat, lng):
-    if lat is None or lng is None:
-        return False
-    return -90 <= lat <= 90 and -180 <= lng <= 180
 
 
 def _normalize_city(city: str) -> str:
@@ -63,49 +54,11 @@ def _parse_radius(value) -> int:
         return DEFAULT_RADIUS
 
 
-def _run_search(request, city, radius):
-    dealers, from_cache = search_dealers(city=city, radius=radius)
-    request.cache_hit = from_cache
-    return dealers
-
-
-def _search_context(
-    city,
-    radius,
-    min_rating,
-    sort,
-    open_now,
-    weekends,
-    has_contacts,
-    request=None,
-    **extra,
-):
-    popular_cities = get_popular_cities()
-    history_cities = []
-
-    if request is not None:
-        if request.user.is_authenticated:
-            history_cities = list(
-                request.user.search_history.values_list("city", flat=True)[:8]
-            )
-        else:
-            history_cities = get_anon_search_history(request)
-
-    return {
-        "dealers": [],
-        "page_obj": [],
-        "city": city,
-        "radius": radius,
-        "min_rating": min_rating,
-        "sort": sort,
-        "open_now": open_now,
-        "weekends": weekends,
-        "has_contacts": has_contacts,
-        "total": 0,
-        "popular_cities": popular_cities,
-        "history_cities": history_cities,
-        **extra,
-    }
+def _parse_min_rating(value) -> float | None:
+    try:
+        return float(value) if value else None
+    except (TypeError, ValueError):
+        return None
 
 
 def search_view(request):
@@ -174,15 +127,27 @@ def search_view(request):
             messages.warning(request, "Please enter a city located in Germany.")
             return render(request, "dealers/search.html", build_context())
 
-        dealers = _run_search(request, city, radius)
+        raw_dealers, from_cache = search_dealers(city=city, radius=radius)
+        request.cache_hit = from_cache
 
         if _should_track_search(request):
             if request.user.is_authenticated:
                 track_user_search_history(request.user, city)
             else:
                 track_anon_search_history(request, city)
-
             track_popular_city(city)
+
+        dealers = filter_and_sort_dealers(
+            raw_dealers,
+            min_rating=_parse_min_rating(min_rating),
+            open_now=bool(open_now),
+            weekends=bool(weekends),
+            has_contacts=bool(has_contacts),
+            user_lat=user_lat,
+            user_lng=user_lng,
+            max_distance_km=max_distance_km,
+            sort=sort,
+        )
 
         if not dealers and is_google_cap_reached():
             messages.warning(
@@ -191,44 +156,6 @@ def search_view(request):
             )
         elif not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
-
-        if min_rating:
-            try:
-                min_rating_value = float(min_rating)
-                dealers = [d for d in dealers if (d.get("rating") or 0) >= min_rating_value]
-            except ValueError:
-                pass
-
-        if open_now:
-            dealers = [d for d in dealers if d.get("open_now")]
-
-        if weekends:
-            dealers = [d for d in dealers if d.get("has_weekend")]
-
-        if has_contacts:
-            dealers = [d for d in dealers if d.get("phone") or d.get("website")]
-
-        if _is_valid_lat_lng(user_lat, user_lng):
-            dealers = attach_distance_to_dealers(
-                dealers=dealers,
-                user_lat=user_lat,
-                user_lng=user_lng,
-            )
-            if max_distance_km is not None and max_distance_km > 0:
-                dealers = [
-                    d for d in dealers
-                    if d.get("distance_km") is not None and d["distance_km"] <= max_distance_km
-                ]
-
-        if sort == "rating":
-            dealers = sorted(dealers, key=lambda x: x.get("rating") or 0, reverse=True)
-        elif sort == "reviews":
-            dealers = sorted(dealers, key=lambda x: x.get("reviews") or 0, reverse=True)
-        elif sort == "distance" and _is_valid_lat_lng(user_lat, user_lng):
-            dealers = sorted(
-                dealers,
-                key=lambda x: x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
-            )
 
     if request.user.is_authenticated and dealers:
         favorite_place_ids = set(
@@ -252,5 +179,3 @@ def search_view(request):
             total=len(dealers),
         ),
     )
-
-

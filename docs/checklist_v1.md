@@ -98,6 +98,6 @@
 
 
 - [ ] **`ThrottleMiddleware`** — in-memory `_store`, не работает при 2+ Gunicorn workers или рестарте контейнера. Заменить на Redis перед prod.
-- [ ] **Фильтрация в `search_view`** — in-memory после `search_dealers()`. Перенести в сервисный слой при росте объёма.
+- [x] **Фильтрация в `search_view`** — in-memory после `search_dealers()`. Перенести в сервисный слой при росте объёма.
 - [ ] **Удаление аккаунта** — повторная авторизация через тот же Google-аккаунт создаёт чистый User. Решить через мягкое удаление или blacklist `google_sub`.
 - [ ] **Тесты:** не покрыты `delete_account_view` и `GoogleOAuthAdapter` (план/квота при first login).
