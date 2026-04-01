@@ -34,35 +34,38 @@
     </div>
 
     <div class="surface-card p-4">
-        <div class="fw-semibold mb-1">Delete account</div>
-        <p class="text-secondary small mb-3">
-            All your data will be permanently removed. This action cannot be undone.
+    <a class="fw-semibold text-decoration-none text-body d-flex justify-content-between align-items-center"
+       data-bs-toggle="collapse" href="#deleteAccountCollapse" role="button" aria-expanded="false">
+        Delete account
+        <span class="text-secondary small">▸</span>
+    </a>
+    <div class="collapse" id="deleteAccountCollapse">
+        <p class="text-danger small mb-3 mt-3">
+            All your data will be permanently removed.<br>
+            This action cannot be undone.<br>
+            If you sign in again with the same Google account, a new account will be created with a FREE plan.
         </p>
-
-            <form method="post" action="{% url 'users:delete_account' %}">
-                {% csrf_token %}
-
-                <div
-                    class="cf-turnstile mb-3"
-                    data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-                    data-callback="onDeleteTurnstileSuccess"
-                    data-expired-callback="onDeleteTurnstileExpired"
-                    data-error-callback="onDeleteTurnstileError"
-                    data-button-id="deleteBtn">
-                </div>
-
-                <button
-                    type="submit"
-                    id="deleteBtn"
-                    class="btn btn-sm btn-outline-danger rounded-pill px-3"
-                    disabled
-                    onclick="return confirm('Are you sure? This cannot be undone.')">
-                    Delete my account
-                </button>
-            </form>
-
-
+        <form method="post" action="{% url 'users:delete_account' %}">
+            {% csrf_token %}
+            <div
+                class="cf-turnstile mb-3"
+                data-sitekey="{{ TURNSTILE_SITE_KEY }}"
+                data-callback="onDeleteTurnstileSuccess"
+                data-expired-callback="onDeleteTurnstileExpired"
+                data-error-callback="onDeleteTurnstileError"
+                data-button-id="deleteBtn">
+            </div>
+            <button
+                type="submit"
+                id="deleteBtn"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                disabled
+                onclick="return confirm('Are you sure? This cannot be undone.')">
+                Delete my account
+            </button>
+        </form>
     </div>
+</div>
 
 </section>
 
