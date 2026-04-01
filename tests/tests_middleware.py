@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import RequestFactory, TestCase
 from apps.users.middleware import reset_quota_if_new_day
 
@@ -18,6 +19,7 @@ def make_search_request(factory, city="Berlin"):
     match.url_name = "search"
     match.app_name = "dealers"
     request.resolver_match = match
+    request.session = {}
     return request
 
 
@@ -109,6 +111,7 @@ class QuotaMiddlewareTests(TestCase):
         user = self._make_user(used_today=0)
         request = self.factory.get("/")
         request.user = user
+        request.session = {}
         request.resolver_match = MagicMock(url_name="home", app_name="dealers")
 
         self.middleware(request)
@@ -140,7 +143,7 @@ class ThrottleMiddlewareTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         self.get_response = MagicMock(return_value=MagicMock(status_code=200))
-        ThrottleMiddleware._store.clear()
+        cache.clear()
 
     def _make_middleware(self, rate=3):
         with patch("apps.users.middleware.settings") as mock_settings:
@@ -148,8 +151,7 @@ class ThrottleMiddlewareTests(TestCase):
             return ThrottleMiddleware(self.get_response)
 
     def _make_user(self, pk=1):
-        user = MagicMock(is_authenticated=True, pk=pk)
-        return user
+        return MagicMock(is_authenticated=True, pk=pk)
 
     def test_requests_within_rate_allowed(self):
         middleware = self._make_middleware(rate=3)
@@ -207,7 +209,7 @@ class ThrottleMiddlewareTests(TestCase):
         self.assertEqual(response.status_code, 429)
 
     def test_window_expiry_resets_throttle(self):
-        """After the time window, throttle should reset."""
+        """After the time window, a new window key is used — throttle resets."""
         middleware = self._make_middleware(rate=2)
         user = self._make_user()
 
@@ -217,14 +219,13 @@ class ThrottleMiddlewareTests(TestCase):
             request.META["REMOTE_ADDR"] = "1.2.3.4"
             middleware(request)
 
-        key = f"throttle:user:{user.pk}"
-        past = time.time() - 61
-        ThrottleMiddleware._store[key] = [past, past]
+        # Simulate next time window (61s later) — new key, fresh counter
+        with patch("apps.users.middleware.time.time", return_value=time.time() + 61):
+            request = make_search_request(self.factory)
+            request.user = user
+            request.META["REMOTE_ADDR"] = "1.2.3.4"
+            response = middleware(request)
 
-        request = make_search_request(self.factory)
-        request.user = user
-        request.META["REMOTE_ADDR"] = "1.2.3.4"
-        response = middleware(request)
         self.assertNotEqual(response.status_code, 429)
 
     def test_x_forwarded_for_used_for_ip(self):
