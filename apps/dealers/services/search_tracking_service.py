@@ -6,6 +6,8 @@ from apps.dealers.models import PopularSearch, UserSearchHistory
 SESSION_HISTORY_KEY = "search_history_cities"
 SESSION_HISTORY_LIMIT = 8
 POPULAR_CITIES_LIMIT = 10
+AUTH_HISTORY_FETCH_LIMIT = 30
+AUTH_HISTORY_KEEP_LIMIT = 20
 
 
 def track_popular_city(city: str) -> None:
@@ -21,7 +23,7 @@ def track_user_search_history(user, city: str) -> None:
     UserSearchHistory.objects.create(user=user, city=city)
 
     ids_to_keep = list(
-        user.search_history.order_by("-searched_at").values_list("id", flat=True)[:20]
+        user.search_history.order_by("-searched_at").values_list("id", flat=True)[:AUTH_HISTORY_KEEP_LIMIT]
     )
     user.search_history.exclude(id__in=ids_to_keep).delete()
 
@@ -40,10 +42,39 @@ def get_anon_search_history(request) -> list[str]:
     return request.session.get(SESSION_HISTORY_KEY, [])
 
 
-
 def get_popular_cities(limit: int = POPULAR_CITIES_LIMIT) -> list[str]:
     return list(
-        PopularSearch.objects
-        .order_by("-count", "city")
+        PopularSearch.objects.order_by("-count", "-updated_at", "city")
         .values_list("city", flat=True)[:limit]
     )
+
+
+def _unique_recent_cities(items: list[str], limit: int = SESSION_HISTORY_LIMIT) -> list[str]:
+    result = []
+    seen = set()
+
+    for city in items:
+        if city in seen:
+            continue
+        seen.add(city)
+        result.append(city)
+
+        if len(result) >= limit:
+            break
+
+    return result
+
+
+def build_search_discovery_context(request) -> dict:
+    if request.user.is_authenticated:
+        raw_history = list(
+            request.user.search_history.values_list("city", flat=True)[:AUTH_HISTORY_FETCH_LIMIT]
+        )
+        history_cities = _unique_recent_cities(raw_history, limit=SESSION_HISTORY_LIMIT)
+    else:
+        history_cities = get_anon_search_history(request)
+
+    return {
+        "popular_cities": get_popular_cities(POPULAR_CITIES_LIMIT),
+        "history_cities": history_cities,
+    }

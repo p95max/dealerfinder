@@ -3,7 +3,7 @@ import re
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from .services.dealer_service import search_dealers
 from .services.distance_service import attach_distance_to_dealers
@@ -15,6 +15,7 @@ from .services.search_tracking_service import (
     track_anon_search_history,
     track_popular_city,
     track_user_search_history,
+    build_search_discovery_context,
 )
 
 
@@ -113,7 +114,6 @@ def search_view(request):
         params.pop("page", None)
         request.session["last_search_params"] = params.urlencode()
     elif request.method == "GET" and not request.GET and request.session.get("last_search_params"):
-        from django.shortcuts import redirect
         return redirect(f"{request.path}?{request.session['last_search_params']}")
 
     city = _normalize_city(request.GET.get("city") or "")
@@ -136,17 +136,21 @@ def search_view(request):
     request.cache_hit = True
 
     def build_context(**extra):
-        return _search_context(
-            city,
-            radius,
-            min_rating,
-            sort,
-            open_now,
-            weekends,
-            has_contacts,
-            request=request,
+        context = {
+            "dealers": [],
+            "page_obj": [],
+            "city": city,
+            "radius": radius,
+            "min_rating": min_rating,
+            "sort": sort,
+            "open_now": open_now,
+            "weekends": weekends,
+            "has_contacts": has_contacts,
+            "total": 0,
             **extra,
-        )
+        }
+        context.update(build_search_discovery_context(request))
+        return context
 
     if getattr(request, "quota_exceeded", False):
         if request.user.is_authenticated:
@@ -181,7 +185,10 @@ def search_view(request):
             track_popular_city(city)
 
         if not dealers and is_google_cap_reached():
-            messages.warning(request, "Live search is temporarily unavailable. Try a city that was searched before.")
+            messages.warning(
+                request,
+                "Live search is temporarily unavailable. Try a city that was searched before.",
+            )
         elif not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
 

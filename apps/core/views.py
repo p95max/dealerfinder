@@ -1,8 +1,11 @@
 from django.views.generic import TemplateView
 from django.shortcuts import render
 
+from apps.dealers.services.search_tracking_service import build_search_discovery_context
+
 def home_view(request):
-    return render(request, "home.html")
+    context = build_search_discovery_context(request)
+    return render(request, "home.html", context)
 
 
 def about_view(request):
