@@ -16,12 +16,7 @@ ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
 DEFAULT_RADIUS = 20
 
 
-def home_view(request):
-    return render(request, "home.html")
 
-
-def about_view(request):
-    return render(request, "about.html")
 
 
 def _parse_float(value):
@@ -197,3 +192,5 @@ def search_view(request):
         "has_contacts": has_contacts,
         "total": len(dealers),
     })
+
+
