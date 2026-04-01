@@ -9,6 +9,13 @@ from .services.dealer_service import search_dealers
 from .services.distance_service import attach_distance_to_dealers
 from .services.geocoding_service import is_german_city
 from .services.google_places import is_google_cap_reached
+from .services.search_tracking_service import (
+    get_anon_search_history,
+    get_popular_cities,
+    track_anon_search_history,
+    track_popular_city,
+    track_user_search_history,
+)
 
 
 DEALERS_PER_PAGE = 20
@@ -17,7 +24,8 @@ DEFAULT_RADIUS = 20
 
 
 
-
+def _should_track_search(request) -> bool:
+    return bool(request.GET.get("city")) and not request.GET.get("page")
 
 def _parse_float(value):
     try:
@@ -60,7 +68,28 @@ def _run_search(request, city, radius):
     return dealers
 
 
-def _search_context(city, radius, min_rating, sort, open_now, weekends, has_contacts, **extra):
+def _search_context(
+    city,
+    radius,
+    min_rating,
+    sort,
+    open_now,
+    weekends,
+    has_contacts,
+    request=None,
+    **extra,
+):
+    popular_cities = get_popular_cities()
+    history_cities = []
+
+    if request is not None:
+        if request.user.is_authenticated:
+            history_cities = list(
+                request.user.search_history.values_list("city", flat=True)[:8]
+            )
+        else:
+            history_cities = get_anon_search_history(request)
+
     return {
         "dealers": [],
         "page_obj": [],
@@ -72,13 +101,17 @@ def _search_context(city, radius, min_rating, sort, open_now, weekends, has_cont
         "weekends": weekends,
         "has_contacts": has_contacts,
         "total": 0,
+        "popular_cities": popular_cities,
+        "history_cities": history_cities,
         **extra,
     }
 
 
 def search_view(request):
     if request.method == "GET" and request.GET.get("city"):
-        request.session["last_search_params"] = request.GET.urlencode()
+        params = request.GET.copy()
+        params.pop("page", None)
+        request.session["last_search_params"] = params.urlencode()
     elif request.method == "GET" and not request.GET and request.session.get("last_search_params"):
         from django.shortcuts import redirect
         return redirect(f"{request.path}?{request.session['last_search_params']}")
@@ -102,27 +135,50 @@ def search_view(request):
     dealers = []
     request.cache_hit = True
 
-    ctx = lambda **extra: _search_context(
-        city, radius, min_rating, sort, open_now, weekends, has_contacts, **extra
-    )
+    def build_context(**extra):
+        return _search_context(
+            city,
+            radius,
+            min_rating,
+            sort,
+            open_now,
+            weekends,
+            has_contacts,
+            request=request,
+            **extra,
+        )
 
     if getattr(request, "quota_exceeded", False):
         if request.user.is_authenticated:
-            messages.warning(request, f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.")
+            messages.warning(
+                request,
+                f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.",
+            )
         else:
-            messages.warning(request, f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.")
-        return render(request, "dealers/search.html", ctx(quota_exceeded=True))
+            messages.warning(
+                request,
+                f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
+            )
+        return render(request, "dealers/search.html", build_context(quota_exceeded=True))
 
     if city:
         if not _is_valid_city(city):
             messages.warning(request, "Please enter a valid city name.")
-            return render(request, "dealers/search.html", ctx())
+            return render(request, "dealers/search.html", build_context())
 
         if not is_german_city(city):
             messages.warning(request, "Please enter a city located in Germany.")
-            return render(request, "dealers/search.html", ctx())
+            return render(request, "dealers/search.html", build_context())
 
         dealers = _run_search(request, city, radius)
+
+        if _should_track_search(request):
+            if request.user.is_authenticated:
+                track_user_search_history(request.user, city)
+            else:
+                track_anon_search_history(request, city)
+
+            track_popular_city(city)
 
         if not dealers and is_google_cap_reached():
             messages.warning(request, "Live search is temporarily unavailable. Try a city that was searched before.")
@@ -180,17 +236,14 @@ def search_view(request):
     paginator = Paginator(dealers, DEALERS_PER_PAGE)
     page_obj = paginator.get_page(page_number)
 
-    return render(request, "dealers/search.html", {
-        "dealers": page_obj,
-        "page_obj": page_obj,
-        "city": city,
-        "radius": radius,
-        "min_rating": min_rating,
-        "sort": sort,
-        "open_now": open_now,
-        "weekends": weekends,
-        "has_contacts": has_contacts,
-        "total": len(dealers),
-    })
+    return render(
+        request,
+        "dealers/search.html",
+        build_context(
+            dealers=page_obj,
+            page_obj=page_obj,
+            total=len(dealers),
+        ),
+    )
 
 
