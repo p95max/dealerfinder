@@ -45,18 +45,19 @@ class QuotaMiddleware:
 
     def __call__(self, request):
         request.quota_exceeded = False
+        session = getattr(request, "session", None)
 
         if _looks_like_search(request) and request.user.is_authenticated:
             reset_quota_if_new_day(request.user)
             request.user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
             request.quota_exceeded = request.user.used_today >= request.user.daily_quota
 
-        elif _looks_like_search(request) and not request.user.is_authenticated:
+        elif _looks_like_search(request) and not request.user.is_authenticated and session is not None:
             today = str(timezone.localdate())
-            if request.session.get("anon_reset") != today:
-                request.session["anon_used"] = 0
-                request.session["anon_reset"] = today
-            used = request.session.get("anon_used", 0)
+            if session.get("anon_reset") != today:
+                session["anon_used"] = 0
+                session["anon_reset"] = today
+            used = session.get("anon_used", 0)
             if used >= settings.ANON_DAILY_LIMIT:
                 request.quota_exceeded = True
 
@@ -70,9 +71,9 @@ class QuotaMiddleware:
                     used_today=F("used_today") + 1
                 )
 
-        elif _is_search_request(request) and not request.user.is_authenticated:
+        elif _is_search_request(request) and not request.user.is_authenticated and session is not None:
             if not request.quota_exceeded and not cache_hit:
-                request.session["anon_used"] = request.session.get("anon_used", 0) + 1
+                session["anon_used"] = session.get("anon_used", 0) + 1
 
         return response
 
@@ -121,8 +122,6 @@ class ThrottleMiddleware:
 
 
 class LoginGateMiddleware:
-    """Require Turnstile gate before starting Google OAuth flow."""
-
     GOOGLE_LOGIN_PATH_PREFIX = "/accounts/google/login/"
 
     def __init__(self, get_response):
@@ -145,10 +144,11 @@ class LoginGateMiddleware:
             request.session.pop("turnstile_login_ok", None)
 
         if (
-                is_authenticated
-                and not request.path.startswith("/users/accept-terms/")
-                and not request.path.startswith("/accounts/")
-                and not getattr(request.user, "terms_accepted", True)
+            is_authenticated
+            and not request.path.startswith("/users/accept-terms/")
+            and not request.path.startswith("/users/delete/")
+            and not request.path.startswith("/accounts/")
+            and not getattr(request.user, "terms_accepted", True)
         ):
             return redirect("users:accept_terms")
 

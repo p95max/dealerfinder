@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",
     "apps.users.middleware.QuotaMiddleware",
 ]

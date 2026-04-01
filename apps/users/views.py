@@ -14,7 +14,7 @@ from .models import Favorite
 def login_gate_view(request):
     """Show login gate page and verify Turnstile before Google OAuth."""
     if request.user.is_authenticated:
-        return redirect("dealers:home")
+        return redirect("home")
 
     if request.method == "POST":
         token = request.POST.get("cf-turnstile-response", "")
@@ -38,7 +38,7 @@ def profile_view(request):
 @login_required
 def delete_account_view(request):
     if request.method != "POST":
-        return redirect("dealers:home")
+        return redirect("home")
 
     token = request.POST.get("cf-turnstile-response", "")
     ip = _get_client_ip(request)
@@ -50,7 +50,7 @@ def delete_account_view(request):
     logout(request)
     user.delete()
     messages.success(request, "Your account has been deleted.")
-    return redirect("dealers:home")
+    return redirect("home")
 
 
 @login_required

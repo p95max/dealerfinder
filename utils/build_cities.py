@@ -16,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 URL = "https://raw.githubusercontent.com/lutangar/cities.json/master/cities.json"
-OUT = Path("static/data/cities_de.json")
+OUT = Path("../static/data/cities_de.json")
 
 print("Downloading cities.json ...")
 with urllib.request.urlopen(URL) as r:

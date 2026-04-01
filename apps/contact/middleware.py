@@ -4,13 +4,20 @@ from django.http import HttpResponse
 
 from utils.http import _get_client_ip
 
+
 class ContactThrottleMiddleware(MiddlewareMixin):
     window_seconds = 600
     anon_limit = 3
     user_limit = 5
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        if request.path != "/contact/" or request.method != "POST":
+        match = getattr(request, "resolver_match", None)
+        if (
+            request.method != "POST"
+            or match is None
+            or match.app_name != "contact"
+            or match.url_name != "contact"
+        ):
             return None
 
         if request.user.is_authenticated:
