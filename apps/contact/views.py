@@ -24,6 +24,7 @@ def contact_view(request):
             return render(request, "contact.html", {"form": form})
 
         contact_message = ContactMessage.objects.create(**form.cleaned_data)
+        
         notify_new_contact_message(contact_message)
 
         messages.success(request, "Your message has been sent. We'll get back to you soon.")
