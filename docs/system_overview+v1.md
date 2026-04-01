@@ -2,46 +2,12 @@
 
 ## 🧱 System Overview
 
-Сервис `DealerFinder` — это server-rendered веб-приложение, которое выполняет:
+`DealerFinder` — server-rendered Django-приложение для поиска автодилеров в Германии.
 
-- поиск дилеров через Google Places API
-- кэширование результатов
-- отдачу данных через Django views
-- отображение через шаблоны
-- гибкая фильтрация найденых обьектов
-- Anti-abuse Protection (Cloudflare Turnstile)
-- авторизация только через Google OAuth (локальная регистрация по email/password не поддерживается)
-- поиск дилеров только по городам Германии (валидация через Geocoding API)
-
-Сервис реализует **cache-first** интеграцию с Google Places API, минимизируя внешние вызовы и стоимость, с простой server-side архитектурой и возможностью дальнейшего расширения через API слой.
-
----
-
-## Фильтрация
-
-> Поиск ограничен городами Германии. Запросы для других стран отклоняются на уровне сервиса.****
-
-1. **radius** радиус поиска в км
-2. **rating+reviews** связка 1. рейтинг (4+ / 4.5+) 2. количество отзывов(например: rating >= 4.3 AND user_ratings_total >= 20) 
-* Примечание: Weighted rating / confidence-adjusted score: рейтинг должен ранжироваться с поправкой на количество отзывов, площадки с высоким средним рейтингом, но малым числом отзывов, не должны необоснованно попадать выше площадок со стабильным рейтингом и большим числом отзывов
-3. **available now** открыто сейчас
-4. **available on weekends** работает в выходные
-5. **types** только Händler/Autohaus (жёстко через types тк фильтрация по слову в названии даст пропуски — легитимные дилеры называют себя "Auto Center", "KFZ München" и т.д.)
-6. **contacts** имеет контакты (телефон, веб-сайт)
-
-### Ранжирование (sorting)
-
-**Цель - показывать наиболее надёжные и полезные площадки сверху**
-Ранжирование должно учитывать комбинацию факторов:
-- рейтинг (с поправкой на количество отзывов)
-- наличие контактов (сайт / телефон)
-- **available now** как бонус (не критичный фактор)
-- расстояние до пользователя
-
-#### Notes:
-* Если рабочие часы либо работает в выходные нет, тогда есть → используется, если нет → не исключается(permissive filtering)
-* Google Places часто даёт неполные данные - жёсткая фильтрация по часам → теряешь нормальные площадки важно не терять релевантные результаты.
-* Обязательно избегать: - сортировку только по рейтингу; - сортировку только по расстоянию
+- Cache-first интеграция с Google Places API
+- Поиск только по городам Германии (валидация через Geocoding API)
+- Авторизация только через Google OAuth
+- Anti-abuse: Cloudflare Turnstile + квоты + троттлинг
 
 ---
 
@@ -50,193 +16,166 @@
 ```
 Client (Browser)
        ↓
+   Middleware (QuotaMiddleware → ThrottleMiddleware → LoginGateMiddleware)
+       ↓
 Django Views (FBV)
        ↓
  Service Layer
- ├── Cache (PostgreSQL / Redis)
+ ├── Cache (PostgreSQL SearchCache / Redis)
  └── Google Places API
 ```
 
-## MVP-структура
+---
 
-dealermap/
+## 📁 Структура проекта
+
+```
+dealerfinder/
 ├── manage.py
+├── build_cities.py          # one-time: генерирует static/data/cities_de.json
 ├── .env.example
-├── .gitignore
-├── README.md
+├── pyproject.toml
 │
-├
 ├── docker/
 │   ├── Dockerfile
 │   ├── docker-compose.yml
-├
+│   ├── docker-compose.dev.yml
+│   ├── entrypoint.sh
+│   └── nginx.conf
+│
 ├── config/
-│   ├── __init__.py
 │   ├── urls.py
-│   ├── asgi.py
-│   ├── wsgi.py
 │   └── settings/
-│       ├── __init__.py
 │       ├── base.py
 │       ├── dev.py
-│       └── prod.py
+│       ├── prod.py
+│       └── test.py
 │
 ├── apps/
+│   ├── contact/
+│   │   ├── forms.py
+│   │   ├── middleware.py    # ContactThrottleMiddleware
+│   │   ├── models.py        # ContactMessage
+│   │   ├── services.py      # Telegram notify
+│   │   ├── urls.py
+│   │   └── views.py
+│   │
 │   ├── core/
-│   │   ├── __init__.py
-│   │   ├── apps.py
 │   │   ├── urls.py
-│   │   ├── views.py
-│   │   ├── tests.py
-│   │   └── templates/
-│   │       └── core/
-│   │           ├── home.html
-│   │           └── about.html
+│   │   └── views.py         # home, about, legal pages
 │   │
-│   ├── users/
-│   │   ├── __init__.py
-│   │   ├── apps.py
+│   ├── dealers/
 │   │   ├── admin.py
-│   │   ├── models.py
+│   │   ├── models.py        # Dealer, SearchCache, PopularSearch, UserSearchHistory
 │   │   ├── urls.py
 │   │   ├── views.py
-│   │   ├── services.py
-│   │   ├── selectors.py
-│   │   ├── tests.py
-│   │   └── migrations/
+│   │   └── services/
+│   │       ├── cache_service.py
+│   │       ├── dealer_service.py
+│   │       ├── distance_service.py
+│   │       ├── geocoding_service.py
+│   │       ├── google_places.py
+│   │       └── search_tracking_service.py
 │   │
-│   └── dealers/
-│       ├── __init__.py
-│       ├── apps.py
+│   └── users/
 │       ├── admin.py
-│       ├── models.py
+│       ├── middleware.py    # QuotaMiddleware, ThrottleMiddleware, LoginGateMiddleware
+│       ├── models.py        # User, Favorite
 │       ├── urls.py
-│       ├── views.py
-│       ├── services.py
-│       ├── selectors.py
-│       ├── filters.py
-│       ├── scoring.py
-│       ├── tests.py
-│       └── migrations/
+│       └── views.py
 │
 ├── integrations/
-│   ├── __init__.py
-│   ├── google_places.py
 │   ├── google_oauth.py
+│   ├── telegram.py
 │   └── turnstile.py
 │
-├── common/
-│   ├── __init__.py
-│   ├── constants.py
-│   ├── enums.py
-│   ├── exceptions.py
-│   └── utils.py
+├── utils/
+│   └── http.py              # _get_client_ip()
 │
 ├── templates/
-│   ├── base.html
-│   └── includes/
-│       ├── navbar.html
-│       ├── footer.html
-│       └── messages.html
-│
-└── static/
-    ├── css/
-    │   └── home.css
-    ├── js/
-    │   └── home.js
-    └── img/
- 
-- менеджер зависимовстей Poetry последней версии
-- в /static скрипты для каждой статической страницы отдельными файлами
-- никаких ИИ комментариев в коде, только docstring в ключевых местах 
- 
+├── static/
+│   ├── css/
+│   ├── js/
+│   └── data/
+│       └── cities_de.json   # ~3500 немецких городов для autocomplete
+└── tests/
+```
+
 ---
 
 ## 🔁 Request Flow
 
-### 🔍 Search flow
+### 🔍 Search
 
 ```
-User → /search?city=Berlin&radius=10
+GET /search/?city=Berlin&radius=10
        ↓
-      View
+QuotaMiddleware — проверка/сброс квоты (User или session для анонима)
        ↓
-   Geocoding API → валидация города (DE only)
+ThrottleMiddleware — rate limit по user.pk / IP
        ↓
- Service layer:
-     → check cache
-         → HIT  → return cached data
-         → MISS → call Google API
-                      ↓
-                   normalize data
-                      ↓
-                   save to DB
-                      ↓
-                   return response
+search_view
        ↓
- Template render
+is_german_city() — Geocoding API (кэш 30 дней)
+       ↓
+search_dealers()
+    → cache HIT  → return (data, from_cache=True)
+    → cache MISS → Google Places API → normalize → set_cache → return (data, False)
+       ↓
+QuotaMiddleware (post-response) — инкремент только если cache MISS
+       ↓
+Template render
 ```
 
-### 📍 Dealer details flow
+### 📍 Dealer details
 
 ```
-User → /dealer/{id}
-       ↓
-      View
-       ↓
-   DB lookup
-       ↓
- (optional) refresh from Google if stale
-       ↓
- render template
+GET /dealer/{id} → DB lookup → (optional) refresh if stale → render
 ```
 
 ---
 
 ## 🧠 Core Components
 
-### 1. Service Layer _(ключевой слой)_
+### Service Layer (`apps/dealers/services/`)
 
-Отвечает за:
+| Модуль | Ответственность |
+|--------|----------------|
+| `dealer_service.py` | оркестрация: cache → Google → normalize → store |
+| `cache_service.py` | read/write `SearchCache` (TTL 24ч) |
+| `google_places.py` | Text Search API, глобальный daily cap |
+| `geocoding_service.py` | валидация города DE, кэш 30 дней |
+| `distance_service.py` | haversine расстояние до пользователя |
+| `search_tracking_service.py` | `PopularSearch`, `UserSearchHistory`, анон-история |
 
-- интеграцию с Google API
-- кэширование
-- нормализацию данных
-- бизнес-логику
+### Cache Strategy
 
-Структура:
+| Параметр | Значение |
+|----------|----------|
+| Тип | read-through |
+| Cache key | `dealers:{city}:{radius_int}` |
+| TTL | 24 часа |
+| Фильтры | применяются in-memory после cache hit/miss |
+| HIT | возврат без Google API |
+| MISS | Google API → normalize → `SearchCache.update_or_create` |
 
-```
-services/
-├── google_places.py
-├── dealer_service.py
-├── cache_service.py
-└── geocoding_service.py
-```
+### Data Normalization
 
-### 2. Cache Strategy
-
-| Параметр  | Значение                                                           |
-|-----------|--------------------------------------------------------------------|
-| Тип       | read-through cache                                                 |
-| Cache key | `{city}_{radius}_{type}_{rating}_{open_now}_{weekends}_{contacts}` |
-| TTL       | 24 часа                                                            |
-| HIT       | сразу возврат                                                      |
-| MISS      | запрос в Google → запись в БД                                      |
-
-### 3. Data Normalization
-
-Google → внутренний формат:
+`normalize()` в `dealer_service.py` → внутренний формат:
 
 ```json
 {
-  "name":     "str",
-  "address":  "str",
-  "lat":      "float",
-  "lng":      "float",
-  "rating":   "float",
-  "place_id": "str",
-  "website":  "str | None"
+  "place_id":    "str",
+  "name":        "str",
+  "address":     "str",
+  "lat":         "float",
+  "lng":         "float",
+  "rating":      "float | None",
+  "reviews":     "int | None",
+  "phone":       "str | None",
+  "website":     "str | None",
+  "open_now":    "bool",
+  "has_weekend": "bool"
 }
 ```
 
@@ -246,207 +185,249 @@ Google → внутренний формат:
 
 ### `Dealer`
 
-| Поле                | Тип      |
-|---------------------|----------|
-| `google_place_id`   | unique   |
-| `name`              | str      |
-| `address`           | str      |
-| `city`              | str      |
-| `lat`, `lng`        | float    |
-| `rating`            | float    |
-| `user_ratings_total`| int      |
-| `website`           | str      |
-| `phone`             | str      |
-| `opening_hours`     | json     |
-| `last_synced_at`    | datetime |
+| Поле | Тип |
+|------|-----|
+| `google_place_id` | str (unique) |
+| `name`, `address`, `city` | str |
+| `lat`, `lng` | float |
+| `rating` | float \| null |
+| `user_ratings_total` | int |
+| `website`, `phone` | str \| null |
+| `last_synced_at` | datetime (auto_now) |
 
 ### `SearchCache`
 
-| Поле           | Тип      |
-|----------------|----------|
-| `query_key`    | str      |
-| `results_json` | json     |
-| `created_at`   | datetime |
+| Поле | Тип |
+|------|-----|
+| `query_key` | str (unique) |
+| `results_json` | json |
+| `created_at` | datetime |
 
 ### `User`
 
-| Поле               | Тип      |
-|--------------------|----------|
-| `created_at`       | datetime |
-| `updated_at`       | datetime |
-| `google_sub`       | str      |
-| `email`            | str      |
-| `plan`             | str      |
-| `daily_quota`      | int      |
-| `used_today`       | int      |
-| `last_quota_reset` | datetime |
+| Поле | Тип |
+|------|-----|
+| `email` | str (unique, USERNAME_FIELD) |
+| `google_sub` | str \| null (unique) |
+| `plan` | str (`free` / `premium`) |
+| `daily_quota` | int |
+| `used_today` | int |
+| `last_quota_reset` | **date** |
+| `terms_accepted` | bool |
+
+### `Favorite`
+
+| Поле | Тип |
+|------|-----|
+| `user` | FK→User |
+| `place_id` | str |
+| `name`, `address`, `city` | str |
+| `rating` | float \| null |
+| `phone`, `website` | str |
+| `lat`, `lng` | float \| null |
+| `created_at` | datetime |
+
+unique_together: `(user, place_id)`
+
+### `PopularSearch`
+
+| Поле | Тип |
+|------|-----|
+| `city` | str (unique) |
+| `count` | int |
+| `updated_at` | datetime (auto_now) |
+
+### `UserSearchHistory`
+
+| Поле | Тип |
+|------|-----|
+| `user` | FK→User |
+| `city` | str |
+| `searched_at` | datetime |
+
+---
+
+## Фильтрация
+
+> Поиск ограничен городами Германии. Запросы для других стран отклоняются.
+
+1. **radius** — радиус в км (allowed: 1, 5, 10, 20, 30, 50, 100, 200, 300; default: 20)
+2. **rating + reviews** — weighted score: `rating * log1p(reviews)` (confidence-adjusted)
+3. **open_now** — открыто сейчас
+4. **weekends** — работает в выходные
+5. **types** — только Händler/Autohaus (через `types`, не по названию)
+6. **contacts** — есть телефон или сайт
+
+Фильтры и сортировка применяются **in-memory** после получения из кэша.
+
+### Ранжирование
+
+Комбинация факторов: weighted rating → наличие контактов → open_now бонус → расстояние.
+Permissive filtering: если часы/выходные не заполнены — не исключается.
 
 ---
 
 ## ⚙️ Tech Stack
 
-### Backend
+**Backend:** Python 3.12, Django 6.x (FBV), PostgreSQL 18.x, Redis
 
-- Python 3.12
-- Django 6.x (FBV)
-- Django Messages Framework — flash-уведомления (success / error / warning)
-  для операций: поиск, лимит квоты, авторизация, удаление аккаунта
-- PostgreSQL 18.х
-- Cloudflare Turnstile 
+**Frontend:** Django Templates, Bootstrap 5.3, Vanilla JS
 
-### Frontend
+**External APIs:** Google Places API (New), Google Geocoding API, Geolocation API, Google OAuth, Telegram Bot API
 
-- Django Templates
-- Bootstrap 5.3
-- Vanilla JS
-
-### External APIs
-
-- Google Places API (New)
-- Google Geocoding API
-- Geolocation API
-
-- Google Auth
-
-### Infra
-
-- Docker Compose v2
-- Gunicorn
-- Nginx 
-- Redis
+**Infra:** Docker Compose v2, Gunicorn (2 workers), Nginx, Redis 7
 
 ---
 
-## ⚡ Performance Strategy
+## ⚡ Performance
 
-- cache-first approach
-- минимальный набор полей (FieldMask)
-- lazy loading деталей (по клику)
-- отказ от realtime обновлений
-- оптимизация запросов в БД (индексы на `city`, `lat`, `lng`, `last_synced_at`)
-- пагинация: 20 результатов на страницу.
+- Cache-first, TTL 24ч
+- FieldMask — только нужные поля от Google
+- Place Details — только по клику, не в списке
+- Геокодирование кэшируется 30 дней
+- Пагинация: 20 результатов на страницу
+- DB индексы: `city`, `lat`, `lng`, `last_synced_at`
 
 ---
 
 ## Auth
 
-- единственный способ авторизации — **Google OAuth** (локальная регистрация не поддерживается)
-- доступ к поиску и регистрация требуют явного принятия **AGB и Datenschutz** (чекбокс при первом запросе)
-- без принятия соглашения поиск и регистрация недоступны
-- анонимные пользователи работают с ограниченной квотой (см. `Rate Limiting`)
-- авторизованные пользователи получают расширенную квоту и доступ к персональному разделу
-- все защищённые endpoint'ы требуют авторизацию
-- удаление аккаунта и всех связанных данных — обязательная функция (требование DSGVO)
-- удаление аккаунта сбрасывает квоту: повторная авторизация через тот же Google-аккаунт создаёт нового User с `used_today=0`. Исправить перед prod.
+- Единственный способ — **Google OAuth** (`django-allauth`)
+- `LoginGateMiddleware` — блокирует прямой переход на `/accounts/google/login/` без прохождения Turnstile
+- При первом входе — обязательное принятие AGB/Datenschutz (`terms_accepted`)
+- Анонимы — ограниченная квота через сессию
+- Удаление аккаунта — каскадное удаление всех данных (DSGVO)
+- ⚠️ Повторная авторизация через тот же Google-аккаунт после удаления создаёт нового User с `used_today=0` — исправить перед prod
 
 ---
 
 ## 💸 Cost Control
 
-- агрессивное кэширование (TTL 24ч) — основной инструмент
-- FieldMask — запрашивать только нужные поля у Google API
-- отключение дорогих endpoints (Place Details только по клику, не в списке)
-- глобальный daily cap: `MAX_GOOGLE_CALLS_PER_DAY = 500`
-  - при достижении: сервис работает только из кэша, новые запросы к Google не идут
-- квота списывается только за cache MISS — повторные поиски из кэша бесплатны
-- результаты геокодирования кэшируются на 30 дней — невалидные города не тарифицируются повторно
-
-##  Rate Limiting
-
-```python
-if user.used_today >= user.daily_quota:
-    raise LimitExceeded
-```
-
-
-| Тип          | Лимит      | Цель                                   |
-|--------------|------------|----------------------------------------|
-| Аноним       | 05 / день  | дать почувствовать ценность            |
-| Free (зарег) | 30 / день  | удержать, показать что сервис работает |
-| Прем         | 500 / день | fair use, без видимого лимита         |
-
-Дополнительно:
-
-- глобальный лимит запросов к Google API
-- fallback → только кэш
-- троттлинг: 5–10 запросов / минута на пользователя
+- Кэш — основной инструмент (TTL 24ч)
+- FieldMask на всех запросах к Google
+- Глобальный daily cap: `MAX_GOOGLE_CALLS_PER_DAY=500` → при достижении сервис работает только из кэша
+- Квота списывается только за cache MISS
+- Геокодирование кэшируется 30 дней
 
 ---
 
-### 🔐 Anti-abuse Protection
+## Rate Limiting
 
-**Cloudflare Turnstile используется для защиты от ботов для форм:**
-- регистрация
-- логин
+| Тип | Лимит | Хранение |
+|-----|-------|----------|
+| Аноним | 3 / день | `session["anon_used"]`, сброс по дате |
+| Free | 30 / день | `User.used_today`, `F()` atomic update |
+| Premium | 200 / день | то же |
+
+Квоты конфигурируются через `.env`: `ANON_DAILY_LIMIT`, `FREE_DAILY_LIMIT`, `PREMIUM_DAILY_LIMIT`.
+
+**Троттлинг:** `SEARCH_THROTTLE_RATE=8` запросов/минуту на пользователя (по `user.pk`) или на IP (аноним). Скользящее окно 60с, in-memory.
+
+**Глобальный cap:** `MAX_GOOGLE_CALLS_PER_DAY=500`, счётчик в Redis, сброс в полночь.
+
+---
+
+## 🔐 Anti-abuse
+
+**Cloudflare Turnstile** (backend-верификация через siteverify):
+- логин (через `LoginGateMiddleware` + `login_gate_view`)
 - удаление аккаунта
+- контактная форма
 
-* Проверка выполняется на backend: токен cf-turnstile-response обязателен для проверки через siteverify API - `запрос без валидного токена отклоняется`
-* Anonymous → всегда проверка, Free → проверка при превышении X запросов, Premium → без Turnstile но может включаться при подозрительном поведении (rate spikes, частые уникальные запросы)
-
----
-
-## 🤖 AI Integration (enrichment layer)
-
-см. [ai_integration.md](ai_integration.md)
+**`ContactThrottleMiddleware`** (Redis cache):
+- аноним: 3 POST / 10 мин (по IP)
+- авторизованный: 5 POST / 10 мин (по user.pk)
 
 ---
 
+## ⭐ Favorites
 
-## 📱 Frontend Behavior
+Только для авторизованных пользователей.
 
-Mobile-first:
-- список дилеров → основной экран
-- карта → secondary view
-- фильтры → offcanvas
+- `Favorite` — снапшот данных дилера на момент добавления
+- `POST /favorites/add/` — `get_or_create` по `(user, place_id)`
+- `POST /favorites/remove/<place_id>/`
+- `POST /favorites/clear/`
+- `GET /favorites/` — список
+- В search results: `is_favorite` флаг в контексте
+
+---
+
+## 📬 Contact
+
+- `GET/POST /contact/` — форма (name, email, message)
+- Turnstile верификация при POST
+- Сохранение в `ContactMessage`
+- Telegram-уведомление на каждое новое сообщение (ошибка отправки не ломает запрос)
+- `ContactThrottleMiddleware` — см. Anti-abuse
+
+---
+
+## 🔎 Search Discovery
+
+- **Popular cities:** `PopularSearch` инкрементируется при каждом поиске. Топ-10 на главной и в search view.
+- **Search history:** авторизованные — `UserSearchHistory` (хранится 20 записей); анонимы — `session["search_history_cities"]` (8 городов, LIFO).
+- `build_search_discovery_context(request)` — единая точка сборки для home и search view.
+
+---
+
+## 📱 Frontend
+
+Mobile-first: список дилеров → основной экран, карта → secondary, фильтры → offcanvas.
+
+Autocomplete городов из `static/data/cities_de.json` (~3500 записей, генерируется `build_cities.py`).
 
 ---
 
 ## 🔧 Deployment
 
 ```yaml
-# Docker Compose services
-- web   # Django
-- db    # PostgreSQL
-- redis 
+services:
+  web    # Django + Gunicorn (2 workers)
+  db     # PostgreSQL 18
+  redis  # Redis 7
+  nginx  # reverse proxy + static files
 ```
+
+`entrypoint.sh`: migrate → collectstatic → createcachetable → create superuser → configure Google SocialApp → start.
 
 ---
 
 ## ⚠️ Tech Debt
 
-> **search_view:** фильтрация и сортировка в памяти после search_dealers() — перенести в DB-запрос или на уровень сервиса при росте объёма
-> **ThrottleMiddleware** использует in-memory store — не работает корректно при нескольких Gunicorn workers или перезапуске контейнера. Заменить на Redis перед prod (при переходе на Gunicorn + Nginx).
-> отсутствуют тесты для `QuotaMiddleware` и `ThrottleMiddleware`: сброс квоты при смене дня, превышение лимита, параллельные запросы, троттлинг по IP и по пользователю
+см. [checklist_v1.md](checklist_v1.md)
 
 ---
 
 ## 🚀 Extensibility
 
 - DRF / API layer
-- mobile client
-- background jobs (Celery)
-- enrichment данных дилеров
+- Mobile client
+- Celery (фоновые задачи)
+- AI enrichment (v2, см. `docs/dealerfinder_ai_integration_v2.md`)
 
 ---
 
-## Testing 
+## 🤖 AI Integration
 
-- [Testing](docs/testing.md)
+см. [dealerfinder_ai_integration_v2.md](dealerfinder_ai_integration_v2.md)
 
 ---
 
-## Datenschutz (DSGVO)/Nutzervereinbarung 
+## Testing
+
+см. [testing.md](testing.md)
+
+---
+
+## Datenschutz / DSGVO
 
 см. [legal_pages.md](legal_pages.md)
 
---- 
+---
 
 ## Contacts
 
 Author: Maksym Petrykin
 Email: [m.petrykin@gmx.de](mailto:m.petrykin@gmx.de)
 Telegram: [@max_p95](https://t.me/max_p95)
-
----
-
-
