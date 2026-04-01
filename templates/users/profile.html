@@ -74,4 +74,6 @@
 
 {% block extra_js %}
 <script src="{% static 'js/delete-account.js' %}" defer></script>
+<script src="{% static 'js/turnstile.js' %}" defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endblock %}
