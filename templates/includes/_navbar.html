@@ -1,5 +1,3 @@
-{% load static %}
-
 <div id="mainNav" class="collapse navbar-collapse">
     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
@@ -15,7 +13,7 @@
                href="{% url 'contact:contact' %}">Contact</a>
         </li>
         <li class="nav-item">
-            <span class="nav-link upgrade-link disabled-upgrade fw-semibold">
+            <span class="nav-link nav-soon-label">
                 👑 Premium (soon)
             </span>
         </li>
@@ -23,40 +21,51 @@
 
     <div class="d-flex align-items-center gap-2">
         {% if user.is_authenticated %}
+            <div class="dropdown">
+                <button class="btn p-0 border-0 bg-transparent nav-user-trigger"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="Open user menu">
+                    <div class="nav-user-avatar">
+                        {{ user.email|slice:":2"|upper }}
+                    </div>
+                    <span class="d-none d-lg-inline nav-user-email">{{ user.email }}</span>
+                </button>
 
-    <div class="dropdown">
-<button class="btn p-0 border-0 bg-transparent nav-user-trigger"
-    data-bs-toggle="dropdown" aria-expanded="false">
-<div class="nav-user-avatar">
-    {{ user.email|slice:":2"|upper }}
-</div>
-<span class="nav-user-email">{{ user.email }}</span>
-</button>
-
-<ul class="dropdown-menu dropdown-menu-end mt-2 nav-user-menu">
-<li>
-    <div class="px-3 py-2 border-bottom">
-        <div class="small text-secondary mb-1">Searches today</div>
-        <div class="d-flex align-items-center gap-2">
-            <div class="progress flex-grow-1" style="height: 4px; border-radius: 999px;">
-                <div class="progress-bar bg-primary" style="width: {% widthratio user.used_today user.daily_quota 100 %}%;"></div>
+                <ul class="dropdown-menu dropdown-menu-end mt-2 nav-user-menu">
+                    <li>
+                        <div class="px-3 py-2 border-bottom">
+                            <div class="small text-secondary mb-1">Searches today</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 4px; border-radius: 999px;">
+                                    <div class="progress-bar bg-primary"
+                                         style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%;">
+                                    </div>
+                                </div>
+                                <span id="quota-counter" data-url="{% url 'users:quota_status' %}">
+                                    {{ user.used_today }} / {{ user.daily_quota }}
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>
+                    </li>
+                    <li>
+                        <form method="post" action="{% url 'account_logout' %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item py-2 text-danger">Sign out</button>
+                        </form>
+                    </li>
+                </ul>
             </div>
-            <span id="quota-counter" data-url="{% url 'users:quota_status' %}">{{ user.used_today }} / {{ user.daily_quota }}</span>
-        </div>
-    </div>
-</li>
-<li>
-    <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>
-</li>
-<li>
-    <form method="post" action="{% url 'account_logout' %}" class="m-0">
-        {% csrf_token %}
-        <button type="submit" class="dropdown-item py-2 text-danger">Sign out</button>
-    </form>
-</li>
-</ul>
-</div>
 
+            <a href="{% url 'users:favorites' %}"
+               class="btn btn-icon btn-outline-primary favorites-btn {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"
+               aria-label="Favorites"
+               title="Favorites">
+                <span class="favorites-icon">★</span>
+            </a>
         {% else %}
             <a class="btn btn-primary rounded-pill px-4 btn-sm"
                href="{% url 'account_login' %}">
@@ -64,16 +73,6 @@
             </a>
         {% endif %}
 
-        {% if user.is_authenticated %}
-        <a href="{% url 'users:favorites' %}"
-           class="btn btn-icon btn-outline-primary favorites-btn
-                  {% if request.resolver_match.url_name == 'favorites' %}active{% endif %}"
-           aria-label="Favorites">
-            <span class="favorites-icon">★</span>
-        </a>
-        {% endif %}
-
-        <button class="btn btn-sm btn-outline-secondary" id="theme-toggle" style="width: 34px; height: 34px; padding: 0;">🌙</button>
-
+        <button class="btn btn-sm btn-outline-secondary btn-theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
     </div>
 </div>

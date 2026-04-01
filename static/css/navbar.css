@@ -101,19 +101,19 @@
 .favorites-btn:hover {
     background: var(--df-primary-soft);
     border-color: #bfdbfe;
-}
 
-.favorites-icon {
-    font-size: 1rem;
-    line-height: 1;
-}
+    .favorites-icon {
+        font-size: 1rem;
+        line-height: 1;
+    }
 
-.favorites-btn.active {
-    background: linear-gradient(135deg, #d4af37, #ffd700);
-    border: none;
-    color: #1f2937;
-}
+    .favorites-btn.active {
+        background: linear-gradient(135deg, #d4af37, #ffd700);
+        border: none;
+        color: #1f2937;
+    }
 
-.favorites-btn.active:hover {
-    filter: brightness(1.05);
+    .favorites-btn.active:hover {
+        filter: brightness(1.05);
+    }
 }
