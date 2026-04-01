@@ -143,6 +143,9 @@ GOOGLE_API_KEY = require_env("GOOGLE_API_KEY")
 TURNSTILE_SITE_KEY = require_env("TURNSTILE_SITE_KEY")
 TURNSTILE_SECRET_KEY = require_env("TURNSTILE_SECRET_KEY")
 
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
 # =========================
 # MESSAGES
 # =========================

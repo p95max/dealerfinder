@@ -1,8 +1,9 @@
-from django.shortcuts import redirect, render
 from django.contrib import messages
+from django.shortcuts import redirect, render
 
 from apps.contact.forms import ContactForm
 from apps.contact.models import ContactMessage
+from apps.contact.services import notify_new_contact_message
 from integrations.turnstile import verify_turnstile
 from utils.http import _get_client_ip
 
@@ -22,9 +23,11 @@ def contact_view(request):
             messages.warning(request, "Please complete the security check.")
             return render(request, "contact.html", {"form": form})
 
-        ContactMessage.objects.create(**form.cleaned_data)
+        contact_message = ContactMessage.objects.create(**form.cleaned_data)
+        notify_new_contact_message(contact_message)
+
         messages.success(request, "Your message has been sent. We'll get back to you soon.")
-        return redirect("dealers:contact")
+        return redirect("contact:contact")
 
     form = ContactForm()
     return render(request, "contact.html", {"form": form})
