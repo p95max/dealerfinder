@@ -4,10 +4,12 @@
 
 Добавить AI enrichment слой (review summary), не затрагивая core search logic.
 
-- ❗ Поиск, фильтрация и ранжирование остаются **детерминированными**
-- 🤖 AI используется только как **cached enrichment layer**
-- ⚡ Генерация summary — **асинхронная**
-- 📦 Отображение — **eager only if ready**
+- Core search logic остаётся полностью **детерминированной**
+- AI используется только как **cached enrichment layer**
+- AI не влияет на состав результатов и порядок выдачи
+- Генерация summary выполняется **асинхронно**
+- Summary отображается **только если уже готово**
+- AI можно отключить через **feature flag**
 
 ---
 
@@ -16,7 +18,7 @@
 - [ ] `Dealer`:
   - [ ] `ai_summary` (JSONField, nullable)
   - [ ] `ai_synced_at` (DateTimeField, nullable)
-  - [ ] `ai_status` (`pending | ready | failed`, nullable)
+  - [ ] `ai_status` (`new | pending | ready | failed`, default=`new`)
   - [ ] `reviews_sample_count` (int, nullable)
   - [ ] `reviews_total_count_at_sync` (int, nullable)
 
@@ -109,7 +111,8 @@
 
 ## 💾 Cache & Strategy
 
-- [ ] AI вызывается **1 раз на дилера**
+- [ ] AI не вызывается повторно для дилеров со статусом `ready`
+- [ ] для `failed` допускается ограниченный retry policy
 - [ ] результат сохраняется в `Dealer.ai_summary`
 - [ ] повторные запросы — только из БД
 
@@ -182,7 +185,7 @@
 ### dealer-card
 
 - [ ] добавить AI summary блок
-- [ ] показывать только если `ai_summary != None`
+- [ ] показывать только если `ai_status = ready`
 
 ### Отображать
 
@@ -192,7 +195,7 @@
 
 ### Warning
 
-- [ ] если `reviews_sample_count << total_reviews`:
+- [ ] если `reviews_sample_count << reviews_total_count_at_sync`:
   - показывать:
   - "Summary based on a limited sample of recent reviews"
 
