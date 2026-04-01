@@ -1,11 +1,10 @@
 import time
 
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from django.db.models import F
-
 from django.http import HttpResponse
-
 from django.shortcuts import redirect
 
 from apps.users.models import User
@@ -30,6 +29,7 @@ def _looks_like_search(request) -> bool:
         and bool(request.GET.get("city"))
     )
 
+
 def reset_quota_if_new_day(user):
     today = timezone.localdate()
     if user.last_quota_reset != today:
@@ -37,7 +37,6 @@ def reset_quota_if_new_day(user):
             used_today=0,
             last_quota_reset=today,
         )
-
 
 
 class QuotaMiddleware:
@@ -78,16 +77,14 @@ class QuotaMiddleware:
         return response
 
 
-
 class ThrottleMiddleware:
     """
     Limits search requests to SEARCH_THROTTLE_RATE per minute per user/IP.
-    Uses in-memory store — resets on worker restart, sufficient for single-process dev/prod.
-    For multi-worker prod replace _store with Redis.
+    Uses a fixed window counter stored in Django cache (Redis in prod).
+    Works correctly across multiple Gunicorn workers and container restarts.
     """
 
     WINDOW = 60  # seconds
-    _store: dict = {}
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -101,25 +98,19 @@ class ThrottleMiddleware:
 
         return self.get_response(request)
 
-    def _get_key(self, request):
+    def _get_key(self, request) -> str:
+        window = int(time.time() // self.WINDOW)
         if request.user.is_authenticated:
-            return f"throttle:user:{request.user.pk}"
-        return f"throttle:ip:{self._get_ip(request)}"
+            return f"throttle:user:{request.user.pk}:{window}"
+        return f"throttle:ip:{self._get_ip(request)}:{window}"
 
     def _is_throttled(self, key: str) -> bool:
-        now = time.time()
-        window_start = now - self.WINDOW
-
-        timestamps = self._store.get(key, [])
-        timestamps = [t for t in timestamps if t > window_start]
-
-        if len(timestamps) >= self.rate:
-            self._store[key] = timestamps
-            return True
-
-        timestamps.append(now)
-        self._store[key] = timestamps
-        return False
+        try:
+            count = cache.incr(key)
+        except ValueError:
+            cache.set(key, 1, timeout=self.WINDOW * 2)
+            count = 1
+        return count > self.rate
 
     @staticmethod
     def _get_ip(request) -> str:
@@ -127,7 +118,6 @@ class ThrottleMiddleware:
         if forwarded:
             return forwarded.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR", "unknown")
-
 
 
 class LoginGateMiddleware:
