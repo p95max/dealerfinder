@@ -8,7 +8,7 @@ from django.http import JsonResponse
 
 from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
-from apps.users.middleware import reset_quota_if_new_day
+from apps.users.services.quota_service import reset_quota_if_new_day
 from .models import Favorite
 
 def login_gate_view(request):

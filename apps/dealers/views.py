@@ -5,6 +5,12 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
+from apps.users.services.quota_service import (
+    get_authenticated_quota_status,
+    get_anonymous_quota_status,
+    consume_authenticated_search,
+    consume_anonymous_search,
+)
 from .services.dealer_service import search_dealers, filter_and_sort_dealers
 from .services.geocoding_service import is_german_city
 from .services.google_places import is_google_cap_reached
@@ -86,7 +92,6 @@ def search_view(request):
         request.session["anon_terms"] = True
 
     dealers = []
-    request.cache_hit = True
 
     def build_context(**extra):
         context = {
@@ -105,20 +110,25 @@ def search_view(request):
         context.update(build_search_discovery_context(request))
         return context
 
-    if getattr(request, "quota_exceeded", False):
-        if request.user.is_authenticated:
-            messages.warning(
-                request,
-                f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.",
-            )
-        else:
-            messages.warning(
-                request,
-                f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
-            )
-        return render(request, "dealers/search.html", build_context(quota_exceeded=True))
-
     if city:
+        if request.user.is_authenticated:
+            quota_status = get_authenticated_quota_status(request.user)
+        else:
+            quota_status = get_anonymous_quota_status(request)
+
+        if not quota_status.allowed:
+            if request.user.is_authenticated:
+                messages.warning(
+                    request,
+                    f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.",
+                )
+            else:
+                messages.warning(
+                    request,
+                    f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
+                )
+            return render(request, "dealers/search.html", build_context(quota_exceeded=True))
+
         if not _is_valid_city(city):
             messages.warning(request, "Please enter a valid city name.")
             return render(request, "dealers/search.html", build_context())
@@ -128,7 +138,12 @@ def search_view(request):
             return render(request, "dealers/search.html", build_context())
 
         raw_dealers, from_cache = search_dealers(city=city, radius=radius)
-        request.cache_hit = from_cache
+
+        if not from_cache:
+            if request.user.is_authenticated:
+                consume_authenticated_search(request.user)
+            else:
+                consume_anonymous_search(request)
 
         if _should_track_search(request):
             if request.user.is_authenticated:

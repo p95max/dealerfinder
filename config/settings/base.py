@@ -61,7 +61,6 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",
-    "apps.users.middleware.QuotaMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
