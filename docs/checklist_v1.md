@@ -105,6 +105,8 @@
 - [x] убрать “ручные костыли”: session-based quota для анонима, cache_hit через request атрибут, middleware зависит от path
 - [x] Очистка SearchCache
 - [x] Health endpoint
+- [x] cookie banner (если Google Maps JS есть)
+- [x]  Email fallback (если Telegram упадёт)
 - [ ] Google API hardening
 `Сейчас риски:
 quota exceeded
@@ -113,5 +115,3 @@ network errors
 Что нужно:
 retry (1–2 раза max)
 лог на каждый failure`
-- [x] cookie banner (если Google Maps JS есть)
-- [ ]  Email fallback (если Telegram упадёт)
