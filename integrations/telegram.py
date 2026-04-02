@@ -10,7 +10,12 @@ def send_telegram_message(text: str, context: dict | None = None) -> None:
     chat_id = settings.TELEGRAM_CHAT_ID
 
     if not token or not chat_id:
-        logger.warning("Telegram config missing")
+        logger.warning(
+            "Telegram config missing",
+            extra={
+                "event": "telegram_config_missing",
+            },
+        )
         return
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
@@ -30,5 +35,8 @@ def send_telegram_message(text: str, context: dict | None = None) -> None:
     except requests.RequestException:
         logger.exception(
             "Telegram send failed",
-            extra=context or {}
+            extra={
+                "event": "telegram_send_failed",
+                **(context or {}),
+            },
         )

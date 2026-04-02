@@ -61,6 +61,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",
+    "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -164,3 +165,61 @@ PREMIUM_DAILY_LIMIT = int(os.getenv("PREMIUM_DAILY_LIMIT", 200))
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
 MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
 SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
+
+# =========================
+# LOGGING
+# =========================
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "utils.logging.JsonFormatter",
+        },
+        "simple": {
+            "format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "console_json": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+        "console_simple": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "root": {
+        "handlers": ["console_json"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console_json"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.dealers": {
+            "handlers": ["console_json"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.users": {
+            "handlers": ["console_json"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.contact": {
+            "handlers": ["console_json"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "integrations": {
+            "handlers": ["console_json"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

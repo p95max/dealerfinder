@@ -11,6 +11,7 @@ from apps.users.services.quota_service import (
     consume_authenticated_search,
     consume_anonymous_search,
 )
+from utils.http import _get_client_ip
 from .services.dealer_service import search_dealers, filter_and_sort_dealers
 from .services.geocoding_service import is_german_city
 from .services.google_places import is_google_cap_reached
@@ -20,6 +21,11 @@ from .services.search_tracking_service import (
     track_user_search_history,
     build_search_discovery_context,
 )
+
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 
 DEALERS_PER_PAGE = 20
@@ -67,7 +73,13 @@ def _parse_min_rating(value) -> float | None:
         return None
 
 
+def _get_user_id(request):
+    return request.user.pk if request.user.is_authenticated else None
+
+
 def search_view(request):
+    started_at = time.monotonic()
+
     if request.method == "GET" and request.GET.get("city"):
         params = request.GET.copy()
         params.pop("page", None)
@@ -111,12 +123,40 @@ def search_view(request):
         return context
 
     if city:
+
+        logger.info(
+            "Search request started",
+            extra={
+                "event": "search_started",
+                "user_id": _get_user_id(request),
+                "is_authenticated": request.user.is_authenticated,
+                "client_ip": _get_client_ip(request),
+                "path": request.path,
+                "method": request.method,
+                "city": city,
+                "radius": radius,
+            },
+        )
+
         if request.user.is_authenticated:
             quota_status = get_authenticated_quota_status(request.user)
         else:
             quota_status = get_anonymous_quota_status(request)
 
         if not quota_status.allowed:
+            logger.warning(
+                "Search denied by quota",
+                extra={
+                    "event": "search_quota_denied",
+                    "user_id": _get_user_id(request),
+                    "is_authenticated": request.user.is_authenticated,
+                    "city": city,
+                    "radius": radius,
+                    "quota_allowed": False,
+                    "status_code": 200,
+                },
+            )
+
             if request.user.is_authenticated:
                 messages.warning(
                     request,
@@ -127,17 +167,53 @@ def search_view(request):
                     request,
                     f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
                 )
+
             return render(request, "dealers/search.html", build_context(quota_exceeded=True))
 
         if not _is_valid_city(city):
+            logger.warning(
+                "Search rejected: invalid city",
+                extra={
+                    "event": "search_invalid_city",
+                    "user_id": _get_user_id(request),
+                    "is_authenticated": request.user.is_authenticated,
+                    "city": city,
+                    "radius": radius,
+                    "status_code": 200,
+                },
+            )
             messages.warning(request, "Please enter a valid city name.")
             return render(request, "dealers/search.html", build_context())
 
         if not is_german_city(city):
+            logger.warning(
+                "Search rejected: city outside Germany",
+                extra={
+                    "event": "search_city_outside_germany",
+                    "user_id": _get_user_id(request),
+                    "is_authenticated": request.user.is_authenticated,
+                    "city": city,
+                    "radius": radius,
+                    "status_code": 200,
+                },
+            )
             messages.warning(request, "Please enter a city located in Germany.")
             return render(request, "dealers/search.html", build_context())
 
         raw_dealers, from_cache = search_dealers(city=city, radius=radius)
+
+        logger.info(
+            "Dealer search executed",
+            extra={
+                "event": "dealer_search_executed",
+                "user_id": _get_user_id(request),
+                "is_authenticated": request.user.is_authenticated,
+                "city": city,
+                "radius": radius,
+                "from_cache": from_cache,
+                "result_count": len(raw_dealers),
+            },
+        )
 
         if not from_cache:
             if request.user.is_authenticated:
