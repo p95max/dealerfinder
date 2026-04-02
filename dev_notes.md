@@ -27,5 +27,23 @@ python manage.py warm_search_cache --min-count 3
 Комбинация
 python manage.py warm_search_cache --limit 10 --radii 20 50 --min-count 2
 
-
+Прод
 docker compose exec web python manage.py warm_search_cache
+
+
+# очисткa SearchCache
+
+Обычный запуск:
+python manage.py purge_expired_search_cache
+
+Проверить без удаления:
+python manage.py purge_expired_search_cache --dry-run
+
+Принудительно взять TTL 48 часов:
+python manage.py purge_expired_search_cache --hours 48
+
+Удалять батчами по 500:
+python manage.py purge_expired_search_cache --batch-size 500
+
+Прод
+docker compose exec web python manage.py purge_expired_search_cache
