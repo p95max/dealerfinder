@@ -17,13 +17,14 @@
 ```
 Client (Browser)
        ↓
-   Middleware (QuotaMiddleware → ThrottleMiddleware → LoginGateMiddleware)
+Middleware (RequestLoggingMiddleware → ThrottleMiddleware → LoginGateMiddleware)
        ↓
 Django Views (FBV)
        ↓
- Service Layer
- ├── Cache (PostgreSQL SearchCache / Redis)
- └── Google Places API
+Service Layer
+├── Search execution / quota handling
+├── Cache (PostgreSQL SearchCache / Redis)
+└── Google Places API
 ```
 
 ---
@@ -63,6 +64,7 @@ dealerfinder/
 │   │
 │   ├── core/
 │   │   ├── urls.py
+│   │   ├── middleware.py
 │   │   └── views.py         # home, about, legal pages
 │   │
 │   ├── dealers/
@@ -70,6 +72,10 @@ dealerfinder/
 │   │   ├── models.py        # Dealer, SearchCache, PopularSearch, UserSearchHistory
 │   │   ├── urls.py
 │   │   ├── views.py
+│   │   ├── management/
+│   │   │        └── commands/
+│   │   │           ├── warm_search_cache.py
+│   │   │           └── purge_expired_search_cache.py
 │   │   └── services/
 │   │       ├── cache_service.py
 │   │       ├── dealer_service.py
@@ -82,15 +88,18 @@ dealerfinder/
 │       ├── admin.py
 │       ├── middleware.py    # QuotaMiddleware, ThrottleMiddleware, LoginGateMiddleware
 │       ├── models.py        # User, Favorite
+│   │   ├── quota_service.py
 │       ├── urls.py
 │       └── views.py
 │
 ├── integrations/
 │   ├── google_oauth.py
 │   ├── telegram.py
+│   ├── email_notifications.py
 │   └── turnstile.py
 │
 ├── utils/
+│   ├── logging.py
 │   └── http.py              # _get_client_ip()
 │
 ├── templates/
@@ -111,11 +120,11 @@ dealerfinder/
 ```
 GET /search/?city=Berlin&radius=10
        ↓
-QuotaMiddleware — проверка/сброс квоты (User или session для анонима)
-       ↓
 ThrottleMiddleware — rate limit по user.pk / IP
        ↓
 search_view
+       ↓
+Quota service — проверка доступности поиска
        ↓
 is_german_city() — Geocoding API (кэш 30 дней)
        ↓
@@ -123,7 +132,7 @@ search_dealers()
     → cache HIT  → return (data, from_cache=True)
     → cache MISS → Google Places API → normalize → set_cache → return (data, False)
        ↓
-QuotaMiddleware (post-response) — инкремент только если cache MISS
+Quota consume — только если cache MISS
        ↓
 Template render
 ```
@@ -296,7 +305,9 @@ Permissive filtering: если часы/выходные не заполнены
 - Единственный способ — **Google OAuth** (`django-allauth`)
 - `LoginGateMiddleware` — блокирует прямой переход на `/accounts/google/login/` без прохождения Turnstile
 - При первом входе — обязательное принятие AGB/Datenschutz (`terms_accepted`)
-- Анонимы — ограниченная квота через сессию
+- Анонимная quota cache-backed по IP + day bucket
+- Квота списывается в search flow/service layer
+- Session для анонима только для UX-истории поиска и consent-state
 - Удаление аккаунта — каскадное удаление всех данных (DSGVO)
 - ⚠️ Повторная авторизация через тот же Google-аккаунт после удаления создаёт нового User с `used_today=0` — исправить перед prod
 
@@ -309,6 +320,8 @@ Permissive filtering: если часы/выходные не заполнены
 - Глобальный daily cap: `MAX_GOOGLE_CALLS_PER_DAY=500` → при достижении сервис работает только из кэша
 - Квота списывается только за cache MISS
 - Геокодирование кэшируется 30 дней
+- optional cache warming through management commands for popular cities 
+- expired cache cleanup via management command
 
 ---
 
@@ -316,7 +329,7 @@ Permissive filtering: если часы/выходные не заполнены
 
 | Тип | Лимит | Хранение |
 |-----|-------|----------|
-| Аноним | 3 / день | `session["anon_used"]`, сброс по дате |
+| Аноним | 3 / день | cache / Redis (по IP + local day) |
 | Free | 30 / день | `User.used_today`, `F()` atomic update |
 | Premium | 200 / день | то же |
 
@@ -360,6 +373,7 @@ Permissive filtering: если часы/выходные не заполнены
 - Turnstile верификация при POST
 - Сохранение в `ContactMessage`
 - Telegram-уведомление на каждое новое сообщение (ошибка отправки не ломает запрос)
+- Email fallback if Telegram is unavailable + notification failure does not break user request
 - `ContactThrottleMiddleware` — см. Anti-abuse
 
 ---
@@ -390,7 +404,27 @@ services:
   nginx  # reverse proxy + static files
 ```
 
+- web healthcheck через /health/
+- db и redis healthchecks переменные БД читаются из .env / env_file
+- есть endpoint /health/ для readiness/basic monitoring
+
 `entrypoint.sh`: migrate → collectstatic → createcachetable → create superuser → configure Google SocialApp → start.
+
+---
+## Observability
+
+- structured JSON logging via Python logging
+- request-level logs through RequestLoggingMiddleware
+- domain events for search, health, and notification flows
+- health endpoint: /health/ with DB and Redis checks
+
+---
+
+## Cookie Consent / Privacy
+
+- cookie consent banner for third-party services
+- consent persisted in session
+- privacy page at `/datenschutz`
 
 ---
 
