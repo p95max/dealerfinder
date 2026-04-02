@@ -104,7 +104,7 @@
 - [x] продумать Celery / RQ, prefetch / warm cache
 - [x] убрать “ручные костыли”: session-based quota для анонима, cache_hit через request атрибут, middleware зависит от path
 - [ ] Очистка SearchCache
-- [ ] Health endpoint
+- [x] Health endpoint
 - [ ] Google API hardening
 Сейчас риски:
 quota exceeded

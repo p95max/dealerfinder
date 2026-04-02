@@ -54,6 +54,9 @@ class JsonFormatter(logging.Formatter):
         if hasattr(record, "client_ip"):
             payload["client_ip"] = record.client_ip
 
+        if hasattr(record, "checks"):
+            payload["checks"] = record.checks
+
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
 
