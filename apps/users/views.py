@@ -67,8 +67,13 @@ def anon_accept_terms_view(request):
 
 @require_POST
 def cookie_consent_view(request):
-    request.session["cookie_consent"] = True
-    return JsonResponse({"ok": True})
+    choice = request.POST.get("choice")
+
+    if choice not in {"accepted", "rejected"}:
+        return JsonResponse({"ok": False, "error": "Invalid choice"}, status=400)
+
+    request.session["cookie_consent"] = choice
+    return JsonResponse({"ok": True, "choice": choice})
 
 
 def pricing_view(request):

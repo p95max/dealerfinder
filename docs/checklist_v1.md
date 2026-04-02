@@ -106,12 +106,12 @@
 - [x] Очистка SearchCache
 - [x] Health endpoint
 - [ ] Google API hardening
-Сейчас риски:
+`Сейчас риски:
 quota exceeded
 partial data
 network errors
 Что нужно:
 retry (1–2 раза max)
-лог на каждый failure
-- [ ] cookie banner (если Google Maps JS есть)
+лог на каждый failure`
+- [x] cookie banner (если Google Maps JS есть)
 - [ ]  Email fallback (если Telegram упадёт)
