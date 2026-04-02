@@ -16,7 +16,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 60s
       timeout: 3s
       retries: 3
@@ -24,10 +24,8 @@ services:
   db:
     image: postgres:18-alpine
     container_name: dealerfinder-db
-    environment:
-      POSTGRES_DB: dealerfinder
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
+    env_file:
+      - ../.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
