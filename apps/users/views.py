@@ -12,20 +12,9 @@ from apps.users.middleware import reset_quota_if_new_day
 from .models import Favorite
 
 def login_gate_view(request):
-    """Show login gate page and verify Turnstile before Google OAuth."""
+    """Render custom login page."""
     if request.user.is_authenticated:
         return redirect("home")
-
-    if request.method == "POST":
-        token = request.POST.get("cf-turnstile-response", "")
-        ip = _get_client_ip(request)
-
-        if not verify_turnstile(token, ip):
-            messages.warning(request, "Please complete the security check.")
-            return render(request, "account/login.html", status=400)
-
-        request.session["turnstile_login_ok"] = True
-        return redirect("google_login")
 
     return render(request, "account/login.html")
 

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load socialaccount %}
 
 {% block title %}Sign in — DealerFinder{% endblock %}
 
@@ -19,31 +20,25 @@
         <div class="mb-4">
             <h2 class="h4 fw-bold mb-2">One-click Google login</h2>
             <p class="text-secondary mb-0">
-                We use Google Sign-In for a simple and passwordless login flow.
+                Quick and secure login with your Google account. We only use your email to create your account.
             </p>
         </div>
 
+        <div
+            class="cf-turnstile mb-4"
+            data-sitekey="{{ TURNSTILE_SITE_KEY }}"
+            data-callback="onLoginTurnstileSuccess"
+            data-expired-callback="onLoginTurnstileExpired"
+            data-error-callback="onLoginTurnstileError">
+        </div>
 
-        <form method="post" action="{% url 'account_login' %}">
-            {% csrf_token %}
-
-                    <div
-                        class="cf-turnstile mb-4"
-                        data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-                        data-callback="onLoginTurnstileSuccess"
-                        data-expired-callback="onLoginTurnstileExpired"
-                        data-error-callback="onLoginTurnstileError"
-                        data-button-id="loginBtn">
-                    </div>
-
-            <button
-                type="submit"
-                id="loginBtn"
-                class="btn btn-primary rounded-pill px-4"
-                disabled>
-                Continue with Google
-            </button>
-        </form>
+        <button
+            type="button"
+            id="loginBtn"
+            class="btn btn-primary rounded-pill px-4"
+            disabled>
+            Continue with Google
+        </button>
 
         <div class="text-secondary small mt-4">
             By continuing, you agree to the processing of technical authentication data.
@@ -53,6 +48,35 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/turnstile.js' %}" defer></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+    const googleLoginUrl = "{% provider_login_url 'google' %}";
+    const loginBtn = document.getElementById("loginBtn");
+
+    function onLoginTurnstileSuccess() {
+        if (loginBtn) {
+            loginBtn.disabled = false;
+        }
+    }
+
+    function onLoginTurnstileExpired() {
+        if (loginBtn) {
+            loginBtn.disabled = true;
+        }
+    }
+
+    function onLoginTurnstileError() {
+        if (loginBtn) {
+            loginBtn.disabled = true;
+        }
+    }
+
+    if (loginBtn) {
+        loginBtn.addEventListener("click", function () {
+            if (!loginBtn.disabled) {
+                window.location.href = googleLoginUrl;
+            }
+        });
+    }
+</script>
 {% endblock %}

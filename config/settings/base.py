@@ -129,6 +129,7 @@ AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/users/accept-terms/"
 LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_ADAPTER = "integrations.google_oauth.GoogleOAuthAdapter"
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
