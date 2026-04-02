@@ -26,10 +26,25 @@
                 <span class="text-secondary">Plan</span>
                 <span class="fw-semibold text-capitalize">{{ user.plan }}</span>
             </div>
-            <div class="d-flex justify-content-between">
-                <span class="text-secondary">Searches today</span>
-                <span class="fw-semibold">{{ user.used_today }} / {{ user.daily_quota }}</span>
-            </div>
+
+                <div class="mb-2 d-flex justify-content-between">
+                    <span class="text-secondary">Searches today</span>
+                    <span class="fw-semibold">{{ user.used_today }} / {{ user.daily_quota }}</span>
+                </div>
+
+                <div class="progress" style="height: 6px; border-radius: 999px;">
+                    <div class="progress-bar
+                        {% if user.used_today >= user.daily_quota %}
+                            bg-danger
+                        {% elif user.used_today >= user.daily_quota|add:"-5" %}
+                            bg-warning
+                        {% else %}
+                            bg-primary
+                        {% endif %}"
+                        style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%;">
+                    </div>
+                </div>
+
         </div>
     </div>
 

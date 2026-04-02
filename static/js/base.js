@@ -11,3 +11,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 10000); // timeout 10 sec
     });
 });
+
+
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('details.nav-user-dropdown[open]').forEach(el => {
+        if (!el.contains(e.target)) el.removeAttribute('open');
+    });
+});
+ 
