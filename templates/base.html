@@ -98,18 +98,6 @@
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"
 ></script>
-<script>
-    function refreshQuota() {
-        fetch("{% url 'users:quota_status' %}")
-            .then(r => r.json())
-            .then(data => {
-                const el = document.getElementById("quota-counter");
-                if (el) el.textContent = `${data.used} / ${data.limit}`;
-            });
-    }
-
-    document.addEventListener("DOMContentLoaded", refreshQuota);
-</script>
 {% if user.is_authenticated %}
 <script>
     window.FAVORITE_ADD_URL = "{% url 'users:favorite_add' %}";
