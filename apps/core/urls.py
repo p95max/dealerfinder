@@ -4,6 +4,7 @@ from . import views
 from .views import ImpressumView, DatenschutzView, AGBView
 
 urlpatterns = [
+    path("health/", views.health_view, name="health"),
     path('', views.home_view, name='home'),
     path('about/', views.about_view, name='about'),
 

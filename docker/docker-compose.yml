@@ -15,6 +15,11 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   db:
     image: postgres:18-alpine
