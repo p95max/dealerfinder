@@ -103,7 +103,7 @@
 - [x] **Тесты:** не покрыты `delete_account_view` и `GoogleOAuthAdapter` (план/квота при first login).
 - [x] продумать Celery / RQ, prefetch / warm cache
 - [x] убрать “ручные костыли”: session-based quota для анонима, cache_hit через request атрибут, middleware зависит от path
-- [ ] Очистка SearchCache
+- [x] Очистка SearchCache
 - [x] Health endpoint
 - [ ] Google API hardening
 Сейчас риски:
