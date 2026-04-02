@@ -23,13 +23,12 @@
         {% if user.is_authenticated %}
 
             <a href="{% url 'users:favorites' %}"
-               class="btn btn-icon favorites-btn {% if favorites_count %}active{% endif %}"
+               class="favorites-btn favorites-btn--extended {% if favorites_count %}active{% endif %}"
                aria-label="Saved dealers">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                     fill="{% if favorites_count %}currentColor{% else %}none{% endif %}"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
+
+                <span class="favorites-icon">⭐</span>
+                <span class="favorites-label">My favourites</span>
+
                 {% if favorites_count %}
                     <span class="nav-badge">{{ favorites_count }}</span>
                 {% endif %}
@@ -37,7 +36,6 @@
 
             <details class="nav-user-dropdown">
                 <summary class="nav-user-trigger" aria-label="User menu">
-                    <span class="nav-user-avatar">{{ user.email|slice:":2"|upper }}</span>
                     <span class="d-none d-lg-inline nav-user-email">{{ user.email }}</span>
                     <svg class="nav-chevron" xmlns="http://www.w3.org/2000/svg" width="13" height="13"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

@@ -1,5 +1,3 @@
-/* navbar_delta.css — добавить к navbar.css */
-
 /* Nav link pills */
 .nav-link-pill {
     padding: .3rem .8rem;
@@ -33,14 +31,40 @@
     color: #fde68a;
 }
 
-/* Favorites badge */
+/* Favorites button */
 .favorites-btn {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    text-decoration: none;
+    background: transparent;
+    color: var(--df-text);
+    transition: background .15s ease, color .15s ease, transform .15s ease;
 }
+
+.favorites-btn:hover {
+    background: var(--df-surface-muted);
+    color: var(--df-text);
+    transform: translateY(-1px);
+}
+
+.favorites-btn.active {
+    color: #f5b301;
+}
+
+.favorites-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
 .nav-badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -3px;
+    right: -3px;
     min-width: 16px;
     height: 16px;
     padding: 0 4px;
@@ -127,4 +151,18 @@ details[open] .nav-chevron { transform: rotate(180deg); }
 .btn-signin:hover {
     opacity: .8;
     color: var(--df-text);
+}
+
+.favorites-btn--extended {
+    width: auto;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    gap: 6px;
+}
+
+.favorites-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
 }
