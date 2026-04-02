@@ -5,7 +5,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def send_telegram_message(text: str, context: dict | None = None) -> None:
+def send_telegram_message(text: str, context: dict | None = None) -> bool:
     token = settings.TELEGRAM_BOT_TOKEN
     chat_id = settings.TELEGRAM_CHAT_ID
 
@@ -16,7 +16,7 @@ def send_telegram_message(text: str, context: dict | None = None) -> None:
                 "event": "telegram_config_missing",
             },
         )
-        return
+        return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
@@ -31,6 +31,7 @@ def send_telegram_message(text: str, context: dict | None = None) -> None:
             timeout=5,
         )
         response.raise_for_status()
+        return True
 
     except requests.RequestException:
         logger.exception(
@@ -40,3 +41,4 @@ def send_telegram_message(text: str, context: dict | None = None) -> None:
                 **(context or {}),
             },
         )
+        return False
