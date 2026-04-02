@@ -102,5 +102,16 @@
 - [x] **Удаление аккаунта** — повторная авторизация через тот же Google-аккаунт создаёт чистый User. Решить через мягкое удаление или blacklist `google_sub`.
 - [x] **Тесты:** не покрыты `delete_account_view` и `GoogleOAuthAdapter` (план/квота при first login).
 - [x] продумать Celery / RQ, prefetch / warm cache
-- [ ] structured logging, metrics (Prometheus/Grafana), error tracking (Sentry)
 - [x] убрать “ручные костыли”: session-based quota для анонима, cache_hit через request атрибут, middleware зависит от path
+- [ ] Очистка SearchCache
+- [ ] Health endpoint
+- [ ] Google API hardening
+Сейчас риски:
+quota exceeded
+partial data
+network errors
+Что нужно:
+retry (1–2 раза max)
+лог на каждый failure
+- [ ] cookie banner (если Google Maps JS есть)
+- [ ]  Email fallback (если Telegram упадёт)
