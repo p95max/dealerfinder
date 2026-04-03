@@ -50,6 +50,9 @@ def search_dealers(city, radius) -> tuple[list, bool]:
         return [], True
 
     raw = search_all_places(city=city, radius=radius)
+    if not raw:
+        return [], True
+
     normalized = normalize(raw)
     normalized = sorted(
         normalized,

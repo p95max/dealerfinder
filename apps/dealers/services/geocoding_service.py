@@ -1,29 +1,39 @@
 import requests
+import logging
+
 from django.conf import settings
 from django.core.cache import cache
 
 GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 CACHE_PREFIX = "geocode:"
 CACHE_TTL = 60 * 60 * 24 * 30  # 30 days
+logger = logging.getLogger(__name__)
 
 
 def geocode_city(city: str) -> dict | None:
     """
-    Returns {"lat": float, "lng": float, "country_code": str} or None if not found.
-    Result is cached for 30 days.
+    Returns {"lat": float, "lng": float, "country_code": str} or None if not found
+    or when external geocoding is temporarily unavailable.
     """
     cache_key = f"{CACHE_PREFIX}{city.lower().strip()}"
     cached = cache.get(cache_key)
     if cached:
         return cached
 
-    response = requests.get(
-        GEOCODING_URL,
-        params={"address": city, "key": settings.GOOGLE_API_KEY},
-        timeout=10,
-    )
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = requests.get(
+            GEOCODING_URL,
+            params={"address": city, "key": settings.GOOGLE_API_KEY},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException:
+        logger.exception(
+            "Geocoding request failed",
+            extra={"event": "google_geocoding_failed", "city": city},
+        )
+        return None
 
     if data.get("status") != "OK" or not data.get("results"):
         return None

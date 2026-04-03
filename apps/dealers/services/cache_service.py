@@ -1,11 +1,12 @@
 from datetime import timedelta
 
 from django.utils import timezone
+from django.conf import settings
 
 from apps.dealers.models import SearchCache
 
 
-TTL = timedelta(hours=24)
+TTL = timedelta(hours=settings.CACHE_TTL_HOURS)
 
 
 def get_cache(query_key):
