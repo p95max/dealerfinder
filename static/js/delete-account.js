@@ -17,9 +17,20 @@ function onDeleteTurnstileError() {
     setDeleteButtonState(false);
 }
 
-document.querySelector('[data-bs-toggle="collapse"]').addEventListener('shown.bs.collapse', e => {
-    e.target.querySelector('span').textContent = '▾';
-});
-document.querySelector('[data-bs-toggle="collapse"]').addEventListener('hidden.bs.collapse', e => {
-    e.target.querySelector('span').textContent = '▸';
-});
+const collapseToggle = document.querySelector('[data-bs-toggle="collapse"]');
+
+if (collapseToggle) {
+    collapseToggle.addEventListener("shown.bs.collapse", (event) => {
+        const span = collapseToggle.querySelector("span");
+        if (span) {
+            span.textContent = "▾";
+        }
+    });
+
+    collapseToggle.addEventListener("hidden.bs.collapse", (event) => {
+        const span = collapseToggle.querySelector("span");
+        if (span) {
+            span.textContent = "▸";
+        }
+    });
+}

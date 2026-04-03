@@ -143,12 +143,14 @@ class ThrottleMiddlewareTests(TestCase):
         request = make_search_request(self.factory)
         request.user = user
         request.META["HTTP_X_FORWARDED_FOR"] = "5.5.5.5, 10.0.0.1"
+        request.META["HTTP_X_REAL_IP"] = "10.0.0.1"
         request.META["REMOTE_ADDR"] = "10.0.0.1"
         middleware(request)
 
         request2 = make_search_request(self.factory)
         request2.user = user
         request2.META["HTTP_X_FORWARDED_FOR"] = "5.5.5.5, 10.0.0.2"
+        request2.META["HTTP_X_REAL_IP"] = "10.0.0.2"
         request2.META["REMOTE_ADDR"] = "10.0.0.2"
         response = middleware(request2)
 
