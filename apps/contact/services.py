@@ -1,3 +1,4 @@
+import html
 import logging
 
 from integrations.email_notifications import send_contact_fallback_email
@@ -12,11 +13,15 @@ def notify_new_contact_message(contact_message) -> None:
         "contact_email": contact_message.email,
     }
 
+    safe_name = html.escape(contact_message.name)
+    safe_email = html.escape(contact_message.email)
+    safe_message = html.escape(contact_message.message[:500])
+
     telegram_text = (
         "📩 <b>New Contact Message</b>\n\n"
-        f"👤 <b>Name:</b> {contact_message.name}\n"
-        f"✉️ <b>Email:</b> {contact_message.email}\n"
-        f"💬 <b>Message:</b>\n{contact_message.message[:500]}"
+        f"👤 <b>Name:</b> {safe_name}\n"
+        f"✉️ <b>Email:</b> {safe_email}\n"
+        f"💬 <b>Message:</b>\n{safe_message}"
     )
 
     telegram_sent = send_telegram_message(telegram_text, context=context)
