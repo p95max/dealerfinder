@@ -145,6 +145,52 @@ fetch("/static/data/cities_de.json")
     });
 
 
+function isFiniteCoordinate(value, min, max) {
+    const num = Number(value);
+    return Number.isFinite(num) && num >= min && num <= max;
+}
+
+function toSafeExternalUrl(value) {
+    if (!value) {
+        return null;
+    }
+
+    try {
+        const url = new URL(value);
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+            return null;
+        }
+        return url.href;
+    } catch {
+        return null;
+    }
+}
+
+function appendInfoRow(container, label, value, options = {}) {
+    if (!value) {
+        return;
+    }
+
+    const row = document.createElement("div");
+
+    const strong = document.createElement("b");
+    strong.textContent = `${label}: `;
+    row.appendChild(strong);
+
+    if (options.href) {
+        const link = document.createElement("a");
+        link.href = options.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = value;
+        row.appendChild(link);
+    } else {
+        row.appendChild(document.createTextNode(value));
+    }
+
+    container.appendChild(row);
+}
+
 function openDealerModal(btn) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -172,28 +218,39 @@ function openDealerModal(btn) {
     };
 
     nameEl.textContent = d.name;
-    infoEl.innerHTML = "";
+    infoEl.replaceChildren();
 
-    if (d.address) infoEl.innerHTML += `<div><b>Address:</b> ${d.address}</div>`;
-    if (d.phone) infoEl.innerHTML += `<div><b>Phone:</b> ${d.phone}</div>`;
-    if (d.website) {
-        infoEl.innerHTML += `<div><b>Website:</b> <a href="${d.website}" target="_blank" rel="noopener noreferrer">${d.website}</a></div>`;
+    appendInfoRow(infoEl, "Address", d.address);
+    appendInfoRow(infoEl, "Phone", d.phone);
+
+    const safeWebsite = toSafeExternalUrl(d.website);
+    if (safeWebsite) {
+        appendInfoRow(infoEl, "Website", safeWebsite, { href: safeWebsite });
     }
-    if (d.rating) infoEl.innerHTML += `<div><b>Rating:</b> ${d.rating}</div>`;
-    if (d.distance) infoEl.innerHTML += `<div><b>Distance:</b> ${d.distance} km</div>`;
 
-    if (d.lat && d.lng) {
-        mapEl.src = `https://maps.google.com/maps?q=${d.lat},${d.lng}&z=15&output=embed`;
-        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lng}`;
+    appendInfoRow(infoEl, "Rating", d.rating);
+    appendInfoRow(infoEl, "Distance", d.distance ? `${d.distance} km` : "");
+
+    const hasValidCoords =
+        isFiniteCoordinate(d.lat, -90, 90) &&
+        isFiniteCoordinate(d.lng, -180, 180);
+
+    if (hasValidCoords) {
+        const lat = Number(d.lat);
+        const lng = Number(d.lng);
+
+        mapEl.src = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
         routeBtn.classList.remove("disabled");
+        routeBtn.setAttribute("aria-disabled", "false");
     } else {
         mapEl.src = "";
         routeBtn.href = "#";
         routeBtn.classList.add("disabled");
+        routeBtn.setAttribute("aria-disabled", "true");
     }
 
     const favBtn = document.getElementById("modalFavoriteBtn");
-
     if (favBtn) {
         if (d.is_favorite) {
             favBtn.classList.add("d-none");
@@ -205,8 +262,10 @@ function openDealerModal(btn) {
             favBtn.onclick = () => addFavorite(favBtn, d);
         }
     }
+
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
+
 
 document.addEventListener("click", (event) => {
     const btn = event.target.closest(".js-open-dealer-modal");
