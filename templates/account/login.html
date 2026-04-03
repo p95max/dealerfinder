@@ -24,16 +24,19 @@
             </p>
         </div>
 
-        <div
-            class="cf-turnstile mb-4"
-            data-sitekey="{{ TURNSTILE_SITE_KEY }}"
-            data-callback="onLoginTurnstileSuccess"
-            data-expired-callback="onLoginTurnstileExpired"
-            data-error-callback="onLoginTurnstileError">
-        </div>
+        <form method="post" action="{% url 'users:google_oauth_start' %}">
+            {% csrf_token %}
+
+            <div
+                class="cf-turnstile mb-4"
+                data-sitekey="{{ TURNSTILE_SITE_KEY }}"
+                data-callback="onLoginTurnstileSuccess"
+                data-expired-callback="onLoginTurnstileExpired"
+                data-error-callback="onLoginTurnstileError">
+            </div>
 
             <button
-                type="button"
+                type="submit"
                 id="loginBtn"
                 class="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2"
                 disabled>
@@ -48,8 +51,8 @@
                 </svg>
 
                 <span>Continue with Google</span>
-
             </button>
+        </form>
 
         <div class="text-secondary small mt-4">
             By continuing, you agree to our
@@ -63,33 +66,18 @@
 {% block extra_js %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
-    const googleLoginUrl = "{% provider_login_url 'google' %}";
     const loginBtn = document.getElementById("loginBtn");
 
     function onLoginTurnstileSuccess() {
-        if (loginBtn) {
-            loginBtn.disabled = false;
-        }
+        if (loginBtn) loginBtn.disabled = false;
     }
 
     function onLoginTurnstileExpired() {
-        if (loginBtn) {
-            loginBtn.disabled = true;
-        }
+        if (loginBtn) loginBtn.disabled = true;
     }
 
     function onLoginTurnstileError() {
-        if (loginBtn) {
-            loginBtn.disabled = true;
-        }
-    }
-
-    if (loginBtn) {
-        loginBtn.addEventListener("click", function () {
-            if (!loginBtn.disabled) {
-                window.location.href = googleLoginUrl;
-            }
-        });
+        if (loginBtn) loginBtn.disabled = true;
     }
 </script>
 {% endblock %}

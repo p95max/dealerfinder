@@ -10,6 +10,7 @@ from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
 from apps.users.services.quota_service import reset_quota_if_new_day
 from .models import Favorite
+from django.urls import reverse
 
 def login_gate_view(request):
     """Render custom login page."""
@@ -17,6 +18,20 @@ def login_gate_view(request):
         return redirect("home")
 
     return render(request, "account/login.html")
+
+
+
+@require_POST
+def google_oauth_start_view(request):
+    token = request.POST.get("cf-turnstile-response", "")
+    ip = _get_client_ip(request)
+
+    if not verify_turnstile(token, ip):
+        messages.warning(request, "Please complete the security check.")
+        return redirect("account_login")
+
+    request.session["google_oauth_verified"] = True
+    return redirect(reverse("google_login"))
 
 
 @login_required

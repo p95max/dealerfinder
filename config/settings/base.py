@@ -25,6 +25,9 @@ TIME_ZONE = "Europe/Berlin"
 USE_TZ = True
 SITE_ID = 1
 
+
+TRUST_X_FORWARDED_FOR = os.getenv("TRUST_X_FORWARDED_FOR", "False") == "True"
+
 # =========================
 # APPS
 # =========================
@@ -58,6 +61,7 @@ MIDDLEWARE = [
     "apps.users.middleware.LoginGateMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.users.middleware.OAuthStartProtectionMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",

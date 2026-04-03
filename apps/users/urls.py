@@ -16,4 +16,5 @@ urlpatterns = [
     path("cookie-consent/", views.cookie_consent_view, name="cookie_consent"),
     path("quota-status/", views.quota_status, name="quota_status"),
     path("pricing/", views.pricing_view, name="pricing"),
+    path("google-oauth/start/", views.google_oauth_start_view, name="google_oauth_start"),
 ]

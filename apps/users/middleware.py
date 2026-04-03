@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 
 from utils.http import _get_client_ip
 
@@ -74,3 +75,23 @@ class LoginGateMiddleware:
             return redirect("users:accept_terms")
 
         return response
+
+
+class OAuthStartProtectionMiddleware:
+    """
+    Allow starting Google OAuth only after backend Turnstile verification.
+    Does not affect the callback endpoint.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        google_login_path = reverse("google_login")
+
+        if request.path == google_login_path:
+            verified = request.session.pop("google_oauth_verified", False)
+            if not verified:
+                return redirect("account_login")
+
+        return self.get_response(request)
