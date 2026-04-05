@@ -1,7 +1,8 @@
 import json
 import logging
-from typing import Any
+import re
 
+from typing import Any
 from django.conf import settings
 from openai import OpenAI
 
@@ -12,12 +13,13 @@ logger = logging.getLogger(__name__)
 client = OpenAI(api_key=settings.AI_API_KEY)
 
 
+
+
 def _safe_parse_json(text: str) -> dict:
     text = text.strip()
-
     if text.startswith("```"):
-        text = text.split("```")[1]
-
+        text = re.sub(r"^```[a-z]*\n?", "", text)
+        text = text.rstrip("` \n")
     return json.loads(text)
 
 

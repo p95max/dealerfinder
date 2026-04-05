@@ -1,10 +1,23 @@
 import re
+import time
+import logging
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
+from apps.dealers.models import DealerAiSummary, Dealer
+from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
+from apps.dealers.services.dealer_service import search_dealers, filter_and_sort_dealers
+from apps.dealers.services.geocoding_service import is_german_city
+from apps.dealers.services.google_places import is_google_cap_reached
+from apps.dealers.services.search_tracking_service import (
+    track_anon_search_history,
+    track_popular_city,
+    track_user_search_history,
+    build_search_discovery_context,
+)
 from apps.users.services.quota_service import (
     get_authenticated_quota_status,
     get_anonymous_quota_status,
@@ -12,26 +25,13 @@ from apps.users.services.quota_service import (
     consume_anonymous_search,
 )
 from utils.http import _get_client_ip
-from .services.dealer_service import search_dealers, filter_and_sort_dealers
-from .services.geocoding_service import is_german_city
-from .services.google_places import is_google_cap_reached
-from .services.search_tracking_service import (
-    track_anon_search_history,
-    track_popular_city,
-    track_user_search_history,
-    build_search_discovery_context,
-)
-from apps.dealers.models import DealerAiSummary
-
-import logging
-import time
 
 logger = logging.getLogger(__name__)
-
 
 DEALERS_PER_PAGE = 20
 ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
 DEFAULT_RADIUS = 20
+AI_SYNC_LIMIT = 5
 
 
 def _should_track_search(request) -> bool:
@@ -76,6 +76,19 @@ def _parse_min_rating(value) -> float | None:
 
 def _get_user_id(request):
     return request.user.pk if request.user.is_authenticated else None
+
+
+def _sync_ai_summaries(place_ids: list[str]) -> None:
+    """Fire-and-forget AI summary generation for a batch of place IDs."""
+    dealers_qs = Dealer.objects.filter(google_place_id__in=place_ids[:AI_SYNC_LIMIT])
+    for dealer_obj in dealers_qs:
+        try:
+            generate_ai_summary_for_dealer(dealer_obj)
+        except Exception:
+            logger.exception(
+                "Inline AI summary generation failed",
+                extra={"event": "ai_sync_on_search_failed", "place_id": dealer_obj.google_place_id},
+            )
 
 
 def search_view(request):
@@ -124,7 +137,6 @@ def search_view(request):
         return context
 
     if city:
-
         logger.info(
             "Search request started",
             extra={
@@ -157,7 +169,6 @@ def search_view(request):
                     "status_code": 200,
                 },
             )
-
             if request.user.is_authenticated:
                 messages.warning(
                     request,
@@ -168,7 +179,6 @@ def search_view(request):
                     request,
                     f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
                 )
-
             return render(request, "dealers/search.html", build_context(quota_exceeded=True))
 
         if not _is_valid_city(city):
@@ -243,6 +253,9 @@ def search_view(request):
 
         place_ids = [dealer.get("place_id") for dealer in dealers if dealer.get("place_id")]
 
+        if not from_cache and settings.AI_ENABLED and settings.AI_SYNC_ON_SEARCH:
+            _sync_ai_summaries(place_ids)
+
         ai_summary_map = {
             item.dealer.google_place_id: item
             for item in DealerAiSummary.objects.select_related("dealer").filter(
@@ -252,7 +265,6 @@ def search_view(request):
 
         for dealer in dealers:
             ai = ai_summary_map.get(dealer.get("place_id"))
-
             if ai:
                 dealer["ai_summary"] = {
                     "status": ai.status,
@@ -267,6 +279,7 @@ def search_view(request):
                     "pros": [],
                     "cons": [],
                 }
+
         logger.info(
             "AI summaries attached to search results",
             extra={

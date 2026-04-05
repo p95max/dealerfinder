@@ -5,12 +5,14 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+from django.urls import reverse
 
 from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
 from apps.users.services.quota_service import reset_quota_if_new_day
+from apps.dealers.models import DealerAiSummary
 from .models import Favorite
-from django.urls import reverse
+
 
 def login_gate_view(request):
     """Render custom login page."""
@@ -109,7 +111,23 @@ def quota_status(request):
 
 @login_required
 def favorites_view(request):
-    favorites = request.user.favorites.all()
+    favorites = list(request.user.favorites.all())
+
+    place_ids = [f.place_id for f in favorites]
+    ai_map = {
+        item.dealer.google_place_id: item
+        for item in DealerAiSummary.objects.select_related("dealer").filter(
+            dealer__google_place_id__in=place_ids
+        )
+    }
+
+    for fav in favorites:
+        ai = ai_map.get(fav.place_id)
+        fav.ai_summary_status = ai.status if ai else "pending"
+        fav.ai_summary_text = (ai.summary or "") if ai else ""
+        fav.ai_summary_pros = (ai.pros or []) if ai else []
+        fav.ai_summary_cons = (ai.cons or []) if ai else []
+
     return render(request, "users/favorites.html", {"favorites": favorites})
 
 
