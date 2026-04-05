@@ -1,294 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("dealerSearchForm");
-    const locationCheckbox = document.getElementById("use_my_location");
-    const latInput = document.getElementById("user_lat");
-    const lngInput = document.getElementById("user_lng");
-    const searchButton = form ? form.querySelector('button[type="submit"]') : null;
-    const locationHelp = document.getElementById("locationHelp");
-
-    if (!form || !locationCheckbox || !latInput || !lngInput || !searchButton) {
-        return;
-    }
-
-    let geoRequestInProgress = false;
-
-    function setLocationMessage(message, isError = false) {
-        if (!locationHelp) {
-            return;
-        }
-
-        locationHelp.textContent = message;
-        locationHelp.classList.toggle("text-danger", isError);
-    }
-
-    function clearCoordinates() {
-        latInput.value = "";
-        lngInput.value = "";
-    }
-
-    function hasCoordinates() {
-        return latInput.value.trim() !== "" && lngInput.value.trim() !== "";
-    }
-
-    function setLoadingState(isLoading) {
-        geoRequestInProgress = isLoading;
-        searchButton.disabled = isLoading;
-
-        if (isLoading) {
-            searchButton.dataset.originalText = searchButton.textContent;
-            searchButton.textContent = "Detecting location...";
-        } else if (searchButton.dataset.originalText) {
-            searchButton.textContent = searchButton.dataset.originalText;
-        }
-    }
-
-    function requestUserLocation(onSuccess = null) {
-        if (!navigator.geolocation) {
-            setLocationMessage("Geolocation is not supported in this browser.", true);
-            locationCheckbox.checked = false;
-            clearCoordinates();
-            return;
-        }
-
-        setLoadingState(true);
-        setLocationMessage("Detecting your location...");
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                latInput.value = String(position.coords.latitude);
-                lngInput.value = String(position.coords.longitude);
-
-                setLoadingState(false);
-                setLocationMessage("Location detected successfully.");
-
-                if (typeof onSuccess === "function") {
-                    onSuccess();
-                }
-            },
-            (error) => {
-                clearCoordinates();
-                locationCheckbox.checked = false;
-                setLoadingState(false);
-
-                let message = "Could not access your location.";
-                if (error.code === error.PERMISSION_DENIED) {
-                    message = "Location access was denied.";
-                } else if (error.code === error.TIMEOUT) {
-                    message = "Location request timed out.";
-                }
-
-                setLocationMessage(message, true);
-            },
-            {
-                enableHighAccuracy: false,
-                timeout: 10000,
-                maximumAge: 300000,
-            }
-        );
-    }
-
-    locationCheckbox.addEventListener("change", () => {
-        if (!locationCheckbox.checked) {
-            clearCoordinates();
-            setLocationMessage(
-                "Location is optional. If enabled, we will use your coordinates only for distance-based filtering and sorting."
-            );
-            return;
-        }
-
-        requestUserLocation();
-    });
-
-    form.addEventListener("submit", (event) => {
-        if (!locationCheckbox.checked) {
-            return;
-        }
-
-        if (geoRequestInProgress) {
-            event.preventDefault();
-            return;
-        }
-
-        if (hasCoordinates()) {
-            return;
-        }
-
-        event.preventDefault();
-        requestUserLocation(() => {
-            form.submit();
-        });
-    });
-});
-
-
-fetch("/static/data/cities_de.json")
-    .then(r => r.json())
-    .then(cities => {
-        const input = document.getElementById("city");
-        const datalist = document.getElementById("cities-list");
-        if (!input || !datalist) return;
-
-        input.addEventListener("input", () => {
-            const val = input.value.trim().toLowerCase();
-            datalist.innerHTML = "";
-            if (val.length < 2) return;
-
-            cities
-                .filter(c => c.toLowerCase().startsWith(val))
-                .slice(0, 10)
-                .forEach(c => {
-                    const opt = document.createElement("option");
-                    opt.value = c;
-                    datalist.appendChild(opt);
-                });
-        });
-    });
-
-
-function isFiniteCoordinate(value, min, max) {
-    const num = Number(value);
-    return Number.isFinite(num) && num >= min && num <= max;
-}
-
-function toSafeExternalUrl(value) {
-    if (!value) {
-        return null;
-    }
-
-    try {
-        const url = new URL(value);
-        if (url.protocol !== "http:" && url.protocol !== "https:") {
-            return null;
-        }
-        return url.href;
-    } catch {
-        return null;
-    }
-}
-
-function appendInfoRow(container, label, value, options = {}) {
-    if (!value) {
-        return;
-    }
-
-    const row = document.createElement("div");
-
-    const strong = document.createElement("b");
-    strong.textContent = `${label}: `;
-    row.appendChild(strong);
-
-    if (options.href) {
-        const link = document.createElement("a");
-        link.href = options.href;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = value;
-        row.appendChild(link);
-    } else {
-        row.appendChild(document.createTextNode(value));
-    }
-
-    container.appendChild(row);
-}
-
-function openDealerModal(btn) {
-    const modalEl = document.getElementById("dealerModal");
-    const nameEl = document.getElementById("modalDealerName");
-    const infoEl = document.getElementById("modalInfo");
-    const mapEl = document.getElementById("modalMap");
-    const routeBtn = document.getElementById("modalRouteBtn");
-
-    if (!modalEl || !nameEl || !infoEl || !mapEl || !routeBtn) {
-        return;
-    }
-
-    const d = {
-        place_id: btn.dataset.dealerPlaceId || "",
-        name: btn.dataset.dealerName || "",
-        address: btn.dataset.dealerAddress || "",
-        phone: btn.dataset.dealerPhone || "",
-        website: btn.dataset.dealerWebsite || "",
-        rating: btn.dataset.dealerRating || "",
-        reviews: btn.dataset.dealerReviews || "",
-        lat: btn.dataset.dealerLat || "",
-        lng: btn.dataset.dealerLng || "",
-        distance: btn.dataset.dealerDistance || "",
-        city: btn.dataset.dealerCity || "",
-        is_favorite: btn.dataset.dealerIsFavorite === "1",
-    };
-
-    nameEl.textContent = d.name;
-    infoEl.replaceChildren();
-
-    appendInfoRow(infoEl, "Address", d.address);
-    appendInfoRow(infoEl, "Phone", d.phone);
-
-    const safeWebsite = toSafeExternalUrl(d.website);
-    if (safeWebsite) {
-        appendInfoRow(infoEl, "Website", safeWebsite, { href: safeWebsite });
-    }
-
-    appendInfoRow(infoEl, "Rating", d.rating);
-    appendInfoRow(infoEl, "Distance", d.distance ? `${d.distance} km` : "");
-
-    const hasValidCoords =
-        isFiniteCoordinate(d.lat, -90, 90) &&
-        isFiniteCoordinate(d.lng, -180, 180);
-
-    if (hasValidCoords) {
-        const lat = Number(d.lat);
-        const lng = Number(d.lng);
-
-        mapEl.src = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
-        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-        routeBtn.classList.remove("disabled");
-        routeBtn.setAttribute("aria-disabled", "false");
-    } else {
-        mapEl.src = "";
-        routeBtn.href = "#";
-        routeBtn.classList.add("disabled");
-        routeBtn.setAttribute("aria-disabled", "true");
-    }
-
-    const favBtn = document.getElementById("modalFavoriteBtn");
-    if (favBtn) {
-        if (d.is_favorite) {
-            favBtn.classList.add("d-none");
-            favBtn.disabled = true;
-            favBtn.onclick = null;
-        } else {
-            favBtn.classList.remove("d-none");
-            favBtn.disabled = false;
-            favBtn.onclick = () => addFavorite(favBtn, d);
-        }
-    }
-
-    bootstrap.Modal.getOrCreateInstance(modalEl).show();
-}
-
-
-document.addEventListener("click", (event) => {
-    const btn = event.target.closest(".js-open-dealer-modal");
-    if (!btn) {
-        return;
-    }
-
-    openDealerModal(btn);
-});
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
     initLocationSearchForm();
     initCityAutocomplete();
 });
 
+
+/* =========================
+   GEOLOCATION
+========================= */
 function initLocationSearchForm() {
     const form = document.getElementById("dealerSearchForm");
     const locationCheckbox = document.getElementById("use_my_location");
     const latInput = document.getElementById("user_lat");
     const lngInput = document.getElementById("user_lng");
-    const searchButton = form ? form.querySelector('button[type="submit"]') : null;
+    const searchButton = form?.querySelector('button[type="submit"]');
     const locationHelp = document.getElementById("locationHelp");
 
     if (!form || !locationCheckbox || !latInput || !lngInput || !searchButton) {
@@ -297,25 +21,22 @@ function initLocationSearchForm() {
 
     let geoRequestInProgress = false;
 
-    function setLocationMessage(message, isError = false) {
-        if (!locationHelp) {
-            return;
-        }
-
-        locationHelp.textContent = message;
+    function setMessage(msg, isError = false) {
+        if (!locationHelp) return;
+        locationHelp.textContent = msg;
         locationHelp.classList.toggle("text-danger", isError);
     }
 
-    function clearCoordinates() {
+    function clearCoords() {
         latInput.value = "";
         lngInput.value = "";
     }
 
-    function hasCoordinates() {
-        return latInput.value.trim() !== "" && lngInput.value.trim() !== "";
+    function hasCoords() {
+        return latInput.value && lngInput.value;
     }
 
-    function setLoadingState(isLoading) {
+    function setLoading(isLoading) {
         geoRequestInProgress = isLoading;
         searchButton.disabled = isLoading;
 
@@ -327,142 +48,112 @@ function initLocationSearchForm() {
         }
     }
 
-    function requestUserLocation(onSuccess = null) {
+    function requestLocation(cb = null) {
         if (!navigator.geolocation) {
-            setLocationMessage("Geolocation is not supported in this browser.", true);
+            setMessage("Geolocation not supported", true);
             locationCheckbox.checked = false;
-            clearCoordinates();
+            clearCoords();
             return;
         }
 
-        setLoadingState(true);
-        setLocationMessage("Detecting your location...");
+        setLoading(true);
+        setMessage("Detecting your location...");
 
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                latInput.value = String(position.coords.latitude);
-                lngInput.value = String(position.coords.longitude);
+            (pos) => {
+                latInput.value = pos.coords.latitude;
+                lngInput.value = pos.coords.longitude;
 
-                setLoadingState(false);
-                setLocationMessage("Location detected successfully.");
+                setLoading(false);
+                setMessage("Location detected");
 
-                if (typeof onSuccess === "function") {
-                    onSuccess();
-                }
+                if (cb) cb();
             },
-            (error) => {
-                clearCoordinates();
+            () => {
+                clearCoords();
                 locationCheckbox.checked = false;
-                setLoadingState(false);
-
-                let message = "Could not access your location.";
-                if (error.code === error.PERMISSION_DENIED) {
-                    message = "Location access was denied.";
-                } else if (error.code === error.TIMEOUT) {
-                    message = "Location request timed out.";
-                }
-
-                setLocationMessage(message, true);
+                setLoading(false);
+                setMessage("Location failed", true);
             },
-            {
-                enableHighAccuracy: false,
-                timeout: 10000,
-                maximumAge: 300000,
-            }
+            { timeout: 10000 }
         );
     }
 
     locationCheckbox.addEventListener("change", () => {
         if (!locationCheckbox.checked) {
-            clearCoordinates();
-            setLocationMessage(
-                "Location is optional. If enabled, we will use your coordinates only for distance-based filtering and sorting."
-            );
+            clearCoords();
+            setMessage("Location is optional");
             return;
         }
-
-        requestUserLocation();
+        requestLocation();
     });
 
-    form.addEventListener("submit", (event) => {
-        if (!locationCheckbox.checked) {
-            return;
-        }
+    form.addEventListener("submit", (e) => {
+        if (!locationCheckbox.checked) return;
 
         if (geoRequestInProgress) {
-            event.preventDefault();
+            e.preventDefault();
             return;
         }
 
-        if (hasCoordinates()) {
-            return;
+        if (!hasCoords()) {
+            e.preventDefault();
+            requestLocation(() => form.submit());
         }
-
-        event.preventDefault();
-        requestUserLocation(() => {
-            form.submit();
-        });
     });
 }
 
+
+/* =========================
+   AUTOCOMPLETE
+========================= */
 function initCityAutocomplete() {
     fetch("/static/data/cities_de.json")
-        .then((response) => response.json())
-        .then((cities) => {
+        .then(r => r.json())
+        .then(cities => {
             const input = document.getElementById("city");
             const datalist = document.getElementById("cities-list");
-            if (!input || !datalist) {
-                return;
-            }
+            if (!input || !datalist) return;
 
             input.addEventListener("input", () => {
-                const value = input.value.trim().toLowerCase();
+                const val = input.value.toLowerCase().trim();
                 datalist.innerHTML = "";
 
-                if (value.length < 2) {
-                    return;
-                }
+                if (val.length < 2) return;
 
                 cities
-                    .filter((city) => city.toLowerCase().startsWith(value))
+                    .filter(c => c.toLowerCase().startsWith(val))
                     .slice(0, 10)
-                    .forEach((city) => {
-                        const option = document.createElement("option");
-                        option.value = city;
-                        datalist.appendChild(option);
+                    .forEach(c => {
+                        const opt = document.createElement("option");
+                        opt.value = c;
+                        datalist.appendChild(opt);
                     });
             });
         })
-        .catch(() => {
-            // silent fail
-        });
+        .catch(() => {});
 }
 
+
+/* =========================
+   HELPERS
+========================= */
 function isFiniteCoordinate(value, min, max) {
     const num = Number(value);
     return Number.isFinite(num) && num >= min && num <= max;
 }
 
 function toSafeExternalUrl(value) {
-    if (!value) {
-        return null;
-    }
-
     try {
         const url = new URL(value);
-        if (url.protocol !== "http:" && url.protocol !== "https:") {
-            return null;
-        }
-        return url.href;
+        return ["http:", "https:"].includes(url.protocol) ? url.href : null;
     } catch {
         return null;
     }
 }
 
 function appendInfoRow(container, label, value, options = {}) {
-    if (!value) {
-        return;
-    }
+    if (!value) return;
 
     const row = document.createElement("div");
 
@@ -484,26 +175,36 @@ function appendInfoRow(container, label, value, options = {}) {
     container.appendChild(row);
 }
 
-function escapeHtml(value) {
-    return String(value)
+function escapeHtml(str) {
+    return String(str)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(">", "&gt;");
 }
 
+
+/* =========================
+   AI SUMMARY
+========================= */
 function renderAiSummary(data) {
     const container = document.getElementById("modalAiSummary");
-    if (!container) {
+    if (!container) return;
+
+    const status = data.ai_status;
+    const summary = data.ai_summary;
+
+    container.classList.add("d-none");
+    container.innerHTML = "";
+
+    if (status === "pending") {
+        container.classList.remove("d-none");
+        container.innerHTML = `
+            <div class="alert alert-secondary mt-3 mb-0 small">
+                AI summary is being generated...
+            </div>
+        `;
         return;
     }
-
-    const status = data.ai_status || "";
-    const summary = data.ai_summary || "";
-
-    container.innerHTML = "";
-    container.classList.add("d-none");
 
     if (status === "done" && summary) {
         container.classList.remove("d-none");
@@ -511,9 +212,6 @@ function renderAiSummary(data) {
             <div class="surface-card-muted p-3 mt-3">
                 <div class="fw-semibold mb-2">AI review summary</div>
                 <p class="small text-secondary mb-2">${escapeHtml(summary)}</p>
-                <div class="text-secondary" style="font-size:12px;">
-                    Automatically generated from public reviews. Informational only.
-                </div>
             </div>
         `;
         return;
@@ -523,12 +221,16 @@ function renderAiSummary(data) {
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="alert alert-warning mt-3 mb-0 small">
-                AI summary is currently unavailable for this dealer.
+                AI summary unavailable
             </div>
         `;
     }
 }
 
+
+/* =========================
+   MODAL
+========================= */
 function openDealerModal(btn) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -536,31 +238,18 @@ function openDealerModal(btn) {
     const mapEl = document.getElementById("modalMap");
     const routeBtn = document.getElementById("modalRouteBtn");
 
-    if (!modalEl || !nameEl || !infoEl || !mapEl || !routeBtn) {
-        return;
-    }
-
     const data = {
-        place_id: btn.dataset.dealerPlaceId || "",
         name: btn.dataset.dealerName || "",
         address: btn.dataset.dealerAddress || "",
         phone: btn.dataset.dealerPhone || "",
         website: btn.dataset.dealerWebsite || "",
         rating: btn.dataset.dealerRating || "",
-        reviews: btn.dataset.dealerReviews || "",
-        lat: btn.dataset.dealerLat || "",
-        lng: btn.dataset.dealerLng || "",
         distance: btn.dataset.dealerDistance || "",
-        city: btn.dataset.dealerCity || "",
-        is_favorite: btn.dataset.dealerIsFavorite === "1",
+        lat: btn.dataset.dealerLat,
+        lng: btn.dataset.dealerLng,
         ai_summary: btn.dataset.dealerAiSummary || "",
-        ai_status: btn.dataset.dealerAiStatus || "",
+        ai_status: btn.dataset.dealerAiStatus || "pending",
     };
-
-    console.log("AI DATA", {
-        summary: data.ai_summary,
-        status: data.ai_status,
-    });
 
     nameEl.textContent = data.name;
     infoEl.replaceChildren();
@@ -576,36 +265,9 @@ function openDealerModal(btn) {
     appendInfoRow(infoEl, "Rating", data.rating);
     appendInfoRow(infoEl, "Distance", data.distance ? `${data.distance} km` : "");
 
-    const hasValidCoords =
-        isFiniteCoordinate(data.lat, -90, 90) &&
-        isFiniteCoordinate(data.lng, -180, 180);
-
-    if (hasValidCoords) {
-        const lat = Number(data.lat);
-        const lng = Number(data.lng);
-
-        mapEl.src = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
-        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-        routeBtn.classList.remove("disabled");
-        routeBtn.setAttribute("aria-disabled", "false");
-    } else {
-        mapEl.src = "";
-        routeBtn.href = "#";
-        routeBtn.classList.add("disabled");
-        routeBtn.setAttribute("aria-disabled", "true");
-    }
-
-    const favBtn = document.getElementById("modalFavoriteBtn");
-    if (favBtn) {
-        if (data.is_favorite) {
-            favBtn.classList.add("d-none");
-            favBtn.disabled = true;
-            favBtn.onclick = null;
-        } else {
-            favBtn.classList.remove("d-none");
-            favBtn.disabled = false;
-            favBtn.onclick = () => addFavorite(favBtn, data);
-        }
+    if (isFiniteCoordinate(data.lat, -90, 90) && isFiniteCoordinate(data.lng, -180, 180)) {
+        mapEl.src = `https://maps.google.com/maps?q=${data.lat},${data.lng}&z=15&output=embed`;
+        routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${data.lat},${data.lng}`;
     }
 
     renderAiSummary(data);
@@ -613,11 +275,12 @@ function openDealerModal(btn) {
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
-document.addEventListener("click", (event) => {
-    const btn = event.target.closest(".js-open-dealer-modal");
-    if (!btn) {
-        return;
-    }
 
+/* =========================
+   CLICK HANDLER
+========================= */
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".js-open-dealer-modal");
+    if (!btn) return;
     openDealerModal(btn);
 });

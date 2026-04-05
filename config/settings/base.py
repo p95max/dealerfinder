@@ -259,3 +259,4 @@ AI_API_KEY = os.getenv("AI_API_KEY", "")
 AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "15"))
 MAX_AI_SUMMARIES_PER_DAY = int(os.getenv("MAX_AI_SUMMARIES_PER_DAY", "200"))
 AI_PROMPT_VERSION = os.getenv("AI_PROMPT_VERSION", "v1")
+AI_SYNC_ON_SEARCH = os.getenv("AI_SYNC_ON_SEARCH", "False") == "True"

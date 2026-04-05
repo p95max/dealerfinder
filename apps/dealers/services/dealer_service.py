@@ -3,6 +3,7 @@ import math
 from .cache_service import get_cache, set_cache
 from .distance_service import attach_distance_to_dealers
 from .google_places import search_all_places, is_google_cap_reached
+from apps.dealers.models import Dealer, DealerAiSummary
 
 
 def build_query_key(city, radius):
@@ -59,6 +60,7 @@ def search_dealers(city, radius) -> tuple[list, bool]:
         key=lambda x: (x["rating"] or 0) * math.log1p(x["reviews"] or 0),
         reverse=True,
     )
+    sync_dealers_to_db(city, normalized)
     set_cache(key, normalized)
     return normalized, False
 
@@ -112,3 +114,29 @@ def filter_and_sort_dealers(
         )
 
     return dealers
+
+
+def sync_dealers_to_db(city: str, dealers: list[dict]) -> None:
+    for item in dealers:
+        place_id = item.get("place_id")
+        name = item.get("name")
+
+        if not place_id or not name:
+            continue
+
+        dealer, _ = Dealer.objects.update_or_create(
+            google_place_id=place_id,
+            defaults={
+                "name": name[:255],
+                "address": item.get("address") or "",
+                "city": city[:100],
+                "lat": item.get("lat") or 0.0,
+                "lng": item.get("lng") or 0.0,
+                "rating": item.get("rating"),
+                "user_ratings_total": item.get("reviews") or 0,
+                "website": item.get("website") or None,
+                "phone": item.get("phone") or None,
+            },
+        )
+
+        DealerAiSummary.objects.get_or_create(dealer=dealer)

@@ -111,13 +111,16 @@ def generate_ai_summary_for_dealer(dealer: Dealer) -> DealerAiSummary:
     summary_obj = ensure_ai_summary_record(dealer)
 
     if not settings.AI_ENABLED:
+        summary_obj.last_error = "AI is disabled"
+        summary_obj.save(update_fields=["last_error", "updated_at"])
         return summary_obj
 
     details = get_place_details(dealer.google_place_id)
     if not details:
         summary_obj.status = DealerAiSummary.STATUS_FAILED
-        summary_obj.last_error = "Place details are unavailable"
-        summary_obj.save(update_fields=["status", "last_error", "updated_at"])
+        summary_obj.last_error = "No reviews available for AI summary"
+        summary_obj.source_review_count = 0
+        summary_obj.save(update_fields=["status", "last_error", "source_review_count", "updated_at"])
         return summary_obj
 
     context = build_dealer_ai_context(details)
@@ -169,6 +172,9 @@ def generate_ai_summary_for_dealer(dealer: Dealer) -> DealerAiSummary:
                 "dealer_id": dealer.pk,
             },
         )
+        summary_obj.provider = settings.AI_PROVIDER
+        summary_obj.model = settings.AI_MODEL
+        summary_obj.prompt_version = settings.AI_PROMPT_VERSION
         summary_obj.status = DealerAiSummary.STATUS_FAILED
         summary_obj.last_error = str(exc)[:1000]
         summary_obj.save(update_fields=["status", "last_error", "updated_at"])

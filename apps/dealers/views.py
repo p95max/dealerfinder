@@ -262,7 +262,7 @@ def search_view(request):
                 }
             else:
                 dealer["ai_summary"] = {
-                    "status": "failed",
+                    "status": "pending",
                     "summary": "",
                     "pros": [],
                     "cons": [],

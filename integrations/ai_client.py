@@ -63,9 +63,12 @@ Reviews:
                 {"role": "system", "content": "You output strict JSON only."},
                 {"role": "user", "content": prompt},
             ],
+            timeout=settings.AI_REQUEST_TIMEOUT,
         )
 
         content = response.choices[0].message.content
+        if not content:
+            raise AiClientError("Empty response from AI provider")
 
         data = _safe_parse_json(content)
 
@@ -87,5 +90,12 @@ Reviews:
             },
         )
         raise AiClientError(str(exc))
+
+
+def generate_dealer_summary(dealer_context: dict[str, Any]) -> dict[str, Any]:
+    if settings.AI_PROVIDER != "openai":
+        raise AiClientError(f"Unsupported AI provider: {settings.AI_PROVIDER}")
+
+    return _generate_with_openai(dealer_context)
 
 
