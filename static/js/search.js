@@ -231,6 +231,17 @@ function renderAiSummary(data) {
 /* =========================
    MODAL
 ========================= */
+function renderAiSummaryLoading() {
+    const container = document.getElementById("modalAiSummary");
+    if (!container) return;
+    container.classList.remove("d-none");
+    container.innerHTML = `
+        <div class="alert alert-secondary mt-3 mb-0 small">
+            ⏳ Generating AI summary...
+        </div>
+    `;
+}
+
 function openDealerModal(btn) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -270,7 +281,21 @@ function openDealerModal(btn) {
         routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${data.lat},${data.lng}`;
     }
 
-    renderAiSummary(data);
+    const placeId = btn.dataset.dealerPlaceId;
+
+    if (data.ai_status === "done") {
+        renderAiSummary(data);
+    } else {
+        renderAiSummaryLoading();
+        fetch(`/dealer/${placeId}/ai-summary/`)
+            .then(r => r.json())
+            .then(ai => {
+                btn.dataset.dealerAiStatus = ai.status;
+                btn.dataset.dealerAiSummary = ai.summary;
+                renderAiSummary({ ...data, ai_status: ai.status, ai_summary: ai.summary });
+            })
+            .catch(() => renderAiSummary({ ...data, ai_status: "failed" }));
+    }
 
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }

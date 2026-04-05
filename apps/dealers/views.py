@@ -25,6 +25,9 @@ from apps.users.services.quota_service import (
     consume_anonymous_search,
 )
 from utils.http import _get_client_ip
+from django.http import JsonResponse
+from apps.dealers.models import Dealer, DealerAiSummary
+from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +92,22 @@ def _sync_ai_summaries(place_ids: list[str]) -> None:
                 "Inline AI summary generation failed",
                 extra={"event": "ai_sync_on_search_failed", "place_id": dealer_obj.google_place_id},
             )
+
+
+def dealer_ai_summary_view(request, place_id):
+    try:
+        dealer = Dealer.objects.get(google_place_id=place_id)
+    except Dealer.DoesNotExist:
+        return JsonResponse({"status": "failed"}, status=404)
+
+    ai = generate_ai_summary_for_dealer(dealer)
+
+    return JsonResponse({
+        "status": ai.status,
+        "summary": ai.summary or "",
+        "pros": ai.pros or [],
+        "cons": ai.cons or [],
+    })
 
 
 def search_view(request):
@@ -320,3 +339,4 @@ def search_view(request):
             total=len(dealers),
         ),
     )
+
