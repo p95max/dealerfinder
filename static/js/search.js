@@ -234,12 +234,36 @@ function renderAiSummary(data) {
 function renderAiSummaryLoading() {
     const container = document.getElementById("modalAiSummary");
     if (!container) return;
+
     container.classList.remove("d-none");
+
     container.innerHTML = `
         <div class="alert alert-secondary mt-3 mb-0 small">
-            ⏳ Generating AI summary...
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <div class="spinner-border spinner-border-sm"></div>
+                <span id="ai-loading-text">Initializing...</span>
+            </div>
         </div>
     `;
+
+    const steps = [
+        "Analyzing dealer data...",
+        "Evaluating ratings...",
+        "Checking reliability...",
+        "Generating summary..."
+    ];
+
+    let i = 0;
+    const textEl = document.getElementById("ai-loading-text");
+
+    const interval = setInterval(() => {
+        if (i < steps.length) {
+            textEl.textContent = steps[i];
+            i++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 800);
 }
 
 function openDealerModal(btn) {
