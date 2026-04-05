@@ -1,7 +1,7 @@
 {% load static %}
 <div class="modal fade" id="dealerModal" tabindex="-1" aria-labelledby="modalDealerName" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content p-4 position-relative">
+        <div class="modal-content dealer-modal-content p-4 position-relative">
 
             <button type="button"
                     class="btn-close position-absolute top-0 end-0 m-3"
@@ -9,13 +9,13 @@
                     aria-label="Close"></button>
 
             <div class="modal-header border-0 p-0 mb-2">
-                <h5 class="fw-bold" id="modalDealerName"></h5>
+                <h5 class="fw-bold mb-0" id="modalDealerName"></h5>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body p-0 pt-3">
                 <div id="modalInfo" class="small mb-3"></div>
 
-                <div style="height: 250px;" class="mb-3">
+                <div class="dealer-map-wrap mb-3">
                     <iframe
                         id="modalMap"
                         width="100%"
@@ -38,18 +38,40 @@
                     <button class="btn btn-outline-secondary flex-grow-1"
                             id="modalFavoriteBtn"
                             type="button">
-                        ➕ Add to Favorites
+                        ☆ Add to favorites
                     </button>
                     {% endif %}
                 </div>
 
-                <button id="loadSummaryBtn"
-                    type="button"
-                    class="btn btn-outline-primary btn-sm mt-3">
-                🤖 Generate AI summary
-            </button>
+                <div class="ai-summary-card mt-3">
+                    <div class="ai-summary-card__header">
+                        <div class="ai-summary-card__title-wrap">
+                            <div class="ai-summary-card__badge">AI</div>
+                            <div>
+                                <div class="ai-summary-card__title">AI dealer summary</div>
+                                <div class="ai-summary-card__subtitle">
+                                    Quick review of dealer profile, ratings and available details
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <div id="modalAiSummary" class="mt-3 d-none"></div>
+                    <div class="ai-summary-card__actions">
+                        <button id="loadSummaryBtn"
+                                type="button"
+                                class="ai-summary-btn ai-summary-btn--accent">
+                            <span class="ai-summary-btn__icon">✨</span>
+                            <span>Analyze this dealer</span>
+                        </button>
+                    </div>
+
+                    <div class="ai-summary-disclaimer">
+                        By using AI summary, you accept the service terms. AI output may be incomplete and should be verified before making a decision.
+                    </div>
+
+                    <div id="modalAiSummary" class="mt-3 d-none"></div>
+                    
+                </div>
             </div>
 
         </div>

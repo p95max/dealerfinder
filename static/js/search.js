@@ -231,16 +231,23 @@ function renderAiSummary(data) {
 /* =========================
    MODAL
 ========================= */
+let aiSummaryLoadingInterval = null;
+
 function renderAiSummaryLoading() {
     const container = document.getElementById("modalAiSummary");
     if (!container) return;
+
+    if (aiSummaryLoadingInterval) {
+        clearInterval(aiSummaryLoadingInterval);
+        aiSummaryLoadingInterval = null;
+    }
 
     container.classList.remove("d-none");
 
     container.innerHTML = `
         <div class="alert alert-secondary mt-3 mb-0 small">
             <div class="d-flex align-items-center gap-2 mb-1">
-                <div class="spinner-border spinner-border-sm"></div>
+                <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
                 <span id="ai-loading-text">Initializing...</span>
             </div>
         </div>
@@ -255,35 +262,116 @@ function renderAiSummaryLoading() {
 
     let i = 0;
     const textEl = document.getElementById("ai-loading-text");
+    if (!textEl) return;
 
-    const interval = setInterval(() => {
+    aiSummaryLoadingInterval = setInterval(() => {
+        if (!document.body.contains(textEl)) {
+            clearInterval(aiSummaryLoadingInterval);
+            aiSummaryLoadingInterval = null;
+            return;
+        }
+
         if (i < steps.length) {
             textEl.textContent = steps[i];
             i++;
         } else {
-            clearInterval(interval);
+            clearInterval(aiSummaryLoadingInterval);
+            aiSummaryLoadingInterval = null;
         }
     }, 800);
 }
 
-function openDealerModal(btn) {
+function resetAiSummaryButton() {
+    const summaryBtn = document.getElementById("loadSummaryBtn");
+    if (!summaryBtn) return;
+
+    summaryBtn.disabled = false;
+    summaryBtn.textContent = "🤖 Generate AI summary";
+    summaryBtn.classList.remove("d-none");
+}
+
+function bindAiSummaryButton(card, placeId, baseData) {
+    const summaryBtn = document.getElementById("loadSummaryBtn");
+    if (!summaryBtn) return;
+
+    summaryBtn.onclick = null;
+    summaryBtn.disabled = false;
+    summaryBtn.textContent = "🤖 Generate AI summary";
+    summaryBtn.classList.remove("d-none");
+
+    summaryBtn.onclick = async function () {
+        summaryBtn.disabled = true;
+        summaryBtn.textContent = "Generating...";
+
+        renderAiSummaryLoading();
+
+        try {
+            const response = await fetch(`/dealer/${placeId}/ai-summary/`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error("AI summary request failed");
+            }
+
+            const ai = await response.json();
+
+            card.dataset.dealerAiStatus = ai.status || "failed";
+            card.dataset.dealerAiSummary = ai.summary || "";
+
+            renderAiSummary({
+                ...baseData,
+                ai_status: ai.status || "failed",
+                ai_summary: ai.summary || "",
+            });
+
+            if ((ai.status || "") === "done") {
+                summaryBtn.classList.add("d-none");
+                return;
+            }
+
+            if ((ai.status || "") === "pending") {
+                summaryBtn.disabled = false;
+                summaryBtn.textContent = "Refresh summary";
+                return;
+            }
+
+            summaryBtn.disabled = false;
+            summaryBtn.textContent = "Try again";
+        } catch (error) {
+            renderAiSummary({
+                ...baseData,
+                ai_status: "failed",
+                ai_summary: "",
+            });
+
+            summaryBtn.disabled = false;
+            summaryBtn.textContent = "Try again";
+        }
+    };
+}
+
+function openDealerModal(card) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
     const infoEl = document.getElementById("modalInfo");
     const mapEl = document.getElementById("modalMap");
     const routeBtn = document.getElementById("modalRouteBtn");
+    const summaryEl = document.getElementById("modalAiSummary");
 
     const data = {
-        name: btn.dataset.dealerName || "",
-        address: btn.dataset.dealerAddress || "",
-        phone: btn.dataset.dealerPhone || "",
-        website: btn.dataset.dealerWebsite || "",
-        rating: btn.dataset.dealerRating || "",
-        distance: btn.dataset.dealerDistance || "",
-        lat: btn.dataset.dealerLat,
-        lng: btn.dataset.dealerLng,
-        ai_summary: btn.dataset.dealerAiSummary || "",
-        ai_status: btn.dataset.dealerAiStatus || "pending",
+        name: card.dataset.dealerName || "",
+        address: card.dataset.dealerAddress || "",
+        phone: card.dataset.dealerPhone || "",
+        website: card.dataset.dealerWebsite || "",
+        rating: card.dataset.dealerRating || "",
+        distance: card.dataset.dealerDistance || "",
+        lat: card.dataset.dealerLat,
+        lng: card.dataset.dealerLng,
+        ai_summary: card.dataset.dealerAiSummary || "",
+        ai_status: card.dataset.dealerAiStatus || "pending",
     };
 
     nameEl.textContent = data.name;
@@ -303,22 +391,29 @@ function openDealerModal(btn) {
     if (isFiniteCoordinate(data.lat, -90, 90) && isFiniteCoordinate(data.lng, -180, 180)) {
         mapEl.src = `https://maps.google.com/maps?q=${data.lat},${data.lng}&z=15&output=embed`;
         routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${data.lat},${data.lng}`;
+    } else {
+        mapEl.src = "";
+        routeBtn.removeAttribute("href");
     }
 
-    const placeId = btn.dataset.dealerPlaceId;
+    if (summaryEl) {
+        summaryEl.classList.add("d-none");
+        summaryEl.innerHTML = "";
+    }
 
-    if (data.ai_status === "done") {
+    const placeId = card.dataset.dealerPlaceId || "";
+
+    resetAiSummaryButton();
+
+    if (data.ai_status === "done" && data.ai_summary) {
         renderAiSummary(data);
+
+        const summaryBtn = document.getElementById("loadSummaryBtn");
+        if (summaryBtn) {
+            summaryBtn.classList.add("d-none");
+        }
     } else {
-        renderAiSummaryLoading();
-        fetch(`/dealer/${placeId}/ai-summary/`)
-            .then(r => r.json())
-            .then(ai => {
-                btn.dataset.dealerAiStatus = ai.status;
-                btn.dataset.dealerAiSummary = ai.summary;
-                renderAiSummary({ ...data, ai_status: ai.status, ai_summary: ai.summary });
-            })
-            .catch(() => renderAiSummary({ ...data, ai_status: "failed" }));
+        bindAiSummaryButton(card, placeId, data);
     }
 
     bootstrap.Modal.getOrCreateInstance(modalEl).show();

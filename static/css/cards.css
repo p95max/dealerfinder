@@ -27,3 +27,115 @@
     color: var(--df-text-muted);
     font-size: 0.95rem;
 }
+
+.dealer-modal-content {
+    border: 0;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+}
+
+.dealer-map-wrap {
+    height: 250px;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #f8f9fb;
+}
+
+.ai-summary-card {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+}
+
+.ai-summary-card__header {
+    margin-bottom: 0.875rem;
+}
+
+.ai-summary-card__title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.ai-summary-card__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.10);
+    color: #4f46e5;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.ai-summary-card__title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.ai-summary-card__subtitle {
+    margin-top: 0.2rem;
+    font-size: 0.82rem;
+    color: #6b7280;
+    line-height: 1.35;
+}
+
+.ai-summary-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.ai-summary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.72rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.ai-summary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.16);
+}
+
+.ai-summary-btn:active {
+    transform: translateY(0);
+}
+
+.ai-summary-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.ai-summary-btn--accent {
+    background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+    color: #fff;
+}
+
+.ai-summary-btn__icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.ai-summary-disclaimer {
+    margin-top: 0.65rem;
+    font-size: 0.73rem;
+    line-height: 1.4;
+    color: #6b7280;
+}
