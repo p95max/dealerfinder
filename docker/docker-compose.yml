@@ -57,6 +57,19 @@ services:
       - web
     restart: unless-stopped
 
+  ai-worker:
+      build:
+        context: ..
+        dockerfile: docker/Dockerfile
+      container_name: dealerfinder-ai-worker
+      command: sh -c "while true; do python manage.py process_pending_ai_summaries --limit 60 --workers 10; sleep 60; done"
+      env_file:
+        - ../.env
+      depends_on:
+        db:
+          condition: service_healthy
+      restart: unless-stopped
+
 volumes:
   postgres_data:
   static_volume:

@@ -77,11 +77,11 @@ def is_summary_up_to_date(summary_obj: DealerAiSummary, fingerprint: str) -> boo
 
 
 def validate_ai_result(data: dict) -> dict:
-    summary = str(data.get("summary", "")).strip()
-    pros = [str(x).strip() for x in data.get("pros", []) if str(x).strip()]
-    cons = [str(x).strip() for x in data.get("cons", []) if str(x).strip()]
-    sentiment = str(data.get("sentiment", "")).strip()
-    languages = [str(x).strip().lower() for x in data.get("languages", []) if str(x).strip()]
+    summary = str(data.get("summary") or "").strip()
+    pros = [str(x).strip() for x in (data.get("pros") or []) if str(x).strip()]
+    cons = [str(x).strip() for x in (data.get("cons") or []) if str(x).strip()]
+    sentiment = str(data.get("sentiment") or "").strip()
+    languages = [str(x).strip().lower() for x in (data.get("languages") or []) if str(x).strip()]
     export_friendly = data.get("export_friendly")
     confidence = data.get("confidence")
 
