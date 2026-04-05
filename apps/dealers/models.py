@@ -24,6 +24,69 @@ class Dealer(models.Model):
         return self.name
 
 
+
+class DealerAiSummary(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_DONE = "done"
+    STATUS_FAILED = "failed"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_DONE, "Done"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    SENTIMENT_POSITIVE = "positive"
+    SENTIMENT_MIXED = "mixed"
+    SENTIMENT_NEGATIVE = "negative"
+
+    SENTIMENT_CHOICES = [
+        (SENTIMENT_POSITIVE, "Positive"),
+        (SENTIMENT_MIXED, "Mixed"),
+        (SENTIMENT_NEGATIVE, "Negative"),
+    ]
+
+    dealer = models.OneToOneField(
+        "Dealer",
+        on_delete=models.CASCADE,
+        related_name="ai_summary",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    provider = models.CharField(max_length=50, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    prompt_version = models.CharField(max_length=20, default="v1")
+
+    summary = models.TextField(blank=True)
+    pros = models.JSONField(default=list, blank=True)
+    cons = models.JSONField(default=list, blank=True)
+    sentiment = models.CharField(
+        max_length=20,
+        choices=SENTIMENT_CHOICES,
+        blank=True,
+    )
+    languages = models.JSONField(default=list, blank=True)
+    export_friendly = models.BooleanField(null=True, blank=True)
+    confidence = models.FloatField(null=True, blank=True)
+
+    source_review_count = models.PositiveIntegerField(default=0)
+    source_fingerprint = models.CharField(max_length=64, blank=True)
+
+    raw_response = models.JSONField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+    generated_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.dealer.name} [{self.status}]"
+
+
 class SearchCache(models.Model):
     query_key = models.CharField(max_length=255, unique=True)
     results_json = models.JSONField()
