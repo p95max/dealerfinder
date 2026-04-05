@@ -15,168 +15,171 @@
 
 ## 🧱 Модели
 
-- [ ] `Dealer`:
-  - [ ] `ai_summary` (JSONField, nullable)
-  - [ ] `ai_synced_at` (DateTimeField, nullable)
-  - [ ] `ai_status` (`new | pending | ready | failed`, default=`new`)
-  - [ ] `reviews_sample_count` (int, nullable)
-  - [ ] `reviews_total_count_at_sync` (int, nullable)
+- [x] `Dealer`:
+  - `ai_summary` (JSONField, nullable) — *(реализовано через отдельную модель `DealerAiSummary` OneToOne)*
+  - `ai_synced_at` (DateTimeField, nullable) — *(`generated_at` в `DealerAiSummary`)*
+  - `ai_status` (`new | pending | ready | failed`, default=`new`) — *(`pending | done | failed` в `DealerAiSummary`)*
+  - `reviews_sample_count` (int, nullable) — *(`source_review_count` в `DealerAiSummary`)*
+  - `reviews_total_count_at_sync` (int, nullable) — *не реализовано*
 
 ---
 
 ## 🌍 Google Places — Place Details
 
-- [ ] добавить `get_place_details(place_id)`
-- [ ] использовать FieldMask:
-  - `reviews`
-  - `rating`
-  - `userRatingCount`
-  - `priceLevel`
-  - `regularOpeningHours`
-  - `currentOpeningHours`
-  - `websiteUri`
-  - `nationalPhoneNumber`
-  - `types`
+- [x] добавить `get_place_details(place_id)`
+- [x] использовать FieldMask:
+  - [x] `reviews`
+  - [x] `rating`
+  - [x] `userRatingCount`
+  - [x] `priceLevel`
+  - [x] `regularOpeningHours`
+  - [x] `currentOpeningHours`
+  - [x] `websiteUri`
+  - [x] `nationalPhoneNumber`
+  - [x] `types`
 
 ---
 
 ## 🤖 AI Service
 
-- [ ] создать `apps/dealers/services/ai_service.py`
+- [x] создать `apps/dealers/services/dealer_ai_service.py`
 
 ### Dealer context
 
-- [ ] собирать `dealer_context` из Place Details:
-  - name, rating, total_reviews
-  - price_level
-  - opening_hours
-  - open_now
-  - website, phone
-  - types
-  - reviews[]
+- [x] собирать `dealer_context` из Place Details:
+  - [x] name, rating, total_reviews
+  - [x] price_level
+  - [x] opening_hours
+  - [x] open_now
+  - [x] website, phone
+  - [x] types
+  - [x] reviews[]
 
 ### JSON contract (strict)
 
+> ⚠️ Реализованный контракт отличается от чеклиста:
 ```json
 {
-  "positives": ["str"],
-  "negatives": ["str"],
+  "pros": ["str"],
+  "cons": ["str"],
   "languages": ["str"],
   "export_friendly": bool,
-  "warranty_mentions": bool,
-  "tone": "positive | neutral | negative"
+  "sentiment": "positive | mixed | negative",
+  "confidence": 0.0-1.0,
+  "summary": "str"
 }
 ```
 
-- [ ] без свободного текста
-- [ ] обязательная валидация JSON
-- [ ] fallback при невалидном ответе
+- [x] без свободного текста *(есть `summary` поле)*
+- [x] обязательная валидация JSON
+- [x] fallback при невалидном ответе
 
 ### Правила
 
-- [ ] если отзывов нет → AI не вызывается
-- [ ] если отзывов < 3 → optional: не показывать summary или low-confidence режим
-- [ ] избегать категоричных утверждений (fact claims)
-- [ ] summary = signals, а не факты
+- [x] если отзывов нет → AI не вызывается
+- [ ] если отзывов < 3 → optional: не показывать summary или low-confidence режим *(не реализовано)*
+- [ ] избегать категоричных утверждений (fact claims) *(в промпте — уточнить)*
+- [ ] summary = signals, а не факты *(в промпте — уточнить)*
 
 ---
 
 ## ⚙️ AI Job Flow (ASYNC)
 
-- [ ] добавить task queue (Celery / RQ — на выбор)
+- [ ] добавить task queue (Celery / RQ) — **не реализовано: используется `ThreadPoolExecutor` + inline sync**
 
 ### Задача
 
-- [ ] `enrich_dealer_ai_summary(dealer_id)`
+- [ ] `enrich_dealer_ai_summary(dealer_id)` — *нет Celery/RQ task; есть management command `process_pending_ai_summaries`*
 
 ### Поведение
 
-- [ ] запуск только если:
-  - `ai_status is NULL` или `failed`
-- [ ] не запускать если `ai_status = ready`
+- [x] запуск только если `ai_status != done` (idempotency через fingerprint)
+- [x] не запускать если `status = done`
 
 ### Обработка
 
-- [ ] retry policy
-- [ ] timeout policy
-- [ ] idempotency guard
+- [ ] retry policy *(нет ретраев в task, есть в HTTP-запросах)*
+- [x] timeout policy *(`AI_REQUEST_TIMEOUT` в settings)*
+- [x] idempotency guard *(fingerprint-based)*
 
 ### Статусы
 
-- [ ] `pending` — задача запущена
-- [ ] `ready` — summary готов
-- [ ] `failed` — ошибка (не бесконечные ретраи)
+- [x] `pending` — задача запущена
+- [x] `done` (≠ `ready`) — summary готов
+- [x] `failed` — ошибка
 
 ---
 
 ## 💾 Cache & Strategy
 
-- [ ] AI не вызывается повторно для дилеров со статусом `ready`
-- [ ] для `failed` допускается ограниченный retry policy
-- [ ] результат сохраняется в `Dealer.ai_summary`
-- [ ] повторные запросы — только из БД
+- [x] AI не вызывается повторно для дилеров со статусом `done`
+- [ ] для `failed` допускается ограниченный retry policy *(нет ограничения на ретраи failed)*
+- [x] результат сохраняется в `DealerAiSummary`
+- [x] повторные запросы — только из БД
+- [ ] Сделать persistent cache в БД + TTL.
+Хранение в Dealer:
+`ai_summary
+ai_summary_status
+ai_summary_generated_at
+`
+И правила:
+`
+если summary есть и ему меньше 7 дней → отдаём из БД
+если summary старше 7 дней → генерим заново
+если summary пустой или failed → пробуем снова
+`
+**Это проще, чем городить отдельный in-memory кеш или Redis только ради summary.**
 
 ---
 
-## 🔄 Интеграция в Search Flow (Resource-efficient)
+## 🔄 Интеграция в Search Flow
 
 ### ❗ Scope v2
 
-- [ ] AI summary отображается **только в search card**
-- [ ] dealer detail page **НЕ входит в v2**
-- [ ] AI используется как **background enrichment**, а не часть request flow
+- [x] AI summary отображается только в search card
+- [x] dealer detail page — отдельная страница (modal)
+- [x] AI используется как background enrichment
 
 ---
 
-### 🚫 Ограничения (важно)
+### 🚫 Ограничения
 
-- [ ] НЕ вызывать AI синхронно в `search_view`
-- [ ] НЕ запускать enrichment для всех дилеров подряд
-- [ ] НЕ блокировать рендер страницы ожиданием AI
+- [ ] НЕ вызывать AI синхронно в `search_view` — **нарушено**: `_sync_ai_summaries` вызывается синхронно в request flow при `AI_SYNC_ON_SEARCH=True`
+- [x] НЕ запускать enrichment для всех дилеров подряд *(top 5 через `AI_SYNC_LIMIT=5`)*
+- [x] НЕ блокировать рендер страницы ожиданием AI *(условно: inline sync может блокировать)*
 
 ---
 
-### ⚙️ Hybrid стратегия (экономный режим)
+### ⚙️ Hybrid стратегия
 
-- [ ] после cache MISS сохраняем базовых дилеров
-- [ ] запускать AI enrichment **только для top N результатов первой страницы** (например: 3–5)
-
-- [ ] запуск enrichment:
-  - [ ] асинхронно (task queue)
-  - [ ] без ожидания результата в response
+- [x] после cache MISS сохраняем базовых дилеров
+- [x] запускать AI enrichment только для top N результатов (`AI_SYNC_LIMIT=5`)
+- [ ] запуск enrichment асинхронно (task queue) — **не реализовано**
+- [ ] без ожидания результата в response — **нарушено при `AI_SYNC_ON_SEARCH=True`**
 
 ---
 
 ### 📦 Отображение (Eager if ready)
 
-- [ ] `ai_summary` показывается **только если `ai_status = ready`**
-- [ ] если `pending` → не показывать блок
-- [ ] если `failed` → не показывать блок
-
-- [ ] карточка дилера должна корректно рендериться **без AI блока**
+- [x] `ai_summary` показывается только если `ai_status = done`
+- [x] если `pending` → не показывать блок
+- [x] если `failed` → не показывать блок
+- [x] карточка дилера корректно рендериться без AI блока
 
 ---
 
 ### 🔁 Поведение при повторных запросах
 
-- [ ] если `ai_status = ready` → всегда брать из БД
-- [ ] повторно AI не вызывать
+- [x] если `status = done` → брать из БД
+- [x] повторно AI не вызывать
 
 ---
 
 ### 💸 Cost control
 
-- [ ] ограничить количество enrichment задач (top N)
-- [ ] не вызывать AI для дилеров вне первой страницы
-- [ ] избегать повторных вызовов (idempotency)
-
----
-
-### 🧠 Принцип
-
-> Generation — async & selective  
-> Display — eager if ready  
-> No impact on search latency
+- [x] ограничить количество enrichment задач (top N = 5)
+- [x] не вызывать AI для дилеров вне первой страницы
+- [x] избегать повторных вызовов (idempotency через fingerprint)
 
 ---
 
@@ -184,50 +187,44 @@
 
 ### dealer-card
 
-- [ ] добавить AI summary блок
-- [ ] показывать только если `ai_status = ready`
+- [x] добавить AI summary блок
+- [x] показывать только если `ai_status = done`
 
 ### Отображать
 
-- [ ] positives
-- [ ] negatives
-- [ ] languages (если есть)
+- [x] positives (pros)
+- [x] negatives (cons)
+- [x] languages (если есть)
 
 ### Warning
 
-- [ ] если `reviews_sample_count << reviews_total_count_at_sync`:
-  - показывать:
-  - "Summary based on a limited sample of recent reviews"
+- [ ] если `reviews_sample_count << reviews_total_count_at_sync` → показывать "Summary based on a limited sample of recent reviews" — **не реализовано**
 
 ### UX
 
-- [ ] UI не делает акцент на AI
-- [ ] выглядит как “review insights”
-- [ ] компактный блок
+- [x] UI не делает акцент на AI
+- [x] выглядит как "review insights"
+- [x] компактный блок
 
 ---
 
-## 📄 Detail Page (опционально)
+## 📄 Detail Page
 
-- [ ] подготовить future-ready использование AI summary
+- [x] AI summary доступен через `/dealer/<place_id>/ai-summary/` (JSON endpoint)
 
 ---
 
 ## ⚖️ Юридическое
 
-- [ ] AI Disclaimer в `/agb`
+- [x] AI Disclaimer — присутствует в UI (`ai-summary-disclaimer`)
+- [ ] AI Disclaimer в `/agb` — *описан в docs, реализация в шаблоне не подтверждена*
 - [ ] проверить необходимость в `/datenschutz`
-- [ ] disclaimer под AI-блоком
+- [x] disclaimer под AI-блоком
 
 ### Важно
 
-- [ ] избегать формулировок:
-  - “работают с иностранцами”
-  - “есть гарантия”
-  - “честные цены”
-- [ ] использовать мягкие формулировки:
-  - “reviews mention…”
-  - “customers report…”
+- [ ] избегать формулировок "работают с иностранцами" / "есть гарантия" и т.д. — *в промпте, проверить*
+- [ ] использовать мягкие формулировки ("reviews mention…") — *в промпте, проверить*
 
 ---
 
@@ -241,7 +238,7 @@
 
 ### Logic
 
-- [ ] skip if `ai_status = ready`
+- [ ] skip if `ai_status = done`
 - [ ] skip if no reviews
 
 ### Integration
@@ -253,8 +250,8 @@
 
 ## 🚀 Future
 
-- [ ] dealer detail page
-- [ ] periodic re-sync (например раз в 30 дней)
+- [ ] dealer detail page (full)
+- [ ] periodic re-sync (раз в 30 дней)
 - [ ] расширение JSON (confidence, tags)
 
 ---
@@ -262,3 +259,9 @@
 ## 🧠 Key Design Principle
 
 Deterministic search + async cached AI enrichment
+
+> Persistent cache в БД реализован через `DealerAiSummary`.
+
+
+
+
