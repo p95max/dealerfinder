@@ -21,6 +21,7 @@ from .services.search_tracking_service import (
     track_user_search_history,
     build_search_discovery_context,
 )
+from apps.dealers.models import DealerAiSummary
 
 import logging
 import time
@@ -238,6 +239,42 @@ def search_view(request):
             user_lng=user_lng,
             max_distance_km=max_distance_km,
             sort=sort,
+        )
+
+        place_ids = [dealer.get("place_id") for dealer in dealers if dealer.get("place_id")]
+
+        ai_summary_map = {
+            item.dealer.google_place_id: item
+            for item in DealerAiSummary.objects.select_related("dealer").filter(
+                dealer__google_place_id__in=place_ids
+            )
+        }
+
+        for dealer in dealers:
+            ai = ai_summary_map.get(dealer.get("place_id"))
+
+            if ai:
+                dealer["ai_summary"] = {
+                    "status": ai.status,
+                    "summary": ai.summary or "",
+                    "pros": ai.pros or [],
+                    "cons": ai.cons or [],
+                }
+            else:
+                dealer["ai_summary"] = {
+                    "status": "failed",
+                    "summary": "",
+                    "pros": [],
+                    "cons": [],
+                }
+        logger.info(
+            "AI summaries attached to search results",
+            extra={
+                "event": "ai_summaries_attached",
+                "place_ids_count": len(place_ids),
+                "ai_summary_map_count": len(ai_summary_map),
+                "place_ids": place_ids[:5],
+            },
         )
 
         if not dealers and is_google_cap_reached():

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Dealer, SearchCache, PopularSearch, UserSearchHistory
+from .models import Dealer, SearchCache, PopularSearch, UserSearchHistory, DealerAiSummary
+
 
 @admin.register(Dealer)
 class DealerAdmin(admin.ModelAdmin):
@@ -30,5 +31,20 @@ class UserSearchHistoryAdmin(admin.ModelAdmin):
     list_display = ("user", "city", "searched_at")
     ordering = ("-searched_at",)
     search_fields = ("user__email", "city")
+
+
+@admin.register(DealerAiSummary)
+class DealerAiSummaryAdmin(admin.ModelAdmin):
+    list_display = (
+        "dealer",
+        "status",
+        "sentiment",
+        "source_review_count",
+        "generated_at",
+        "updated_at",
+    )
+    list_filter = ("status", "sentiment", "provider", "model")
+    search_fields = ("dealer__name", "dealer__google_place_id")
+    readonly_fields = ("generated_at", "updated_at", "raw_response")
 
 

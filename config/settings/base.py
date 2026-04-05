@@ -249,4 +249,13 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False") == "True"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# =========================
+# AI
+# =========================
+AI_ENABLED = os.getenv("AI_ENABLED", "False") == "True"
+AI_PROVIDER = os.getenv("AI_PROVIDER", "openai")
+AI_MODEL = os.getenv("AI_MODEL", "gpt-4o-mini")
+AI_API_KEY = os.getenv("AI_API_KEY", "")
+AI_REQUEST_TIMEOUT = int(os.getenv("AI_REQUEST_TIMEOUT", "15"))
+MAX_AI_SUMMARIES_PER_DAY = int(os.getenv("MAX_AI_SUMMARIES_PER_DAY", "200"))
+AI_PROMPT_VERSION = os.getenv("AI_PROMPT_VERSION", "v1")

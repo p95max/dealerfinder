@@ -74,6 +74,10 @@
     data-dealer-lng="{{ d.lng|default:'' }}"
     data-dealer-distance="{{ d.distance_km|default:'' }}"
     data-dealer-is-favorite="{% if d.is_favorite %}1{% else %}0{% endif %}"
+    data-dealer-ai-summary="{{ d.ai_summary.summary|default:''|escapejs }}"
+    data-dealer-ai-pros='{{ d.ai_summary.pros|default:"[]" }}'
+    data-dealer-ai-cons='{{ d.ai_summary.cons|default:"[]" }}'
+    data-dealer-ai-status="{{ d.ai_summary.status|default:'' }}"
 >
     <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
         <div class="flex-grow-1">
