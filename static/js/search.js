@@ -286,7 +286,7 @@ function resetAiSummaryButton() {
     if (!summaryBtn) return;
 
     summaryBtn.disabled = false;
-    summaryBtn.textContent = "🤖 Generate AI summary";
+    summaryBtn.textContent = "? Generate AI summary";
     summaryBtn.classList.remove("d-none");
 }
 
@@ -296,7 +296,7 @@ function bindAiSummaryButton(card, placeId, baseData) {
 
     summaryBtn.onclick = null;
     summaryBtn.disabled = false;
-    summaryBtn.textContent = "🤖 Generate AI summary";
+    summaryBtn.textContent = "? Generate AI summary";
     summaryBtn.classList.remove("d-none");
 
     summaryBtn.onclick = async function () {
@@ -353,6 +353,47 @@ function bindAiSummaryButton(card, placeId, baseData) {
     };
 }
 
+function bindModalFavoriteButton(card) {
+    const favoriteBtn = document.getElementById("modalFavoriteBtn");
+    if (!favoriteBtn) return;
+
+    const placeId = card.dataset.dealerPlaceId || "";
+    const name = card.dataset.dealerName || "";
+    const address = card.dataset.dealerAddress || "";
+    const rating = card.dataset.dealerRating || "";
+    const phone = card.dataset.dealerPhone || "";
+    const website = card.dataset.dealerWebsite || "";
+    const isFavorite = card.dataset.dealerIsFavorite === "1";
+
+    favoriteBtn.onclick = null;
+    favoriteBtn.disabled = false;
+
+    if (isFavorite) {
+        favoriteBtn.className = "btn btn-outline-danger flex-grow-1";
+        favoriteBtn.textContent = "✖ Remove from favorites";
+
+        favoriteBtn.onclick = function () {
+            removeFavorite(placeId);
+        };
+    } else {
+        favoriteBtn.className = "btn btn-outline-secondary flex-grow-1";
+        favoriteBtn.textContent = "☆ Add to favorites";
+
+        favoriteBtn.onclick = function () {
+            addFavorite(favoriteBtn, {
+                place_id: placeId,
+                name: name,
+                address: address,
+                rating: rating,
+                phone: phone,
+                website: website,
+                lat: card.dataset.dealerLat || "",
+                lng: card.dataset.dealerLng || "",
+            });
+        };
+    }
+}
+
 function openDealerModal(card) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -395,6 +436,8 @@ function openDealerModal(card) {
         mapEl.src = "";
         routeBtn.removeAttribute("href");
     }
+
+    bindModalFavoriteButton(card);
 
     if (summaryEl) {
         summaryEl.classList.add("d-none");
