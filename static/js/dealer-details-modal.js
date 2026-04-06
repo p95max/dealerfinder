@@ -1,8 +1,91 @@
-/* =========================
-   MODAL
-========================= */
 let aiSummaryLoadingInterval = null;
 
+/* =========================
+   HELPER
+========================= */
+function parseJsonArray(value) {
+    if (!value) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return [];
+    }
+}
+
+/* =========================
+   AI SUMMARY
+========================= */
+function renderAiSummary(data) {
+    const container = document.getElementById("modalAiSummary");
+    if (!container) return;
+
+    const status = data.ai_status;
+    const summary = data.ai_summary;
+    const pros = Array.isArray(data.ai_pros) ? data.ai_pros : [];
+    const cons = Array.isArray(data.ai_cons) ? data.ai_cons : [];
+
+    container.classList.add("d-none");
+    container.innerHTML = "";
+
+    if (status === "pending") {
+        container.classList.remove("d-none");
+        container.innerHTML = `
+            <div class="alert alert-secondary mt-3 mb-0 small">
+                AI summary is being generated...
+            </div>
+        `;
+        return;
+    }
+
+    if (status === "done" && summary) {
+        const prosHtml = pros.map((item) => `
+            <div class="ai-summary-point ai-summary-point--pros">
+                <span class="ai-summary-point__icon">+</span>
+                <span>${escapeHtml(item)}</span>
+            </div>
+        `).join("");
+
+        const consHtml = cons.map((item) => `
+            <div class="ai-summary-point ai-summary-point--cons">
+                <span class="ai-summary-point__icon">!</span>
+                <span>${escapeHtml(item)}</span>
+            </div>
+        `).join("");
+
+        container.classList.remove("d-none");
+        container.innerHTML = `
+            <div class="surface-card-muted p-3 mt-3">
+                <div class="fw-semibold mb-2">AI summary (based on reviews)</div>
+                <p class="small text-secondary mb-3">${escapeHtml(summary)}</p>
+
+                ${pros.length ? `
+                    <div class="ai-summary-list mb-2">
+                        ${prosHtml}
+                    </div>
+                ` : ""}
+
+                ${cons.length ? `
+                    <div class="ai-summary-list">
+                        ${consHtml}
+                    </div>
+                ` : ""}
+            </div>
+        `;
+        return;
+    }
+
+    if (status === "failed") {
+        container.classList.remove("d-none");
+        container.innerHTML = `
+            <div class="alert alert-warning mt-3 mb-0 small">
+                AI summary unavailable
+            </div>
+        `;
+    }
+}
 function renderAiSummaryLoading() {
     const container = document.getElementById("modalAiSummary");
     if (!container) return;
@@ -58,6 +141,63 @@ function resetAiSummaryButton() {
     summaryBtn.disabled = true;
     summaryBtn.textContent = "✨ Analyze this dealer";
     summaryBtn.classList.remove("d-none");
+}
+function initAiConsent(data) {
+    const checkbox = document.getElementById("aiConsentCheckbox");
+    const button = document.getElementById("loadSummaryBtn");
+    const summaryContainer = document.getElementById("modalAiSummary");
+
+    if (!checkbox || !button || !summaryContainer) return;
+
+    const STORAGE_KEY = "aiConsentAccepted";
+
+    checkbox.onchange = null;
+
+    const alreadyAccepted = sessionStorage.getItem(STORAGE_KEY) === "1";
+
+    if (alreadyAccepted) {
+        checkbox.checked = true;
+        button.disabled = false;
+
+        if (data.ai_status === "done" && data.ai_summary) {
+            button.classList.add("d-none");
+            renderAiSummary(data);
+        } else {
+            button.classList.remove("d-none");
+        }
+
+        return;
+    }
+
+    checkbox.checked = false;
+
+    summaryContainer.classList.add("d-none");
+    summaryContainer.innerHTML = "";
+
+    button.disabled = true;
+
+    checkbox.onchange = () => {
+        const accepted = checkbox.checked;
+
+        if (!accepted) {
+            button.disabled = true;
+
+            summaryContainer.classList.add("d-none");
+            summaryContainer.innerHTML = "";
+            return;
+        }
+
+        sessionStorage.setItem(STORAGE_KEY, "1");
+
+        if (data.ai_status === "done" && data.ai_summary) {
+            button.classList.add("d-none");
+            renderAiSummary(data);
+            return;
+        }
+
+        button.classList.remove("d-none");
+        button.disabled = false;
+    };
 }
 
 function bindAiSummaryButton(card, placeId, baseData) {
@@ -131,7 +271,6 @@ function bindAiSummaryButton(card, placeId, baseData) {
         }
     };
 }
-
 function bindModalFavoriteButton(card) {
     const favoriteBtn = document.getElementById("modalFavoriteBtn");
     if (!favoriteBtn) return;
@@ -173,18 +312,9 @@ function bindModalFavoriteButton(card) {
     }
 }
 
-function parseJsonArray(value) {
-    if (!value) {
-        return [];
-    }
-
-    try {
-        return JSON.parse(value);
-    } catch {
-        return [];
-    }
-}
-
+/* =========================
+   MODAL/ORCHESTRATOR
+========================= */
 function openDealerModal(card) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -246,142 +376,11 @@ function openDealerModal(card) {
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
 
-
-/* =========================
-   CLICK HANDLER
-========================= */
 document.addEventListener("click", (e) => {
     const btn = e.target.closest(".js-open-dealer-modal");
     if (!btn) return;
     openDealerModal(btn);
 });
 
-/* =========================
-   AI SUMMARY
-========================= */
-function renderAiSummary(data) {
-    const container = document.getElementById("modalAiSummary");
-    if (!container) return;
 
-    const status = data.ai_status;
-    const summary = data.ai_summary;
-    const pros = Array.isArray(data.ai_pros) ? data.ai_pros : [];
-    const cons = Array.isArray(data.ai_cons) ? data.ai_cons : [];
 
-    container.classList.add("d-none");
-    container.innerHTML = "";
-
-    if (status === "pending") {
-        container.classList.remove("d-none");
-        container.innerHTML = `
-            <div class="alert alert-secondary mt-3 mb-0 small">
-                AI summary is being generated...
-            </div>
-        `;
-        return;
-    }
-
-    if (status === "done" && summary) {
-        const prosHtml = pros.map((item) => `
-            <div class="ai-summary-point ai-summary-point--pros">
-                <span class="ai-summary-point__icon">+</span>
-                <span>${escapeHtml(item)}</span>
-            </div>
-        `).join("");
-
-        const consHtml = cons.map((item) => `
-            <div class="ai-summary-point ai-summary-point--cons">
-                <span class="ai-summary-point__icon">!</span>
-                <span>${escapeHtml(item)}</span>
-            </div>
-        `).join("");
-
-        container.classList.remove("d-none");
-        container.innerHTML = `
-            <div class="surface-card-muted p-3 mt-3">
-                <div class="fw-semibold mb-2">AI summary (based on reviews)</div>
-                <p class="small text-secondary mb-3">${escapeHtml(summary)}</p>
-
-                ${pros.length ? `
-                    <div class="ai-summary-list mb-2">
-                        ${prosHtml}
-                    </div>
-                ` : ""}
-
-                ${cons.length ? `
-                    <div class="ai-summary-list">
-                        ${consHtml}
-                    </div>
-                ` : ""}
-            </div>
-        `;
-        return;
-    }
-
-    if (status === "failed") {
-        container.classList.remove("d-none");
-        container.innerHTML = `
-            <div class="alert alert-warning mt-3 mb-0 small">
-                AI summary unavailable
-            </div>
-        `;
-    }
-}
-
-function initAiConsent(data) {
-    const checkbox = document.getElementById("aiConsentCheckbox");
-    const button = document.getElementById("loadSummaryBtn");
-    const summaryContainer = document.getElementById("modalAiSummary");
-
-    if (!checkbox || !button || !summaryContainer) return;
-
-    const STORAGE_KEY = "aiConsentAccepted";
-
-    checkbox.onchange = null;
-
-    const alreadyAccepted = sessionStorage.getItem(STORAGE_KEY) === "1";
-
-    if (alreadyAccepted) {
-        checkbox.checked = true;
-        button.disabled = false;
-
-        if (data.ai_status === "done" && data.ai_summary) {
-            button.classList.add("d-none");
-            renderAiSummary(data);
-        } else {
-            button.classList.remove("d-none");
-        }
-
-        return;
-    }
-
-    checkbox.checked = false;
-
-    summaryContainer.classList.add("d-none");
-    summaryContainer.innerHTML = "";
-
-    button.disabled = true;
-
-    checkbox.onchange = () => {
-        const accepted = checkbox.checked;
-
-        if (!accepted) {
-            button.disabled = true;
-
-            summaryContainer.classList.add("d-none");
-            summaryContainer.innerHTML = "";
-            return;
-        }
-
-        sessionStorage.setItem(STORAGE_KEY, "1");
-
-        if (data.ai_status === "done" && data.ai_summary) {
-            button.classList.add("d-none");
-            renderAiSummary(data);
-            return;
-        }
-
-        button.classList.remove("d-none");
-        button.disabled = false;
-    };
-}
