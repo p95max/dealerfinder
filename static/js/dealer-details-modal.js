@@ -55,8 +55,8 @@ function resetAiSummaryButton() {
     const summaryBtn = document.getElementById("loadSummaryBtn");
     if (!summaryBtn) return;
 
-    summaryBtn.disabled = false;
-    summaryBtn.textContent = "? Generate AI summary";
+    summaryBtn.disabled = true;
+    summaryBtn.textContent = "✨ Analyze this dealer";
     summaryBtn.classList.remove("d-none");
 }
 
@@ -65,8 +65,11 @@ function bindAiSummaryButton(card, placeId, baseData) {
     if (!summaryBtn) return;
 
     summaryBtn.onclick = null;
-    summaryBtn.disabled = false;
-    summaryBtn.textContent = "✨ Generate AI summary";
+
+    const checkbox = document.getElementById("aiConsentCheckbox");
+    summaryBtn.disabled = !(checkbox && checkbox.checked);
+
+    summaryBtn.textContent = "✨ Analyze this dealer";
     summaryBtn.classList.remove("d-none");
 
     summaryBtn.onclick = async function () {
@@ -190,20 +193,20 @@ function openDealerModal(card) {
     const routeBtn = document.getElementById("modalRouteBtn");
     const summaryEl = document.getElementById("modalAiSummary");
 
-const data = {
-    name: card.dataset.dealerName || "",
-    address: card.dataset.dealerAddress || "",
-    phone: card.dataset.dealerPhone || "",
-    website: card.dataset.dealerWebsite || "",
-    rating: card.dataset.dealerRating || "",
-    distance: card.dataset.dealerDistance || "",
-    lat: card.dataset.dealerLat,
-    lng: card.dataset.dealerLng,
-    ai_summary: card.dataset.dealerAiSummary || "",
-    ai_status: card.dataset.dealerAiStatus || "pending",
-    ai_pros: parseJsonArray(card.dataset.dealerAiPros),
-    ai_cons: parseJsonArray(card.dataset.dealerAiCons),
-};
+    const data = {
+        name: card.dataset.dealerName || "",
+        address: card.dataset.dealerAddress || "",
+        phone: card.dataset.dealerPhone || "",
+        website: card.dataset.dealerWebsite || "",
+        rating: card.dataset.dealerRating || "",
+        distance: card.dataset.dealerDistance || "",
+        lat: card.dataset.dealerLat,
+        lng: card.dataset.dealerLng,
+        ai_summary: card.dataset.dealerAiSummary || "",
+        ai_status: card.dataset.dealerAiStatus || "pending",
+        ai_pros: parseJsonArray(card.dataset.dealerAiPros),
+        ai_cons: parseJsonArray(card.dataset.dealerAiCons),
+    };
 
     nameEl.textContent = data.name;
     infoEl.replaceChildren();
@@ -237,17 +240,8 @@ const data = {
     const placeId = card.dataset.dealerPlaceId || "";
 
     resetAiSummaryButton();
-
-    if (data.ai_status === "done" && data.ai_summary) {
-        renderAiSummary(data);
-
-        const summaryBtn = document.getElementById("loadSummaryBtn");
-        if (summaryBtn) {
-            summaryBtn.classList.add("d-none");
-        }
-    } else {
-        bindAiSummaryButton(card, placeId, data);
-    }
+    bindAiSummaryButton(card, placeId, data);
+    initAiConsent(data);
 
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
@@ -332,4 +326,40 @@ function renderAiSummary(data) {
             </div>
         `;
     }
+}
+
+function initAiConsent(data) {
+    const checkbox = document.getElementById("aiConsentCheckbox");
+    const button = document.getElementById("loadSummaryBtn");
+    const summaryContainer = document.getElementById("modalAiSummary");
+
+    if (!checkbox || !button || !summaryContainer) return;
+
+    checkbox.onchange = null;
+    checkbox.checked = false;
+
+    summaryContainer.classList.add("d-none");
+    summaryContainer.innerHTML = "";
+
+    button.disabled = true;
+
+    checkbox.onchange = () => {
+        const accepted = checkbox.checked;
+
+        if (!accepted) {
+            button.disabled = true;
+            summaryContainer.classList.add("d-none");
+            summaryContainer.innerHTML = "";
+            return;
+        }
+
+        if (data.ai_status === "done" && data.ai_summary) {
+            button.classList.add("d-none");
+            renderAiSummary(data);
+            return;
+        }
+
+        button.classList.remove("d-none");
+        button.disabled = false;
+    };
 }
