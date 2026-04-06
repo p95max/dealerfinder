@@ -335,7 +335,26 @@ function initAiConsent(data) {
 
     if (!checkbox || !button || !summaryContainer) return;
 
+    const STORAGE_KEY = "aiConsentAccepted";
+
     checkbox.onchange = null;
+
+    const alreadyAccepted = sessionStorage.getItem(STORAGE_KEY) === "1";
+
+    if (alreadyAccepted) {
+        checkbox.checked = true;
+        button.disabled = false;
+
+        if (data.ai_status === "done" && data.ai_summary) {
+            button.classList.add("d-none");
+            renderAiSummary(data);
+        } else {
+            button.classList.remove("d-none");
+        }
+
+        return;
+    }
+
     checkbox.checked = false;
 
     summaryContainer.classList.add("d-none");
@@ -348,10 +367,13 @@ function initAiConsent(data) {
 
         if (!accepted) {
             button.disabled = true;
+
             summaryContainer.classList.add("d-none");
             summaryContainer.innerHTML = "";
             return;
         }
+
+        sessionStorage.setItem(STORAGE_KEY, "1");
 
         if (data.ai_status === "done" && data.ai_summary) {
             button.classList.add("d-none");
