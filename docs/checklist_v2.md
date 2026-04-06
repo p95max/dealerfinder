@@ -77,19 +77,8 @@
 ### Правила
 
 - [x] если отзывов нет → AI не вызывается
-- [ ] если отзывов < 3 → optional: не показывать summary или low-confidence режим *(не реализовано)*
-- [ ] избегать категоричных утверждений (fact claims) *(в промпте — уточнить)*
-- [ ] summary = signals, а не факты *(в промпте — уточнить)*
 
 ---
-
-## ⚙️ AI Job Flow (ASYNC)
-
-- [ ] добавить task queue (Celery / RQ) — **не реализовано: используется `ThreadPoolExecutor` + inline sync**
-
-### Задача
-
-- [ ] `enrich_dealer_ai_summary(dealer_id)` — *нет Celery/RQ task; есть management command `process_pending_ai_summaries`*
 
 ### Поведение
 
@@ -153,8 +142,8 @@ ai_summary_generated_at
 
 - [x] после cache MISS сохраняем базовых дилеров
 - [x] запускать AI enrichment только для top N результатов (`AI_SYNC_LIMIT=5`)
-- [ ] запуск enrichment асинхронно (task queue) — **не реализовано**
-- [ ] без ожидания результата в response — **нарушено при `AI_SYNC_ON_SEARCH=True`**
+- [ ] запуск enrichment асинхронно (task queue)
+- [ ] без ожидания результата в response 
 
 ---
 
@@ -179,7 +168,7 @@ ai_summary_generated_at
 - [x] ограничить количество enrichment задач (top N = 5)
 - [x] не вызывать AI для дилеров вне первой страницы
 - [x] избегать повторных вызовов (idempotency через fingerprint)
-- [ ] установить дневной лимит AI summary: anon - 5 шт. , free - 15 шт., premium - 50 шт.
+- [ ] установить `дневной лимит AI summary`: anon - 5 шт. , free - 15 шт., premium - 50 шт.
  * Чесно лимитировать не “просмотры AI summary”, а именно: новые генерации AI summary, которые реально вызвали AI provider`
  * Показать пользователю отдельный счётчик типа AI summaries today в User Profile + Dropdown menu
  * не смешивать это с обычной search quota
@@ -222,34 +211,9 @@ ai_summary_generated_at
 ## ⚖️ Юридическое
 
 - [x] AI Disclaimer — присутствует в UI (`ai-summary-disclaimer`)
-- [ ] AI Disclaimer в `/agb` — *описан в docs, реализация в шаблоне не подтверждена*
+- [ ] AI Disclaimer в `/agb`
 - [ ] проверить необходимость в `/datenschutz`
 - [x] disclaimer под AI-блоком
-
-### Важно
-
-- [ ] избегать формулировок "работают с иностранцами" / "есть гарантия" и т.д. — *в промпте, проверить*
-- [ ] использовать мягкие формулировки ("reviews mention…") — *в промпте, проверить*
-
----
-
-## 🧪 Тесты
-
-### Unit
-
-- [ ] ai_service JSON validation
-- [ ] no-reviews path
-- [ ] invalid JSON fallback
-
-### Logic
-
-- [ ] skip if `ai_status = done`
-- [ ] skip if no reviews
-
-### Integration
-
-- [ ] search показывает summary если ready
-- [ ] search не показывает если pending/failed
 
 ---
 
