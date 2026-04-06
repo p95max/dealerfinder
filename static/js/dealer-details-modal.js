@@ -305,7 +305,7 @@ function renderAiSummary(data) {
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="surface-card-muted p-3 mt-3">
-                <div class="fw-semibold mb-2">AI review summary</div>
+                <div class="fw-semibold mb-2">AI summary (based on reviews)</div>
                 <p class="small text-secondary mb-3">${escapeHtml(summary)}</p>
 
                 ${pros.length ? `
