@@ -12,8 +12,9 @@
      data-dealer-is-favorite="{% if is_favorite %}1{% else %}0{% endif %}"
      data-dealer-ai-status="{{ dealer.ai_summary_status|default:'pending' }}"
      data-dealer-ai-summary="{{ dealer.ai_summary_text|default:''|escapejs }}"
-     data-dealer-ai-pros="{{ dealer.ai_summary_pros|default:'[]'|escapejs }}"
-     data-dealer-ai-cons="{{ dealer.ai_summary_cons|default:'[]'|escapejs }}">
+    data-dealer-ai-pros='{{ dealer.ai_summary_pros_json|escapejs }}'
+    data-dealer-ai-cons='{{ dealer.ai_summary_cons_json|escapejs }}'
+>
 
     <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-start">

@@ -1,5 +1,6 @@
 import logging
 import re
+import json
 
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -305,7 +306,10 @@ def search_view(request):
 
         for dealer in dealers:
             ai = ai_summary_map.get(dealer.get("place_id"))
-            dealer["ai_summary"] = _build_ai_summary_payload(ai)
+            payload = _build_ai_summary_payload(ai)
+            dealer["ai_summary"] = payload
+            dealer["ai_summary_pros_json"] = json.dumps(payload["pros"], ensure_ascii=False)
+            dealer["ai_summary_cons_json"] = json.dumps(payload["cons"], ensure_ascii=False)
 
         logger.info(
             "AI summaries attached to search results",
