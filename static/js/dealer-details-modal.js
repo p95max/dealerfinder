@@ -1,7 +1,7 @@
 let aiSummaryLoadingInterval = null;
 
 /* =========================
-   HELPER
+   HELPERS
 ========================= */
 function parseJsonArray(value) {
     if (!value) {
