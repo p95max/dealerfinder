@@ -1,40 +1,38 @@
-import re
-import time
 import logging
+import re
 
-from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
 
-from apps.dealers.models import DealerAiSummary, Dealer
-from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
-from apps.dealers.services.dealer_service import search_dealers, filter_and_sort_dealers
+from apps.dealers.models import Dealer, DealerAiSummary
+from apps.dealers.services.dealer_ai_service import (
+    generate_ai_summary_for_dealer,
+    is_summary_fresh,
+)
+from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
 from apps.dealers.services.geocoding_service import is_german_city
 from apps.dealers.services.google_places import is_google_cap_reached
 from apps.dealers.services.search_tracking_service import (
+    build_search_discovery_context,
     track_anon_search_history,
     track_popular_city,
     track_user_search_history,
-    build_search_discovery_context,
 )
 from apps.users.services.quota_service import (
-    get_authenticated_quota_status,
-    get_anonymous_quota_status,
-    consume_authenticated_search,
     consume_anonymous_search,
+    consume_authenticated_search,
+    get_anonymous_quota_status,
+    get_authenticated_quota_status,
 )
 from utils.http import _get_client_ip
-from django.http import JsonResponse
-from apps.dealers.models import Dealer, DealerAiSummary
-from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
 
 logger = logging.getLogger(__name__)
 
 DEALERS_PER_PAGE = 20
 ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
 DEFAULT_RADIUS = 20
-AI_SYNC_LIMIT = 5
 
 
 def _should_track_search(request) -> bool:
@@ -81,17 +79,45 @@ def _get_user_id(request):
     return request.user.pk if request.user.is_authenticated else None
 
 
-def _sync_ai_summaries(place_ids: list[str]) -> None:
-    """Fire-and-forget AI summary generation for a batch of place IDs."""
-    dealers_qs = Dealer.objects.filter(google_place_id__in=place_ids[:AI_SYNC_LIMIT])
-    for dealer_obj in dealers_qs:
-        try:
-            generate_ai_summary_for_dealer(dealer_obj)
-        except Exception:
-            logger.exception(
-                "Inline AI summary generation failed",
-                extra={"event": "ai_sync_on_search_failed", "place_id": dealer_obj.google_place_id},
-            )
+def _build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
+    if not ai:
+        return {
+            "status": "pending",
+            "summary": "",
+            "pros": [],
+            "cons": [],
+        }
+
+    if ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
+        return {
+            "status": ai.status,
+            "summary": ai.summary or "",
+            "pros": ai.pros or [],
+            "cons": ai.cons or [],
+        }
+
+    if ai.status == DealerAiSummary.STATUS_PENDING:
+        return {
+            "status": ai.status,
+            "summary": "",
+            "pros": [],
+            "cons": [],
+        }
+
+    if ai.status == DealerAiSummary.STATUS_FAILED:
+        return {
+            "status": ai.status,
+            "summary": "",
+            "pros": [],
+            "cons": [],
+        }
+
+    return {
+        "status": "pending",
+        "summary": "",
+        "pros": [],
+        "cons": [],
+    }
 
 
 def dealer_ai_summary_view(request, place_id):
@@ -102,17 +128,11 @@ def dealer_ai_summary_view(request, place_id):
 
     ai = generate_ai_summary_for_dealer(dealer)
 
-    return JsonResponse({
-        "status": ai.status,
-        "summary": ai.summary or "",
-        "pros": ai.pros or [],
-        "cons": ai.cons or [],
-    })
+    payload = _build_ai_summary_payload(ai)
+    return JsonResponse(payload)
 
 
 def search_view(request):
-    started_at = time.monotonic()
-
     if request.method == "GET" and request.GET.get("city"):
         params = request.GET.copy()
         params.pop("page", None)
@@ -191,12 +211,16 @@ def search_view(request):
             if request.user.is_authenticated:
                 messages.warning(
                     request,
-                    f"Daily search limit reached. Upgrade to Premium for {settings.PREMIUM_DAILY_LIMIT} searches/day.",
+                    "Daily search limit reached. "
+                    "Upgrade to Premium for "
+                    f"{request.user.daily_quota if False else ''}"
+                    f"{getattr(__import__('django.conf').conf.settings, 'PREMIUM_DAILY_LIMIT', '')} searches/day.",
                 )
             else:
                 messages.warning(
                     request,
-                    f"Daily limit reached. Create a free account for {settings.FREE_DAILY_LIMIT} searches/day.",
+                    f"Daily limit reached. Create a free account for "
+                    f"{getattr(__import__('django.conf').conf.settings, 'FREE_DAILY_LIMIT', '')} searches/day.",
                 )
             return render(request, "dealers/search.html", build_context(quota_exceeded=True))
 
@@ -272,9 +296,6 @@ def search_view(request):
 
         place_ids = [dealer.get("place_id") for dealer in dealers if dealer.get("place_id")]
 
-        if not from_cache and settings.AI_ENABLED and settings.AI_SYNC_ON_SEARCH:
-            _sync_ai_summaries(place_ids)
-
         ai_summary_map = {
             item.dealer.google_place_id: item
             for item in DealerAiSummary.objects.select_related("dealer").filter(
@@ -284,20 +305,7 @@ def search_view(request):
 
         for dealer in dealers:
             ai = ai_summary_map.get(dealer.get("place_id"))
-            if ai:
-                dealer["ai_summary"] = {
-                    "status": ai.status,
-                    "summary": ai.summary or "",
-                    "pros": ai.pros or [],
-                    "cons": ai.cons or [],
-                }
-            else:
-                dealer["ai_summary"] = {
-                    "status": "pending",
-                    "summary": "",
-                    "pros": [],
-                    "cons": [],
-                }
+            dealer["ai_summary"] = _build_ai_summary_payload(ai)
 
         logger.info(
             "AI summaries attached to search results",
@@ -318,9 +326,7 @@ def search_view(request):
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
 
     if request.user.is_authenticated and dealers:
-        favorite_place_ids = set(
-            request.user.favorites.values_list("place_id", flat=True)
-        )
+        favorite_place_ids = set(request.user.favorites.values_list("place_id", flat=True))
         for dealer in dealers:
             dealer["is_favorite"] = dealer.get("place_id") in favorite_place_ids
     else:
@@ -339,4 +345,3 @@ def search_view(request):
             total=len(dealers),
         ),
     )
-

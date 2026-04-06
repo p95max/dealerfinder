@@ -116,7 +116,7 @@
 - [ ] для `failed` допускается ограниченный retry policy *(нет ограничения на ретраи failed)*
 - [x] результат сохраняется в `DealerAiSummary`
 - [x] повторные запросы — только из БД
-- [ ] Сделать persistent cache в БД + TTL.
+- [x] Сделать persistent cache в БД + TTL.
 Хранение в Dealer:
 `ai_summary
 ai_summary_status
