@@ -144,7 +144,6 @@ ai_summary_generated_at
 
 ### 🚫 Ограничения
 
-- [ ] НЕ вызывать AI синхронно в `search_view` — **нарушено**: `_sync_ai_summaries` вызывается синхронно в request flow при `AI_SYNC_ON_SEARCH=True`
 - [x] НЕ запускать enrichment для всех дилеров подряд *(top 5 через `AI_SYNC_LIMIT=5`)*
 - [x] НЕ блокировать рендер страницы ожиданием AI *(условно: inline sync может блокировать)*
 
@@ -180,6 +179,12 @@ ai_summary_generated_at
 - [x] ограничить количество enrichment задач (top N = 5)
 - [x] не вызывать AI для дилеров вне первой страницы
 - [x] избегать повторных вызовов (idempotency через fingerprint)
+- [ ] установить дневной лимит AI summary: anon - 5 шт. , free - 15 шт., premium - 50 шт.
+ * Чесно лимитировать не “просмотры AI summary”, а именно: новые генерации AI summary, которые реально вызвали AI provider`
+ * Показать пользователю отдельный счётчик типа AI summaries today в User Profile + Dropdown menu
+ * не смешивать это с обычной search quota
+ * Spam на failed retry: Cooldown
+ * указать это в legal pages + about us + premium
 
 ---
 
