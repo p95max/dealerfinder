@@ -170,6 +170,18 @@ function bindModalFavoriteButton(card) {
     }
 }
 
+function parseJsonArray(value) {
+    if (!value) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(value);
+    } catch {
+        return [];
+    }
+}
+
 function openDealerModal(card) {
     const modalEl = document.getElementById("dealerModal");
     const nameEl = document.getElementById("modalDealerName");
@@ -189,8 +201,8 @@ const data = {
     lng: card.dataset.dealerLng,
     ai_summary: card.dataset.dealerAiSummary || "",
     ai_status: card.dataset.dealerAiStatus || "pending",
-    ai_pros: JSON.parse(card.dataset.dealerAiPros || "[]"),
-    ai_cons: JSON.parse(card.dataset.dealerAiCons || "[]"),
+    ai_pros: parseJsonArray(card.dataset.dealerAiPros),
+    ai_cons: parseJsonArray(card.dataset.dealerAiCons),
 };
 
     nameEl.textContent = data.name;
