@@ -1,16 +1,16 @@
 # DealerFinder — AI Gap Closure Checklist
 
-## Sprint 1 — Архитектурный долг (CRITICAL)
+## Sprint 1 — Архитектурный долг (CRITICAL) [x] CLOSED
 - [x] Remove synchronous AI generation from `dealer_ai_summary_view`  
   → Make endpoint read-only
 
-- [ ] Add background job enqueue in `search_view()` (top N dealers on cache MISS)  
+- [x] Add background job enqueue in `search_view()` (top N dealers on cache MISS)  
   → Trigger async summary generation
 
-- [ ] Introduce `AI_SYNC_LIMIT` in settings  
+- [x] Introduce `AI_SYNC_LIMIT` in settings  
   → Control number of dealers processed per request
 
-- [ ] Implement `pending` state response in API  
+- [x] Implement `pending` state response in API  
   → Return status instead of blocking request
 
 - [ ] Add job status model (`pending`, `done`, `failed`)  
