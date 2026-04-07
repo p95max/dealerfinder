@@ -251,8 +251,6 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 return;
             }
 
-            const resp = await fetch(`/dealer/${placeId}/ai-summary/`)
-
             summaryBtn.disabled = false;
             summaryBtn.textContent = "Try again";
         } catch (error) {

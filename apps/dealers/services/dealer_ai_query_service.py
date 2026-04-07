@@ -53,67 +53,6 @@ def build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
     }
 
 
-def maybe_generate_ai_summaries_for_top_dealers(dealers: list[dict]) -> None:
-    """
-    Temporary synchronous bridge from search flow.
-    Later should be replaced with async queue / worker.
-    """
-    if not getattr(settings, "AI_ENABLED", False):
-        return
-
-    limit = getattr(settings, "AI_SYNC_LIMIT", 5)
-    if limit <= 0:
-        return
-
-    top_place_ids = [
-        dealer.get("place_id")
-        for dealer in dealers[:limit]
-        if dealer.get("place_id")
-    ]
-
-    if not top_place_ids:
-        return
-
-    dealers_map = {
-        dealer.google_place_id: dealer
-        for dealer in Dealer.objects.filter(google_place_id__in=top_place_ids)
-    }
-
-    ai_map = {
-        item.dealer.google_place_id: item
-        for item in DealerAiSummary.objects.select_related("dealer").filter(
-            dealer__google_place_id__in=top_place_ids
-        )
-    }
-
-    for place_id in top_place_ids:
-        dealer_obj = dealers_map.get(place_id)
-        if not dealer_obj:
-            continue
-
-        ai_obj = ai_map.get(place_id)
-        should_generate = (
-            ai_obj is None
-            or ai_obj.status != DealerAiSummary.STATUS_DONE
-            or not is_summary_fresh(ai_obj)
-        )
-
-        if not should_generate:
-            continue
-
-        try:
-            generate_ai_summary_for_dealer(dealer_obj)
-        except Exception:
-            logger.exception(
-                "AI summary generation from search flow failed",
-                extra={
-                    "event": "ai_summary_generation_from_search_failed",
-                    "place_id": place_id,
-                    "dealer_id": dealer_obj.pk,
-                },
-            )
-
-
 def attach_ai_summaries_to_dealers(dealers: list[dict]) -> list[dict]:
     place_ids = [
         dealer.get("place_id")
