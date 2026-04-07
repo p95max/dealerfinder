@@ -34,7 +34,7 @@ function renderAiSummary(data) {
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="alert alert-secondary mt-3 mb-0 small">
-                AI summary is being generated...
+                AI summary is being prepared. This may take a few seconds.
             </div>
         `;
         return;
@@ -219,11 +219,13 @@ function bindAiSummaryButton(card, placeId, baseData) {
         renderAiSummaryLoading();
 
         try {
-            const response = await fetch(`/dealer/${placeId}/ai-summary/`, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                },
-            });
+            const response = await fetch(`/dealer/${placeId}/ai-summary/generate/`, {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRFToken": getCsrfToken(),
+                    },
+                });
 
             if (!response.ok) {
                 throw new Error("AI summary request failed");
@@ -249,60 +251,7 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 return;
             }
 
-            if ((ai.status || "") === "pending") {
-                let attempts = 0;
-                const maxAttempts = 5;
-
-                const poll = async () => {
-                    if (attempts >= maxAttempts) {
-                        summaryBtn.disabled = false;
-                        summaryBtn.textContent = "Try again";
-                        return;
-                    }
-
-                    attempts++;
-
-                    try {
-                        const resp = await fetch(`/dealer/${placeId}/ai-summary/`, {
-                            headers: {
-                                "X-Requested-With": "XMLHttpRequest",
-                            },
-                        });
-
-                        if (!resp.ok) throw new Error();
-
-                        const updated = await resp.json();
-
-                        if (updated.status === "done") {
-                            renderAiSummary({
-                                ...baseData,
-                                ai_status: updated.status,
-                                ai_summary: updated.summary || "",
-                                ai_pros: updated.pros || [],
-                                ai_cons: updated.cons || [],
-                            });
-
-                            summaryBtn.classList.add("d-none");
-                            return;
-                        }
-
-                        if (updated.status === "failed") {
-                            summaryBtn.disabled = false;
-                            summaryBtn.textContent = "Try again";
-                            return;
-                        }
-
-                        setTimeout(poll, 2000);
-
-                                } catch {
-                                    summaryBtn.disabled = false;
-                                    summaryBtn.textContent = "Try again";
-                                }
-                            };
-
-                            setTimeout(poll, 2000);
-                            return;
-                        }
+            const resp = await fetch(`/dealer/${placeId}/ai-summary/`)
 
             summaryBtn.disabled = false;
             summaryBtn.textContent = "Try again";

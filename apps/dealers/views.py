@@ -5,8 +5,11 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 from apps.dealers.services.dealer_ai_query_service import (
+    attach_ai_summaries_to_dealers,
+    generate_dealer_ai_summary_payload,
     get_dealer_ai_summary_payload,
 )
 from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
@@ -206,6 +209,11 @@ def search_view(request):
         paginator = Paginator(dealers, DEALERS_PER_PAGE)
         page_obj = paginator.get_page(page_number)
 
+        current_page_dealers = list(page_obj.object_list)
+
+        if current_page_dealers:
+            attach_ai_summaries_to_dealers(current_page_dealers)
+
         if not dealers and is_google_cap_reached():
             messages.warning(
                 request,
@@ -224,6 +232,10 @@ def search_view(request):
         ),
     )
 
+@require_POST
+def dealer_ai_summary_generate_view(request, place_id):
+    payload, status_code = generate_dealer_ai_summary_payload(place_id)
+    return JsonResponse(payload, status=status_code)
 
 def dealer_ai_summary_view(request, place_id):
     payload, status_code = get_dealer_ai_summary_payload(place_id)

@@ -161,7 +161,35 @@ def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
 
     ai = getattr(dealer, "ai_summary", None)
 
-    if ai is None or (ai.status != DealerAiSummary.STATUS_DONE and not is_summary_fresh(ai)):
-        ai = generate_ai_summary_for_dealer(dealer)
+    if ai is None:
+        return (
+            {"status": "pending", "summary": "", "pros": [], "cons": []},
+            200,
+        )
 
+    if ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
+        return build_ai_summary_payload(ai), 200
+
+    if ai.status == DealerAiSummary.STATUS_FAILED:
+        return (
+            {"status": "failed", "summary": "", "pros": [], "cons": []},
+            200,
+        )
+
+    return (
+        {"status": "pending", "summary": "", "pros": [], "cons": []},
+        200,
+    )
+
+
+def generate_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
+    try:
+        dealer = Dealer.objects.get(google_place_id=place_id)
+    except Dealer.DoesNotExist:
+        return (
+            {"status": "not_found", "summary": "", "pros": [], "cons": []},
+            404,
+        )
+
+    ai = generate_ai_summary_for_dealer(dealer)
     return build_ai_summary_payload(ai), 200

@@ -45,6 +45,7 @@ def search_dealers(city, radius) -> tuple[list, bool]:
 
     cached = get_cache(key)
     if cached:
+        sync_dealers_to_db(city, cached)
         return cached, True
 
     if is_google_cap_reached():

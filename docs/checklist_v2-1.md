@@ -1,8 +1,8 @@
 # DealerFinder — AI Gap Closure Checklist
 
 ## Sprint 1 — Архитектурный долг (CRITICAL)
-- [ ] Remove synchronous AI generation from `dealer_ai_summary_view`  
-  → Make endpoint read-only, no side-effects
+- [x] Remove synchronous AI generation from `dealer_ai_summary_view`  
+  → Make endpoint read-only
 
 - [ ] Add background job enqueue in `search_view()` (top N dealers on cache MISS)  
   → Trigger async summary generation
