@@ -1,16 +1,15 @@
 import logging
 import re
-import json
 
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
-from apps.dealers.models import Dealer, DealerAiSummary
-from apps.dealers.services.dealer_ai_service import (
-    generate_ai_summary_for_dealer,
-    is_summary_fresh,
+from apps.dealers.services.dealer_ai_query_service import (
+    attach_ai_summaries_to_dealers,
+    get_dealer_ai_summary_payload,
+    maybe_generate_ai_summaries_for_top_dealers,
 )
 from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
 from apps.dealers.services.geocoding_service import is_german_city
@@ -80,130 +79,9 @@ def _get_user_id(request):
     return request.user.pk if request.user.is_authenticated else None
 
 
-def _build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
-    if not ai:
-        return {
-            "status": "pending",
-            "summary": "",
-            "pros": [],
-            "cons": [],
-        }
-
-    if ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
-        return {
-            "status": ai.status,
-            "summary": ai.summary or "",
-            "pros": ai.pros or [],
-            "cons": ai.cons or [],
-        }
-
-    if ai.status == DealerAiSummary.STATUS_PENDING:
-        return {
-            "status": ai.status,
-            "summary": "",
-            "pros": [],
-            "cons": [],
-        }
-
-    if ai.status == DealerAiSummary.STATUS_FAILED:
-        return {
-            "status": ai.status,
-            "summary": "",
-            "pros": [],
-            "cons": [],
-        }
-
-    return {
-        "status": "pending",
-        "summary": "",
-        "pros": [],
-        "cons": [],
-    }
-
-
-def _maybe_generate_ai_summaries_for_top_dealers(dealers: list[dict]) -> None:
-    """
-    Temporary bridge fix:
-    trigger AI generation from search flow for top N dealers.
-
-    This is still synchronous from the web process and should be replaced
-    later with a real background queue / worker.
-    """
-    from django.conf import settings
-
-    if not getattr(settings, "AI_ENABLED", False):
-        return
-
-    limit = getattr(settings, "AI_SYNC_LIMIT", 5)
-    if limit <= 0:
-        return
-
-    top_place_ids = [
-        dealer.get("place_id")
-        for dealer in dealers[:limit]
-        if dealer.get("place_id")
-    ]
-
-    if not top_place_ids:
-        return
-
-    dealers_map = {
-        dealer.google_place_id: dealer
-        for dealer in Dealer.objects.filter(google_place_id__in=top_place_ids)
-    }
-
-    ai_map = {
-        item.dealer.google_place_id: item
-        for item in DealerAiSummary.objects.select_related("dealer").filter(
-            dealer__google_place_id__in=top_place_ids
-        )
-    }
-
-    for place_id in top_place_ids:
-        dealer_obj = dealers_map.get(place_id)
-        if not dealer_obj:
-            continue
-
-        ai_obj = ai_map.get(place_id)
-
-        should_generate = (
-            ai_obj is None
-            or ai_obj.status != DealerAiSummary.STATUS_DONE
-            or not is_summary_fresh(ai_obj)
-        )
-
-        if not should_generate:
-            continue
-
-        try:
-            generate_ai_summary_for_dealer(dealer_obj)
-        except Exception:
-            logger.exception(
-                "AI summary generation from search flow failed",
-                extra={
-                    "event": "ai_summary_generation_from_search_failed",
-                    "place_id": place_id,
-                    "dealer_id": dealer_obj.pk,
-                },
-            )
-
-
 def dealer_ai_summary_view(request, place_id):
-    try:
-        dealer = Dealer.objects.get(google_place_id=place_id)
-    except Dealer.DoesNotExist:
-        return JsonResponse(
-            {"status": "not_found", "summary": "", "pros": [], "cons": []},
-            status=404,
-        )
-
-    ai = getattr(dealer, "ai_summary", None)
-
-    if ai is None or (ai.status != DealerAiSummary.STATUS_DONE and not is_summary_fresh(ai)):
-        ai = generate_ai_summary_for_dealer(dealer)
-
-    payload = _build_ai_summary_payload(ai)
-    return JsonResponse(payload)
+    payload, status_code = get_dealer_ai_summary_payload(place_id)
+    return JsonResponse(payload, status=status_code)
 
 
 def search_view(request):
@@ -378,40 +256,6 @@ def search_view(request):
 
         paginator = Paginator(dealers, DEALERS_PER_PAGE)
         page_obj = paginator.get_page(page_number)
-
-        current_page_dealers = list(page_obj.object_list)
-
-        # _maybe_generate_ai_summaries_for_top_dealers(current_page_dealers)
-
-        place_ids = [
-            dealer.get("place_id")
-            for dealer in current_page_dealers
-            if dealer.get("place_id")
-        ]
-
-        ai_summary_map = {
-            item.dealer.google_place_id: item
-            for item in DealerAiSummary.objects.select_related("dealer").filter(
-                dealer__google_place_id__in=place_ids
-            )
-        }
-
-        for dealer in current_page_dealers:
-            ai = ai_summary_map.get(dealer.get("place_id"))
-            payload = _build_ai_summary_payload(ai)
-            dealer["ai_summary"] = payload
-            dealer["ai_summary_pros_json"] = json.dumps(payload["pros"], ensure_ascii=False)
-            dealer["ai_summary_cons_json"] = json.dumps(payload["cons"], ensure_ascii=False)
-
-        logger.info(
-            "AI summaries attached to search results",
-            extra={
-                "event": "ai_summaries_attached",
-                "place_ids_count": len(place_ids),
-                "ai_summary_map_count": len(ai_summary_map),
-                "place_ids": place_ids[:5],
-            },
-        )
 
         if not dealers and is_google_cap_reached():
             messages.warning(
