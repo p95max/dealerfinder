@@ -121,13 +121,86 @@ def _build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
     }
 
 
+def _maybe_generate_ai_summaries_for_top_dealers(dealers: list[dict]) -> None:
+    """
+    Temporary bridge fix:
+    trigger AI generation from search flow for top N dealers.
+
+    This is still synchronous from the web process and should be replaced
+    later with a real background queue / worker.
+    """
+    from django.conf import settings
+
+    if not getattr(settings, "AI_ENABLED", False):
+        return
+
+    limit = getattr(settings, "AI_SYNC_LIMIT", 5)
+    if limit <= 0:
+        return
+
+    top_place_ids = [
+        dealer.get("place_id")
+        for dealer in dealers[:limit]
+        if dealer.get("place_id")
+    ]
+
+    if not top_place_ids:
+        return
+
+    dealers_map = {
+        dealer.google_place_id: dealer
+        for dealer in Dealer.objects.filter(google_place_id__in=top_place_ids)
+    }
+
+    ai_map = {
+        item.dealer.google_place_id: item
+        for item in DealerAiSummary.objects.select_related("dealer").filter(
+            dealer__google_place_id__in=top_place_ids
+        )
+    }
+
+    for place_id in top_place_ids:
+        dealer_obj = dealers_map.get(place_id)
+        if not dealer_obj:
+            continue
+
+        ai_obj = ai_map.get(place_id)
+
+        should_generate = (
+            ai_obj is None
+            or ai_obj.status != DealerAiSummary.STATUS_DONE
+            or not is_summary_fresh(ai_obj)
+        )
+
+        if not should_generate:
+            continue
+
+        try:
+            generate_ai_summary_for_dealer(dealer_obj)
+        except Exception:
+            logger.exception(
+                "AI summary generation from search flow failed",
+                extra={
+                    "event": "ai_summary_generation_from_search_failed",
+                    "place_id": place_id,
+                    "dealer_id": dealer_obj.pk,
+                },
+            )
+
+
 def dealer_ai_summary_view(request, place_id):
     try:
         dealer = Dealer.objects.get(google_place_id=place_id)
     except Dealer.DoesNotExist:
-        return JsonResponse({"status": "failed"}, status=404)
+        return JsonResponse(
+            {"status": "not_found", "summary": "", "pros": [], "cons": []},
+            status=404,
+        )
 
-    ai = generate_ai_summary_for_dealer(dealer)
+    ai = getattr(dealer, "ai_summary", None)
+
+    if ai is None or (ai.status != DealerAiSummary.STATUS_DONE and not is_summary_fresh(ai)):
+        ai = generate_ai_summary_for_dealer(dealer)
 
     payload = _build_ai_summary_payload(ai)
     return JsonResponse(payload)
@@ -158,6 +231,7 @@ def search_view(request):
         request.session["anon_terms"] = True
 
     dealers = []
+    page_obj = []
 
     def build_context(**extra):
         context = {
@@ -214,7 +288,6 @@ def search_view(request):
                     request,
                     "Daily search limit reached. "
                     "Upgrade to Premium for "
-                    f"{request.user.daily_quota if False else ''}"
                     f"{getattr(__import__('django.conf').conf.settings, 'PREMIUM_DAILY_LIMIT', '')} searches/day.",
                 )
             else:
@@ -295,7 +368,26 @@ def search_view(request):
             sort=sort,
         )
 
-        place_ids = [dealer.get("place_id") for dealer in dealers if dealer.get("place_id")]
+        if request.user.is_authenticated and dealers:
+            favorite_place_ids = set(request.user.favorites.values_list("place_id", flat=True))
+            for dealer in dealers:
+                dealer["is_favorite"] = dealer.get("place_id") in favorite_place_ids
+        else:
+            for dealer in dealers:
+                dealer["is_favorite"] = False
+
+        paginator = Paginator(dealers, DEALERS_PER_PAGE)
+        page_obj = paginator.get_page(page_number)
+
+        current_page_dealers = list(page_obj.object_list)
+
+        # _maybe_generate_ai_summaries_for_top_dealers(current_page_dealers)
+
+        place_ids = [
+            dealer.get("place_id")
+            for dealer in current_page_dealers
+            if dealer.get("place_id")
+        ]
 
         ai_summary_map = {
             item.dealer.google_place_id: item
@@ -304,7 +396,7 @@ def search_view(request):
             )
         }
 
-        for dealer in dealers:
+        for dealer in current_page_dealers:
             ai = ai_summary_map.get(dealer.get("place_id"))
             payload = _build_ai_summary_payload(ai)
             dealer["ai_summary"] = payload
@@ -328,17 +420,6 @@ def search_view(request):
             )
         elif not dealers:
             messages.warning(request, "No dealers found. Please enter a city in Germany.")
-
-    if request.user.is_authenticated and dealers:
-        favorite_place_ids = set(request.user.favorites.values_list("place_id", flat=True))
-        for dealer in dealers:
-            dealer["is_favorite"] = dealer.get("place_id") in favorite_place_ids
-    else:
-        for dealer in dealers:
-            dealer["is_favorite"] = False
-
-    paginator = Paginator(dealers, DEALERS_PER_PAGE)
-    page_obj = paginator.get_page(page_number)
 
     return render(
         request,

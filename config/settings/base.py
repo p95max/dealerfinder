@@ -263,3 +263,4 @@ AI_SYNC_ON_SEARCH = os.getenv("AI_SYNC_ON_SEARCH", "False") == "True"
 AI_SUMMARY_TTL_DAYS = int(os.getenv("AI_SUMMARY_TTL_DAYS", "7"))
 AI_FAILED_RETRY_HOURS = int(os.getenv("AI_FAILED_RETRY_HOURS", "12"))
 AI_PENDING_STALE_MINUTES = int(os.getenv("AI_PENDING_STALE_MINUTES", "30"))
+AI_SYNC_LIMIT = int(os.getenv("AI_SYNC_LIMIT", "5"))

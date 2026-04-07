@@ -250,10 +250,59 @@ function bindAiSummaryButton(card, placeId, baseData) {
             }
 
             if ((ai.status || "") === "pending") {
-                summaryBtn.disabled = false;
-                summaryBtn.textContent = "Refresh summary";
-                return;
-            }
+                let attempts = 0;
+                const maxAttempts = 5;
+
+                const poll = async () => {
+                    if (attempts >= maxAttempts) {
+                        summaryBtn.disabled = false;
+                        summaryBtn.textContent = "Try again";
+                        return;
+                    }
+
+                    attempts++;
+
+                    try {
+                        const resp = await fetch(`/dealer/${placeId}/ai-summary/`, {
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest",
+                            },
+                        });
+
+                        if (!resp.ok) throw new Error();
+
+                        const updated = await resp.json();
+
+                        if (updated.status === "done") {
+                            renderAiSummary({
+                                ...baseData,
+                                ai_status: updated.status,
+                                ai_summary: updated.summary || "",
+                                ai_pros: updated.pros || [],
+                                ai_cons: updated.cons || [],
+                            });
+
+                            summaryBtn.classList.add("d-none");
+                            return;
+                        }
+
+                        if (updated.status === "failed") {
+                            summaryBtn.disabled = false;
+                            summaryBtn.textContent = "Try again";
+                            return;
+                        }
+
+                        setTimeout(poll, 2000);
+
+                                } catch {
+                                    summaryBtn.disabled = false;
+                                    summaryBtn.textContent = "Try again";
+                                }
+                            };
+
+                            setTimeout(poll, 2000);
+                            return;
+                        }
 
             summaryBtn.disabled = false;
             summaryBtn.textContent = "Try again";
