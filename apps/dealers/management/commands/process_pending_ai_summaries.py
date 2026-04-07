@@ -19,13 +19,7 @@ class Command(BaseCommand):
 
         candidates = list(
             DealerAiSummary.objects.select_related("dealer")
-            .filter(
-                status__in=[
-                    DealerAiSummary.STATUS_PENDING,
-                    DealerAiSummary.STATUS_FAILED,
-                    DealerAiSummary.STATUS_DONE,
-                ]
-            )
+            .filter(status=DealerAiSummary.STATUS_PENDING)
             .order_by("updated_at")[:limit]
         )
 

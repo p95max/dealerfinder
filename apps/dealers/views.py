@@ -21,12 +21,14 @@ from apps.dealers.services.search_tracking_service import (
     track_popular_city,
     track_user_search_history,
 )
+from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
 from apps.users.services.quota_service import (
     consume_anonymous_search,
     consume_authenticated_search,
     get_anonymous_quota_status,
     get_authenticated_quota_status,
 )
+from django.conf import settings
 from utils.http import _get_client_ip
 
 logger = logging.getLogger(__name__)
@@ -197,6 +199,14 @@ def search_view(request):
             max_distance_km=max_distance_km,
             sort=sort,
         )
+
+        if not from_cache and dealers:
+            top_place_ids = [
+                dealer.get("place_id")
+                for dealer in dealers[:settings.AI_SYNC_LIMIT]
+                if dealer.get("place_id")
+            ]
+            enqueue_ai_summaries_for_dealers(top_place_ids, limit=settings.AI_SYNC_LIMIT)
 
         if request.user.is_authenticated and dealers:
             favorite_place_ids = set(request.user.favorites.values_list("place_id", flat=True))
