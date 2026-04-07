@@ -7,9 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 from apps.dealers.services.dealer_ai_query_service import (
-    attach_ai_summaries_to_dealers,
     get_dealer_ai_summary_payload,
-    maybe_generate_ai_summaries_for_top_dealers,
 )
 from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
 from apps.dealers.services.geocoding_service import is_german_city
@@ -33,55 +31,6 @@ logger = logging.getLogger(__name__)
 DEALERS_PER_PAGE = 20
 ALLOWED_RADIUS = {1, 5, 10, 20, 30, 50, 100, 200, 300}
 DEFAULT_RADIUS = 20
-
-
-def _should_track_search(request) -> bool:
-    return bool(request.GET.get("city")) and not request.GET.get("page")
-
-
-def _parse_float(value):
-    try:
-        if value in (None, ""):
-            return None
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _normalize_city(city: str) -> str:
-    return re.sub(r"\s+", " ", city.strip()).title()
-
-
-def _is_valid_city(city: str) -> bool:
-    if not city or len(city) < 2:
-        return False
-    if re.fullmatch(r"[\d\s\-_.,:;!?@#$%^&*()]+", city):
-        return False
-    return True
-
-
-def _parse_radius(value) -> int:
-    try:
-        r = int(float(value))
-        return r if r in ALLOWED_RADIUS else DEFAULT_RADIUS
-    except (TypeError, ValueError):
-        return DEFAULT_RADIUS
-
-
-def _parse_min_rating(value) -> float | None:
-    try:
-        return float(value) if value else None
-    except (TypeError, ValueError):
-        return None
-
-
-def _get_user_id(request):
-    return request.user.pk if request.user.is_authenticated else None
-
-
-def dealer_ai_summary_view(request, place_id):
-    payload, status_code = get_dealer_ai_summary_payload(place_id)
-    return JsonResponse(payload, status=status_code)
 
 
 def search_view(request):
@@ -274,3 +223,54 @@ def search_view(request):
             total=len(dealers),
         ),
     )
+
+
+def dealer_ai_summary_view(request, place_id):
+    payload, status_code = get_dealer_ai_summary_payload(place_id)
+    return JsonResponse(payload, status=status_code)
+
+# =========================
+# HELPERS
+# =========================
+def _should_track_search(request) -> bool:
+    return bool(request.GET.get("city")) and not request.GET.get("page")
+
+
+def _parse_float(value):
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_city(city: str) -> str:
+    return re.sub(r"\s+", " ", city.strip()).title()
+
+
+def _is_valid_city(city: str) -> bool:
+    if not city or len(city) < 2:
+        return False
+    if re.fullmatch(r"[\d\s\-_.,:;!?@#$%^&*()]+", city):
+        return False
+    return True
+
+
+def _parse_radius(value) -> int:
+    try:
+        r = int(float(value))
+        return r if r in ALLOWED_RADIUS else DEFAULT_RADIUS
+    except (TypeError, ValueError):
+        return DEFAULT_RADIUS
+
+
+def _parse_min_rating(value) -> float | None:
+    try:
+        return float(value) if value else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _get_user_id(request):
+    return request.user.pk if request.user.is_authenticated else None
