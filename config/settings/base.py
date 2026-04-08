@@ -27,7 +27,6 @@ SITE_ID = 1
 
 
 TRUST_X_FORWARDED_FOR = os.getenv("TRUST_X_FORWARDED_FOR", "False") == "True"
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # =========================
 # APPS
@@ -54,6 +53,7 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # =========================
 MIDDLEWARE = [
+    "apps.core.middleware.ClientIPMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -66,7 +66,6 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",
-    "apps.core.middleware.ClientIPMiddleware",
     "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
@@ -111,6 +110,8 @@ DATABASES = {
 # =========================
 # CACHE
 # =========================
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+REDIS_RATE_LIMIT_DB = os.getenv("REDIS_RATE_LIMIT_DB", "redis://redis:6379/2")
 
 CACHES = {
     "default": {

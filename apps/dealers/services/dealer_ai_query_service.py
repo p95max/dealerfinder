@@ -177,10 +177,40 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
             404,
         )
 
-    ai = generate_ai_summary_for_dealer(
-        dealer,
-        user=request.user if request and request.user.is_authenticated else None,
-        request=request,
-    )
+    if request:
+        try:
+            AiRateLimitService().check(request.user, request)
+        except RateLimitExceeded:
+            return (
+                {
+                    "status": "failed",
+                    "summary": "",
+                    "pros": [],
+                    "cons": [],
+                    "error_code": "rate_limited",
+                    "message": "Too many requests. Please slow down.",
+                },
+                429,
+            )
+
+    try:
+        ai = generate_ai_summary_for_dealer(
+            dealer,
+            user=request.user if request and request.user.is_authenticated else None,
+            request=request,
+        )
+    except Exception:
+        logger.exception("AI generation failed")
+        return (
+            {
+                "status": "failed",
+                "summary": "",
+                "pros": [],
+                "cons": [],
+                "error_code": "ai_error",
+                "message": "AI service temporarily unavailable.",
+            },
+            200,
+        )
 
     return build_ai_summary_payload(ai), 200
