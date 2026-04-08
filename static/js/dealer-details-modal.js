@@ -60,7 +60,7 @@ function renderAiSummary(data) {
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="surface-card-muted p-3 mt-3">
-                <div class="fw-semibold mb-2">AI summary (based on reviews)</div>
+                <div class="fw-semibold mb-2">Based on Google Maps reviews</div>
                 <p class="small text-secondary mb-3">${escapeHtml(summary)}</p>
 
                 ${pros.length ? `
