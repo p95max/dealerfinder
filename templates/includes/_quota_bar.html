@@ -1,0 +1,16 @@
+<div class="nav-quota-label mt-2">
+    <div class="small text-secondary mb-1">{{ label }}</div>
+
+    <div class="d-flex align-items-center gap-2">
+        <span class="fw-semibold">
+            {{ used }} / {{ total }}
+        </span>
+    </div>
+</div>
+
+<div class="nav-quota-track">
+    <div class="nav-quota-fill
+        {% if used >= total %}bg-danger{% endif %}"
+        style="width: {% if total %}{% widthratio used total 100 %}{% else %}0{% endif %}%">
+    </div>
+</div>

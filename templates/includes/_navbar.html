@@ -46,49 +46,9 @@
                 <div class="nav-user-menu dropdown-menu show">
                     <div class="px-3 py-2 border-bottom">
 
-                        <div class="nav-quota-label">
-                            <div class="small text-secondary mb-1">Searches today</div>
+                    {% include "includes/_quota_bar.html" with label="Searches today" used=user.used_today total=user.daily_quota %}
 
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="progress flex-grow-1" style="height: 4px; border-radius: 999px;">
-                                    <div class="progress-bar {% if user.used_today >= user.daily_quota %}bg-danger{% else %}bg-primary{% endif %}"
-                                         style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%;">
-                                    </div>
-                                </div>
-
-
-
-                                <span id="quota-counter"
-                                      class="small text-secondary"
-                                      data-url="{% url 'users:quota_status' %}">
-                                    {{ user.used_today }} / {{ user.daily_quota }}
-                                </span>
-                            </div>
-                        </div>
-
-
-                        <div class="nav-quota-track">
-                            <div class="nav-quota-fill"
-                                 style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%">
-                            </div>
-                        </div>
-
-                        <div class="nav-quota-label mt-2">
-                            <div class="small text-secondary mb-1">AI summaries today</div>
-
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="small text-secondary">
-                                    {{ user.ai_used_today }} / {{ user.ai_daily_quota }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="nav-quota-track">
-                            <div class="nav-quota-fill
-                                 {% if user.ai_used_today >= user.ai_daily_quota %}bg-danger{% endif %}"
-                                 style="width: {% if user.ai_daily_quota %}{% widthratio user.ai_used_today user.ai_daily_quota 100 %}{% else %}0{% endif %}%">
-                            </div>
-                        </div>
+                    {% include "includes/_quota_bar.html" with label="AI summaries today" used=user.ai_used_today total=user.ai_daily_quota %}
 
                     </div>
                     <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>
