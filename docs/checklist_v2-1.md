@@ -25,8 +25,15 @@
 - [x] Display “AI summaries today” in profile/navbar  
   → Increase transparency for users
 
-- [ ] Implement anti-spam guard (user-level + system-level)  
+- [x] Implement anti-spam guard (user-level + system-level)  
   → Rate limit failed/pending job creation
+
+- [ ] Redis integration
+  * [ ] Cache AI summary
+  * [ ] Cache Google Places
+  * [ ] Deduplication lock
+  * [ ] Quota counters (refactor to Redis)
+  * [ ] Feature flags / plans (optional, next sprint)
 
 - [ ] Add retry logic for failed jobs  
   → Avoid permanent broken states
