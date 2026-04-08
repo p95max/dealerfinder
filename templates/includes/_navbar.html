@@ -56,6 +56,8 @@
                                     </div>
                                 </div>
 
+
+
                                 <span id="quota-counter"
                                       class="small text-secondary"
                                       data-url="{% url 'users:quota_status' %}">
@@ -64,11 +66,30 @@
                             </div>
                         </div>
 
+
                         <div class="nav-quota-track">
                             <div class="nav-quota-fill"
                                  style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%">
                             </div>
                         </div>
+
+                        <div class="nav-quota-label mt-2">
+                            <div class="small text-secondary mb-1">AI summaries today</div>
+
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small text-secondary">
+                                    {{ user.ai_used_today }} / {{ user.ai_daily_quota }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="nav-quota-track">
+                            <div class="nav-quota-fill
+                                 {% if user.ai_used_today >= user.ai_daily_quota %}bg-danger{% endif %}"
+                                 style="width: {% if user.ai_daily_quota %}{% widthratio user.ai_used_today user.ai_daily_quota 100 %}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+
                     </div>
                     <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>
                     <form method="post" action="{% url 'account_logout' %}" class="m-0">

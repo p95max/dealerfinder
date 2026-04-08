@@ -12,6 +12,7 @@ from integrations.turnstile import verify_turnstile
 from apps.users.services.quota_service import reset_quota_if_new_day
 from apps.dealers.models import DealerAiSummary
 from .models import Favorite
+from .services.ai_quota_service import reset_ai_quota_if_new_day
 
 
 def login_gate_view(request):
@@ -38,6 +39,18 @@ def google_oauth_start_view(request):
 
 @login_required
 def profile_view(request):
+    reset_quota_if_new_day(request.user)
+    reset_ai_quota_if_new_day(request.user)
+    request.user.refresh_from_db(
+        fields=[
+            "used_today",
+            "daily_quota",
+            "last_quota_reset",
+            "ai_used_today",
+            "ai_daily_quota",
+            "last_ai_quota_reset",
+        ]
+    )
     return render(request, "users/profile.html")
 
 

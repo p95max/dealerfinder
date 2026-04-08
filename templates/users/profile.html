@@ -45,6 +45,26 @@
                     </div>
                 </div>
 
+                <div class="mt-3">
+    <div class="mb-2 d-flex justify-content-between">
+        <span class="text-secondary">AI summaries today</span>
+        <span class="fw-semibold">{{ user.ai_used_today }} / {{ user.ai_daily_quota }}</span>
+    </div>
+
+    <div class="progress" style="height: 6px; border-radius: 999px;">
+        <div class="progress-bar
+            {% if user.ai_used_today >= user.ai_daily_quota %}
+                bg-danger
+            {% elif user.ai_used_today >= user.ai_daily_quota|add:'-2' %}
+                bg-warning
+            {% else %}
+                bg-primary
+            {% endif %}"
+            style="width: {% if user.ai_daily_quota %}{% widthratio user.ai_used_today user.ai_daily_quota 100 %}{% else %}0{% endif %}%;">
+        </div>
+    </div>
+</div>
+
         </div>
     </div>
 

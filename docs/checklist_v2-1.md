@@ -19,10 +19,10 @@
 ---
 
 ## Sprint 2 — Cost Control & Stability
-- [ ] Add AI quota (per user, daily limit)  
+- [x] Add AI quota (per user, daily limit)  
   → Prevent abuse and uncontrolled API costs
 
-- [ ] Display “AI summaries today” in profile/navbar  
+- [x] Display “AI summaries today” in profile/navbar  
   → Increase transparency for users
 
 - [ ] Implement anti-spam guard (user-level + system-level)  
