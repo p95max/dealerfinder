@@ -13,7 +13,8 @@ class GoogleOAuthAdapter(DefaultSocialAccountAdapter):
         if user.plan in (None, "", "anon"):
             user.plan = "free"
             user.daily_quota = settings.FREE_DAILY_LIMIT
+            user.ai_daily_quota = settings.FREE_AI_DAILY_LIMIT
 
-        user.save(update_fields=["google_sub", "plan", "daily_quota"])
+        user.save(update_fields=["google_sub", "plan", "daily_quota", "ai_daily_quota"])
 
         return user

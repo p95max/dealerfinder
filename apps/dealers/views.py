@@ -244,7 +244,10 @@ def search_view(request):
 
 @require_POST
 def dealer_ai_summary_generate_view(request, place_id):
-    payload, status_code = generate_dealer_ai_summary_payload(place_id)
+    payload, status_code = generate_dealer_ai_summary_payload(
+        place_id,
+        request=request,
+    )
     return JsonResponse(payload, status=status_code)
 
 def dealer_ai_summary_view(request, place_id):

@@ -9,6 +9,12 @@ from datetime import timedelta
 from apps.dealers.models import Dealer, DealerAiSummary
 from apps.dealers.services.google_places import get_place_details
 from integrations.ai_client import generate_dealer_summary, AiClientError
+from apps.users.services.ai_quota_service import (
+    get_authenticated_ai_quota_status,
+    consume_authenticated_ai_quota,
+    get_anonymous_ai_quota_status,
+    consume_anonymous_ai_quota,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +138,13 @@ def validate_ai_result(data: dict) -> dict:
     }
 
 
-def generate_ai_summary_for_dealer(dealer: Dealer) -> DealerAiSummary:
+def generate_ai_summary_for_dealer(
+    dealer: Dealer,
+    *,
+    user=None,
+    request=None,
+) -> DealerAiSummary:
+
     summary_obj = ensure_ai_summary_record(dealer)
 
     if not settings.AI_ENABLED:
@@ -261,6 +273,40 @@ def generate_ai_summary_for_dealer(dealer: Dealer) -> DealerAiSummary:
             "updated_at",
         ]
     )
+
+    if user and user.is_authenticated:
+        quota = get_authenticated_ai_quota_status(user)
+
+        if not quota.allowed:
+            summary_obj.status = DealerAiSummary.STATUS_FAILED
+            summary_obj.last_error = "AI daily quota reached"
+            summary_obj.save(
+                update_fields=[
+                    "status",
+                    "last_error",
+                    "updated_at",
+                ]
+            )
+            return summary_obj
+
+        consume_authenticated_ai_quota(user)
+
+    elif request is not None:
+        quota = get_anonymous_ai_quota_status(request)
+
+        if not quota.allowed:
+            summary_obj.status = DealerAiSummary.STATUS_FAILED
+            summary_obj.last_error = "AI daily quota reached (anonymous)"
+            summary_obj.save(
+                update_fields=[
+                    "status",
+                    "last_error",
+                    "updated_at",
+                ]
+            )
+            return summary_obj
+
+        consume_anonymous_ai_quota(request)
 
     try:
         logger.info("AI CALL STARTED", extra={"dealer_id": dealer.pk})

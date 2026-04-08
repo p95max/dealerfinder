@@ -12,6 +12,9 @@ class User(AbstractUser):
     last_quota_reset = models.DateField(null=True, blank=True)
     email = models.EmailField(unique=True)
     terms_accepted = models.BooleanField(default=False)
+    ai_daily_quota = models.IntegerField(default=settings.FREE_AI_DAILY_LIMIT)
+    ai_used_today = models.IntegerField(default=0)
+    last_ai_quota_reset = models.DateField(null=True, blank=True)
 
     groups = models.ManyToManyField(
         "auth.Group",

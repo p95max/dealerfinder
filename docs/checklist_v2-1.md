@@ -1,6 +1,6 @@
 # DealerFinder — AI Gap Closure Checklist
 
-## Sprint 1 — Архитектурный долг (CRITICAL)  `CLOSED`
+## Sprint 1 (CRITICAL)  `CLOSED`
 - [x] Remove synchronous AI generation from `dealer_ai_summary_view`  
   → Make endpoint read-only
 

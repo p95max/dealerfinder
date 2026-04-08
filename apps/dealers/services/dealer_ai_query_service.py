@@ -121,7 +121,7 @@ def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
     )
 
 
-def generate_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
+def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[dict, int]:
     try:
         dealer = Dealer.objects.get(google_place_id=place_id)
     except Dealer.DoesNotExist:
@@ -130,5 +130,10 @@ def generate_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
             404,
         )
 
-    ai = generate_ai_summary_for_dealer(dealer)
+    ai = generate_ai_summary_for_dealer(
+        dealer,
+        user=request.user if request and request.user.is_authenticated else None,
+        request=request,
+    )
+
     return build_ai_summary_payload(ai), 200
