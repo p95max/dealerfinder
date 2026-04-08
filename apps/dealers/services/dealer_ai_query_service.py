@@ -8,6 +8,7 @@ from apps.dealers.services.dealer_ai_service import (
     generate_ai_summary_for_dealer,
     is_summary_fresh,
 )
+from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +111,7 @@ def attach_ai_summaries_to_dealers(dealers: list[dict]) -> list[dict]:
     return dealers
 
 
-def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
+def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, int]:
     try:
         dealer = Dealer.objects.get(google_place_id=place_id)
     except Dealer.DoesNotExist:
@@ -121,25 +122,36 @@ def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
 
     ai = getattr(dealer, "ai_summary", None)
 
-    if ai is None:
-        return (
-            {"status": "pending", "summary": "", "pros": [], "cons": []},
-            200,
-        )
-
-    if ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
+    if ai and ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
         return build_ai_summary_payload(ai), 200
 
-    if ai.status == DealerAiSummary.STATUS_FAILED:
-        error_code = ai.last_error or "ai_unavailable"
+    if ai and ai.status == DealerAiSummary.STATUS_FAILED:
+        return build_ai_summary_payload(ai), 200
 
-        message = "AI summary unavailable"
-
-        if error_code == "quota_exceeded":
-            message = (
-                f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day. "
-                f"Sign in to get {settings.FREE_AI_DAILY_LIMIT} summaries per day."
+    if request:
+        try:
+            AiRateLimitService().check(request.user, request)
+        except RateLimitExceeded:
+            return (
+                {
+                    "status": "failed",
+                    "summary": "",
+                    "pros": [],
+                    "cons": [],
+                    "error_code": "rate_limited",
+                    "message": "Too many requests. Please slow down.",
+                },
+                429,
             )
+
+    try:
+        ai = generate_ai_summary_for_dealer(
+            dealer,
+            user=request.user if request and request.user.is_authenticated else None,
+            request=request,
+        )
+    except Exception:
+        logger.exception("AI generation failed")
 
         return (
             {
@@ -147,16 +159,13 @@ def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
                 "summary": "",
                 "pros": [],
                 "cons": [],
-                "error_code": error_code,
-                "message": message,
+                "error_code": "ai_error",
+                "message": "AI service temporarily unavailable.",
             },
             200,
         )
 
-    return (
-        {"status": "pending", "summary": "", "pros": [], "cons": []},
-        200,
-    )
+    return build_ai_summary_payload(ai), 200
 
 
 def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[dict, int]:

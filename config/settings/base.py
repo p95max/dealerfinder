@@ -66,6 +66,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "apps.contact.middleware.ContactThrottleMiddleware",
     "apps.users.middleware.ThrottleMiddleware",
+    "apps.core.middleware.ClientIPMiddleware",
     "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
@@ -113,8 +114,11 @@ DATABASES = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
@@ -176,10 +180,7 @@ ANON_AI_DAILY_LIMIT = int(os.getenv("ANON_AI_DAILY_LIMIT", "5"))
 FREE_AI_DAILY_LIMIT = int(os.getenv("FREE_AI_DAILY_LIMIT", "10"))
 PREMIUM_AI_DAILY_LIMIT = int(os.getenv("PREMIUM_AI_DAILY_LIMIT", "50"))
 
-AI_RATE_LIMIT = int(os.getenv("AI_RATE_LIMIT", 5))
-AI_RATE_WINDOW = int(os.getenv("AI_RATE_WINDOW", 60))
-AI_MAX_PENDING_PER_USER=int(os.getenv("AI_MAX_PENDING_PER_USER", 3))
-AI_MAX_GLOBAL_PENDING=int(os.getenv("AI_MAX_GLOBAL_PENDING=", 100))
+AI_RATE_LIMIT_PER_MINUTE = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "5"))
 
 # =========================
 # LOGGING

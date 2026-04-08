@@ -17,6 +17,7 @@ dependencies = [
     "gunicorn (>=25.3.0,<26.0.0)",
     "redis (>=7.4.0,<8.0.0)",
     "openai (>=2.30.0,<3.0.0)",
+    "django-redis (>=6.0.0,<7.0.0)",
 ]
 
 [build-system]

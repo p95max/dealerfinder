@@ -21,6 +21,7 @@ from apps.dealers.services.search_tracking_service import (
     track_popular_city,
     track_user_search_history,
 )
+from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
 from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
 from apps.users.services.quota_service import (
     consume_anonymous_search,
@@ -250,8 +251,12 @@ def dealer_ai_summary_generate_view(request, place_id):
     )
     return JsonResponse(payload, status=status_code)
 
+
 def dealer_ai_summary_view(request, place_id):
-    payload, status_code = get_dealer_ai_summary_payload(place_id)
+    payload, status_code = get_dealer_ai_summary_payload(
+        place_id,
+        request=request,
+    )
     return JsonResponse(payload, status=status_code)
 
 # =========================
