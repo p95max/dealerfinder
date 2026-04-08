@@ -15,6 +15,10 @@ from apps.users.services.ai_quota_service import (
     get_anonymous_ai_quota_status,
     consume_anonymous_ai_quota,
 )
+from apps.dealers.services.ai_system_quota_service import (
+    get_ai_system_quota_status,
+    consume_ai_system_quota,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +86,7 @@ def is_summary_up_to_date(summary_obj: DealerAiSummary, fingerprint: str) -> boo
         and summary_obj.model == settings.AI_MODEL
         and summary_obj.provider == settings.AI_PROVIDER
     )
+
 
 def is_summary_fresh(summary_obj: DealerAiSummary) -> bool:
     if not summary_obj.generated_at:
@@ -279,7 +284,8 @@ def generate_ai_summary_for_dealer(
 
         if not quota.allowed:
             summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "quota_exceeded"
+            summary_obj.last_error = "quota_exceeded_free"
+
             summary_obj.save(
                 update_fields=[
                     "status",
@@ -296,7 +302,8 @@ def generate_ai_summary_for_dealer(
 
         if not quota.allowed:
             summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "quota_exceeded"
+            summary_obj.last_error = "quota_exceeded_anon"
+
             summary_obj.save(
                 update_fields=[
                     "status",
@@ -307,6 +314,22 @@ def generate_ai_summary_for_dealer(
             return summary_obj
 
         consume_anonymous_ai_quota(request)
+
+        system_quota = get_ai_system_quota_status()
+
+        if not system_quota.allowed:
+            summary_obj.status = DealerAiSummary.STATUS_FAILED
+            summary_obj.last_error = "system_quota_exceeded"
+            summary_obj.save(
+                update_fields=[
+                    "status",
+                    "last_error",
+                    "updated_at",
+                ]
+            )
+            return summary_obj
+
+        consume_ai_system_quota()
 
     try:
         logger.info("AI CALL STARTED", extra={"dealer_id": dealer.pk})
