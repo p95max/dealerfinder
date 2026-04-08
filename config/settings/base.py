@@ -27,6 +27,7 @@ SITE_ID = 1
 
 
 TRUST_X_FORWARDED_FOR = os.getenv("TRUST_X_FORWARDED_FOR", "False") == "True"
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # =========================
 # APPS
@@ -166,12 +167,19 @@ MESSAGE_TAGS = {
 ANON_DAILY_LIMIT = int(os.getenv("ANON_DAILY_LIMIT", 5))
 FREE_DAILY_LIMIT = int(os.getenv("FREE_DAILY_LIMIT", 30))
 PREMIUM_DAILY_LIMIT = int(os.getenv("PREMIUM_DAILY_LIMIT", 200))
+
 CACHE_TTL_HOURS = int(os.getenv("CACHE_TTL_HOURS", 24))
 MAX_GOOGLE_CALLS_PER_DAY = int(os.getenv("MAX_GOOGLE_CALLS_PER_DAY", 500))
 SEARCH_THROTTLE_RATE = int(os.getenv("SEARCH_THROTTLE_RATE", 8))
+
 ANON_AI_DAILY_LIMIT = int(os.getenv("ANON_AI_DAILY_LIMIT", "5"))
 FREE_AI_DAILY_LIMIT = int(os.getenv("FREE_AI_DAILY_LIMIT", "10"))
 PREMIUM_AI_DAILY_LIMIT = int(os.getenv("PREMIUM_AI_DAILY_LIMIT", "50"))
+
+AI_RATE_LIMIT = int(os.getenv("AI_RATE_LIMIT", 5))
+AI_RATE_WINDOW = int(os.getenv("AI_RATE_WINDOW", 60))
+AI_MAX_PENDING_PER_USER=int(os.getenv("AI_MAX_PENDING_PER_USER", 3))
+AI_MAX_GLOBAL_PENDING=int(os.getenv("AI_MAX_GLOBAL_PENDING=", 100))
 
 # =========================
 # LOGGING
