@@ -24,6 +24,8 @@ function renderAiSummary(data) {
 
     const status = data.ai_status;
     const summary = data.ai_summary;
+    const errorCode = data.ai_error_code || "";
+    const message = data.ai_message || data.ai_error || "AI summary unavailable";
     const pros = Array.isArray(data.ai_pros) ? data.ai_pros : [];
     const cons = Array.isArray(data.ai_cons) ? data.ai_cons : [];
 
@@ -81,7 +83,7 @@ function renderAiSummary(data) {
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="alert alert-warning mt-3 mb-0 small">
-                AI summary unavailable
+                ${escapeHtml(message)}
             </div>
         `;
     }
@@ -237,6 +239,8 @@ function bindAiSummaryButton(card, placeId, baseData) {
             card.dataset.dealerAiSummary = ai.summary || "";
             card.dataset.dealerAiPros = JSON.stringify(ai.pros || []);
             card.dataset.dealerAiCons = JSON.stringify(ai.cons || []);
+            card.dataset.dealerAiErrorCode = ai.error_code || "";
+            card.dataset.dealerAiMessage = ai.message || ai.error || "";
 
             renderAiSummary({
                 ...baseData,
@@ -244,6 +248,8 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 ai_summary: ai.summary || "",
                 ai_pros: ai.pros || [],
                 ai_cons: ai.cons || [],
+                ai_error_code: ai.error_code || "",
+                ai_message: ai.message || ai.error || "",
             });
 
             if ((ai.status || "") === "done") {
@@ -332,6 +338,8 @@ function openDealerModal(card) {
         ai_status: card.dataset.dealerAiStatus || "pending",
         ai_pros: parseJsonArray(card.dataset.dealerAiPros),
         ai_cons: parseJsonArray(card.dataset.dealerAiCons),
+        ai_error_code: card.dataset.dealerAiErrorCode || "",
+        ai_message: card.dataset.dealerAiMessage || "",
     };
 
     nameEl.textContent = data.name;

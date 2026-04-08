@@ -279,7 +279,7 @@ def generate_ai_summary_for_dealer(
 
         if not quota.allowed:
             summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "AI daily quota reached"
+            summary_obj.last_error = "quota_exceeded"
             summary_obj.save(
                 update_fields=[
                     "status",
@@ -296,7 +296,7 @@ def generate_ai_summary_for_dealer(
 
         if not quota.allowed:
             summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "AI daily quota reached (anonymous)"
+            summary_obj.last_error = "quota_exceeded"
             summary_obj.save(
                 update_fields=[
                     "status",

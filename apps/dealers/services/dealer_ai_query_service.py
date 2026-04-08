@@ -38,11 +38,22 @@ def build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
         }
 
     if ai.status == DealerAiSummary.STATUS_FAILED:
+        error_code = ai.last_error or "ai_unavailable"
+        message = "AI summary unavailable"
+
+        if error_code == "quota_exceeded":
+            message = (
+                f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day. "
+                f"Sign in to get {settings.FREE_AI_DAILY_LIMIT} summaries per day."
+            )
+
         return {
-            "status": ai.status,
+            "status": "failed",
             "summary": "",
             "pros": [],
             "cons": [],
+            "error_code": error_code,
+            "message": message,
         }
 
     return {
@@ -110,8 +121,25 @@ def get_dealer_ai_summary_payload(place_id: str) -> tuple[dict, int]:
         return build_ai_summary_payload(ai), 200
 
     if ai.status == DealerAiSummary.STATUS_FAILED:
+        error_code = ai.last_error or "ai_unavailable"
+
+        message = "AI summary unavailable"
+
+        if error_code == "quota_exceeded":
+            message = (
+                f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day. "
+                f"Sign in to get {settings.FREE_AI_DAILY_LIMIT} summaries per day."
+            )
+
         return (
-            {"status": "failed", "summary": "", "pros": [], "cons": []},
+            {
+                "status": "failed",
+                "summary": "",
+                "pros": [],
+                "cons": [],
+                "error_code": error_code,
+                "message": message,
+            },
             200,
         )
 
