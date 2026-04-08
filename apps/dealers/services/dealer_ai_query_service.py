@@ -43,18 +43,18 @@ def build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
 
         if error_code == "system_quota_exceeded":
             message = (
-                "AI summaries are temporarily unavailable due to today's system limit. "
+                "AI summaries are temporarily unavailable due to today's system limit.\n"
                 "Please try again tomorrow."
             )
         elif error_code == "quota_exceeded_anon":
             message = (
-                f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day. "
+                f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day.\n"
                 f"Sign in to get {settings.FREE_AI_DAILY_LIMIT} summaries per day."
             )
         elif error_code == "quota_exceeded_free":
             message = (
-                f"Free plan limit reached: {settings.FREE_AI_DAILY_LIMIT} AI summaries per day. "
-                f"Upgrade to Premium for more daily AI summaries."
+                f"Free plan limit reached: {settings.FREE_AI_DAILY_LIMIT} AI summaries per day.\n"
+                f"Upgrade to Premium ({settings.PREMIUM_AI_DAILY_LIMIT} sum./day) for more daily AI summaries."
             )
 
         return {
