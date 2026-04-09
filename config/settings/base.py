@@ -113,6 +113,7 @@ DATABASES = {
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 REDIS_RATE_LIMIT_DB = os.getenv("REDIS_RATE_LIMIT_DB", "redis://redis:6379/2")
 AI_SUMMARY_CACHE_TTL_SECONDS = int(os.getenv("AI_SUMMARY_CACHE_TTL_SECONDS", "21600"))
+PLACE_DETAILS_CACHE_TTL_SECONDS = int(os.getenv("PLACE_DETAILS_CACHE_TTL_SECONDS", "86400"))
 
 CACHES = {
     "default": {

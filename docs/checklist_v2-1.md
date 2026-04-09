@@ -30,7 +30,7 @@
 
 - [ ] Redis integration
   * [x] Cache AI summary
-  * [ ] Cache Google Places
+  * [x] Cache Google Places
   * [ ] Deduplication lock
   * [ ] Quota counters (refactor to Redis)
   * [ ] Feature flags / plans (optional, next sprint)

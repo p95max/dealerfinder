@@ -7,6 +7,10 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from .geocoding_service import geocode_city
+from .google_places_cache_service import (
+    get_cached_place_details,
+    set_cached_place_details,
+)
 
 
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
@@ -178,6 +182,25 @@ def get_place_details(place_id: str) -> dict | None:
     if not place_id:
         return None
 
+    cached = get_cached_place_details(place_id)
+    if cached:
+        logger.info(
+            "Google Place Details served from Redis cache",
+            extra={
+                "event": "google_place_details_cache_hit",
+                "place_id": place_id,
+            },
+        )
+        return cached
+
+    logger.info(
+        "Google Place Details Redis cache miss",
+        extra={
+            "event": "google_place_details_cache_miss",
+            "place_id": place_id,
+        },
+    )
+
     headers = {
         "X-Goog-Api-Key": settings.GOOGLE_API_KEY,
         "X-Goog-FieldMask": ",".join(
@@ -207,7 +230,9 @@ def get_place_details(place_id: str) -> dict | None:
             headers=headers,
             timeout=20,
         )
-        return response.json()
+        data = response.json()
+        set_cached_place_details(place_id, data)
+        return data
     except requests.RequestException:
         logger.exception(
             "Google Place Details request failed",
