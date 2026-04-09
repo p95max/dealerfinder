@@ -1,25 +1,31 @@
 import hashlib
 import json
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
 
 from apps.dealers.models import Dealer, DealerAiSummary
+from apps.dealers.services.ai_system_quota_service import (
+    consume_ai_system_quota,
+    get_ai_system_quota_status,
+)
+from apps.dealers.services.dealer_ai_cache_service import (
+    delete_cached_ai_summary_payload,
+)
+from apps.dealers.services.dealer_ai_lock_service import (
+    acquire_ai_summary_lock,
+    release_ai_summary_lock,
+)
 from apps.dealers.services.google_places import get_place_details
-from integrations.ai_client import generate_dealer_summary, AiClientError
 from apps.users.services.ai_quota_service import (
-    get_authenticated_ai_quota_status,
+    consume_anonymous_ai_quota,
     consume_authenticated_ai_quota,
     get_anonymous_ai_quota_status,
-    consume_anonymous_ai_quota,
+    get_authenticated_ai_quota_status,
 )
-from apps.dealers.services.ai_system_quota_service import (
-    get_ai_system_quota_status,
-    consume_ai_system_quota,
-)
-from apps.dealers.services.dealer_ai_cache_service import delete_cached_ai_summary_payload
+from integrations.ai_client import AiClientError, generate_dealer_summary
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +124,11 @@ def validate_ai_result(data: dict) -> dict:
     pros = [str(x).strip() for x in (data.get("pros") or []) if str(x).strip()]
     cons = [str(x).strip() for x in (data.get("cons") or []) if str(x).strip()]
     sentiment = str(data.get("sentiment") or "").strip()
-    languages = [str(x).strip().lower() for x in (data.get("languages") or []) if str(x).strip()]
+    languages = [
+        str(x).strip().lower()
+        for x in (data.get("languages") or [])
+        if str(x).strip()
+    ]
     export_friendly = data.get("export_friendly")
     confidence = data.get("confidence")
 
@@ -139,9 +149,66 @@ def validate_ai_result(data: dict) -> dict:
         "cons": cons[:3],
         "sentiment": sentiment,
         "languages": languages[:5],
-        "export_friendly": export_friendly if isinstance(export_friendly, bool) or export_friendly is None else None,
+        "export_friendly": (
+            export_friendly
+            if isinstance(export_friendly, bool) or export_friendly is None
+            else None
+        ),
         "confidence": confidence,
     }
+
+
+def _get_authenticated_quota_error_code(user) -> str:
+    if getattr(user, "plan", "") == "premium":
+        return "quota_exceeded_premium"
+    return "quota_exceeded_authenticated"
+
+
+def _mark_summary_failed_no_reviews(
+    summary_obj: DealerAiSummary,
+    *,
+    error_message: str,
+    review_count: int = 0,
+    fingerprint: str = "",
+) -> DealerAiSummary:
+    summary_obj.status = DealerAiSummary.STATUS_FAILED
+    summary_obj.summary = ""
+    summary_obj.pros = []
+    summary_obj.cons = []
+    summary_obj.sentiment = ""
+    summary_obj.languages = []
+    summary_obj.export_friendly = None
+    summary_obj.confidence = None
+    summary_obj.source_review_count = review_count
+    summary_obj.source_fingerprint = fingerprint
+    summary_obj.raw_response = None
+    summary_obj.generated_at = None
+    summary_obj.last_error = error_message
+    summary_obj.provider = settings.AI_PROVIDER
+    summary_obj.model = settings.AI_MODEL
+    summary_obj.prompt_version = settings.AI_PROMPT_VERSION
+    summary_obj.save(
+        update_fields=[
+            "status",
+            "summary",
+            "pros",
+            "cons",
+            "sentiment",
+            "languages",
+            "export_friendly",
+            "confidence",
+            "source_review_count",
+            "source_fingerprint",
+            "raw_response",
+            "generated_at",
+            "last_error",
+            "provider",
+            "model",
+            "prompt_version",
+            "updated_at",
+        ]
+    )
+    return summary_obj
 
 
 def generate_ai_summary_for_dealer(
@@ -150,7 +217,6 @@ def generate_ai_summary_for_dealer(
     user=None,
     request=None,
 ) -> DealerAiSummary:
-
     summary_obj = ensure_ai_summary_record(dealer)
 
     if not settings.AI_ENABLED:
@@ -160,269 +226,236 @@ def generate_ai_summary_for_dealer(
         summary_obj.save(update_fields=["status", "last_error", "updated_at"])
         return summary_obj
 
-    details = get_place_details(dealer.google_place_id)
+    lock = acquire_ai_summary_lock(
+        dealer.google_place_id,
+        ttl_seconds=settings.AI_DEDUP_LOCK_TTL_SECONDS,
+    )
 
-
-    if not details:
-        delete_cached_ai_summary_payload(dealer.google_place_id)
-
-        summary_obj.status = DealerAiSummary.STATUS_FAILED
-        summary_obj.summary = ""
-        summary_obj.pros = []
-        summary_obj.cons = []
-        summary_obj.sentiment = ""
-        summary_obj.languages = []
-        summary_obj.export_friendly = None
-        summary_obj.confidence = None
-        summary_obj.source_review_count = 0
-        summary_obj.raw_response = None
-        summary_obj.generated_at = None
-        summary_obj.last_error = "No reviews available for AI summary"
-        summary_obj.provider = settings.AI_PROVIDER
-        summary_obj.model = settings.AI_MODEL
-        summary_obj.prompt_version = settings.AI_PROMPT_VERSION
-        summary_obj.save(
-            update_fields=[
-                "status",
-                "summary",
-                "pros",
-                "cons",
-                "sentiment",
-                "languages",
-                "export_friendly",
-                "confidence",
-                "source_review_count",
-                "raw_response",
-                "generated_at",
-                "last_error",
-                "updated_at",
-            ]
-        )
-        return summary_obj
-
-    context = build_dealer_ai_context(details)
-    reviews = context.get("reviews", [])
-    review_count = len(reviews)
-
-    if review_count == 0:
+    if not lock:
         logger.info(
-            "AI summary skipped because no reviews are available",
+            "AI summary generation skipped because lock is already held",
             extra={
-                "event": "ai_summary_skipped_no_reviews",
+                "event": "ai_summary_dedup_lock_skipped",
                 "dealer_id": dealer.pk,
-            },
-        )
-        delete_cached_ai_summary_payload(dealer.google_place_id)
-
-        summary_obj.status = DealerAiSummary.STATUS_FAILED
-        summary_obj.summary = ""
-        summary_obj.pros = []
-        summary_obj.cons = []
-        summary_obj.sentiment = ""
-        summary_obj.languages = []
-        summary_obj.export_friendly = None
-        summary_obj.confidence = None
-        summary_obj.source_review_count = 0
-        summary_obj.raw_response = None
-        summary_obj.generated_at = None
-        summary_obj.last_error = "No reviews available for AI summary"
-        summary_obj.save(
-            update_fields=[
-                "status",
-                "summary",
-                "pros",
-                "cons",
-                "sentiment",
-                "languages",
-                "export_friendly",
-                "confidence",
-                "source_review_count",
-                "raw_response",
-                "generated_at",
-                "last_error",
-                "updated_at",
-            ]
-        )
-        return summary_obj
-
-    fingerprint = build_source_fingerprint(context)
-
-    if is_summary_up_to_date(summary_obj, fingerprint):
-        logger.info(
-            "AI summary skipped because it is up to date",
-            extra={
-                "event": "ai_summary_skipped_cached",
-                "dealer_id": dealer.pk,
+                "place_id": dealer.google_place_id,
             },
         )
         return summary_obj
-
-    if (
-        summary_obj.status == DealerAiSummary.STATUS_FAILED
-        and not can_retry_failed_summary(summary_obj)
-    ):
-        return summary_obj
-
-    logger.info(
-        "AI summary generation requested",
-        extra={
-            "event": "ai_summary_requested",
-            "dealer_id": dealer.pk,
-            "review_count": review_count,
-        },
-    )
-
-    delete_cached_ai_summary_payload(dealer.google_place_id)
-
-    summary_obj.status = DealerAiSummary.STATUS_PENDING
-    summary_obj.last_error = ""
-    summary_obj.provider = settings.AI_PROVIDER
-    summary_obj.model = settings.AI_MODEL
-    summary_obj.prompt_version = settings.AI_PROMPT_VERSION
-    summary_obj.save(
-        update_fields=[
-            "status",
-            "last_error",
-            "provider",
-            "model",
-            "prompt_version",
-            "updated_at",
-        ]
-    )
-
-    if user and user.is_authenticated:
-        quota = get_authenticated_ai_quota_status(user)
-
-        if not quota.allowed:
-            delete_cached_ai_summary_payload(dealer.google_place_id)
-            summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "quota_exceeded_free"
-
-            summary_obj.save(
-                update_fields=[
-                    "status",
-                    "last_error",
-                    "updated_at",
-                ]
-            )
-            return summary_obj
-
-        consume_authenticated_ai_quota(user)
-
-    elif request is not None:
-        quota = get_anonymous_ai_quota_status(request)
-
-        if not quota.allowed:
-            delete_cached_ai_summary_payload(dealer.google_place_id)
-            summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "quota_exceeded_anon"
-
-            summary_obj.save(
-                update_fields=[
-                    "status",
-                    "last_error",
-                    "updated_at",
-                ]
-            )
-            return summary_obj
-
-        consume_anonymous_ai_quota(request)
-
-        system_quota = get_ai_system_quota_status()
-
-        if not system_quota.allowed:
-            delete_cached_ai_summary_payload(dealer.google_place_id)
-            summary_obj.status = DealerAiSummary.STATUS_FAILED
-            summary_obj.last_error = "system_quota_exceeded"
-            summary_obj.save(
-                update_fields=[
-                    "status",
-                    "last_error",
-                    "updated_at",
-                ]
-            )
-            return summary_obj
-
-        consume_ai_system_quota()
 
     try:
-        logger.info("AI CALL STARTED", extra={"dealer_id": dealer.pk})
-        result = generate_dealer_summary(context)
-        validated = validate_ai_result(result)
-    except (AiClientError, ValueError, TypeError) as exc:
-        delete_cached_ai_summary_payload(dealer.google_place_id)
-        logger.exception(
-            "AI summary generation failed",
+        details = get_place_details(dealer.google_place_id)
+
+        if not details:
+            delete_cached_ai_summary_payload(dealer.google_place_id)
+            return _mark_summary_failed_no_reviews(
+                summary_obj,
+                error_message="No reviews available for AI summary",
+            )
+
+        context = build_dealer_ai_context(details)
+        reviews = context.get("reviews", [])
+        review_count = len(reviews)
+
+        if review_count == 0:
+            logger.info(
+                "AI summary skipped because no reviews are available",
+                extra={
+                    "event": "ai_summary_skipped_no_reviews",
+                    "dealer_id": dealer.pk,
+                },
+            )
+            delete_cached_ai_summary_payload(dealer.google_place_id)
+            return _mark_summary_failed_no_reviews(
+                summary_obj,
+                error_message="No reviews available for AI summary",
+                review_count=0,
+                fingerprint=build_source_fingerprint(context),
+            )
+
+        fingerprint = build_source_fingerprint(context)
+
+        if is_summary_up_to_date(summary_obj, fingerprint):
+            logger.info(
+                "AI summary skipped because it is up to date",
+                extra={
+                    "event": "ai_summary_skipped_cached",
+                    "dealer_id": dealer.pk,
+                },
+            )
+            return summary_obj
+
+        if (
+            summary_obj.status == DealerAiSummary.STATUS_FAILED
+            and not can_retry_failed_summary(summary_obj)
+        ):
+            return summary_obj
+
+        logger.info(
+            "AI summary generation requested",
             extra={
-                "event": "ai_summary_failed",
+                "event": "ai_summary_requested",
                 "dealer_id": dealer.pk,
+                "review_count": review_count,
             },
         )
-        summary_obj.status = DealerAiSummary.STATUS_FAILED
+
+        delete_cached_ai_summary_payload(dealer.google_place_id)
+
+        summary_obj.status = DealerAiSummary.STATUS_PENDING
+        summary_obj.last_error = ""
         summary_obj.provider = settings.AI_PROVIDER
         summary_obj.model = settings.AI_MODEL
         summary_obj.prompt_version = settings.AI_PROMPT_VERSION
-        summary_obj.summary = ""
-        summary_obj.pros = []
-        summary_obj.cons = []
-        summary_obj.sentiment = ""
-        summary_obj.languages = []
-        summary_obj.export_friendly = None
-        summary_obj.confidence = None
-        summary_obj.raw_response = None
-        summary_obj.generated_at = None
-        summary_obj.last_error = str(exc)[:1000]
-        summary_obj.source_review_count = review_count
-        summary_obj.source_fingerprint = fingerprint
         summary_obj.save(
             update_fields=[
                 "status",
+                "last_error",
                 "provider",
                 "model",
                 "prompt_version",
-                "summary",
-                "pros",
-                "cons",
-                "sentiment",
-                "languages",
-                "export_friendly",
-                "confidence",
-                "raw_response",
-                "generated_at",
-                "last_error",
                 "updated_at",
             ]
         )
+
+        if user and user.is_authenticated:
+            quota = get_authenticated_ai_quota_status(user)
+
+            if not quota.allowed:
+                delete_cached_ai_summary_payload(dealer.google_place_id)
+                summary_obj.status = DealerAiSummary.STATUS_FAILED
+                summary_obj.last_error = _get_authenticated_quota_error_code(user)
+                summary_obj.save(
+                    update_fields=[
+                        "status",
+                        "last_error",
+                        "updated_at",
+                    ]
+                )
+                return summary_obj
+
+            consume_authenticated_ai_quota(user)
+
+        elif request is not None:
+            quota = get_anonymous_ai_quota_status(request)
+
+            if not quota.allowed:
+                delete_cached_ai_summary_payload(dealer.google_place_id)
+                summary_obj.status = DealerAiSummary.STATUS_FAILED
+                summary_obj.last_error = "quota_exceeded_anon"
+                summary_obj.save(
+                    update_fields=[
+                        "status",
+                        "last_error",
+                        "updated_at",
+                    ]
+                )
+                return summary_obj
+
+            system_quota = get_ai_system_quota_status()
+
+            if not system_quota.allowed:
+                delete_cached_ai_summary_payload(dealer.google_place_id)
+                summary_obj.status = DealerAiSummary.STATUS_FAILED
+                summary_obj.last_error = "system_quota_exceeded"
+                summary_obj.save(
+                    update_fields=[
+                        "status",
+                        "last_error",
+                        "updated_at",
+                    ]
+                )
+                return summary_obj
+
+            consume_anonymous_ai_quota(request)
+            consume_ai_system_quota()
+
+        try:
+            logger.info(
+                "AI CALL STARTED",
+                extra={
+                    "event": "ai_call_started",
+                    "dealer_id": dealer.pk,
+                },
+            )
+            result = generate_dealer_summary(context)
+            validated = validate_ai_result(result)
+        except (AiClientError, ValueError, TypeError) as exc:
+            delete_cached_ai_summary_payload(dealer.google_place_id)
+            logger.exception(
+                "AI summary generation failed",
+                extra={
+                    "event": "ai_summary_failed",
+                    "dealer_id": dealer.pk,
+                },
+            )
+            summary_obj.status = DealerAiSummary.STATUS_FAILED
+            summary_obj.provider = settings.AI_PROVIDER
+            summary_obj.model = settings.AI_MODEL
+            summary_obj.prompt_version = settings.AI_PROMPT_VERSION
+            summary_obj.summary = ""
+            summary_obj.pros = []
+            summary_obj.cons = []
+            summary_obj.sentiment = ""
+            summary_obj.languages = []
+            summary_obj.export_friendly = None
+            summary_obj.confidence = None
+            summary_obj.raw_response = None
+            summary_obj.generated_at = None
+            summary_obj.last_error = str(exc)[:1000]
+            summary_obj.source_review_count = review_count
+            summary_obj.source_fingerprint = fingerprint
+            summary_obj.save(
+                update_fields=[
+                    "status",
+                    "provider",
+                    "model",
+                    "prompt_version",
+                    "summary",
+                    "pros",
+                    "cons",
+                    "sentiment",
+                    "languages",
+                    "export_friendly",
+                    "confidence",
+                    "raw_response",
+                    "generated_at",
+                    "last_error",
+                    "source_review_count",
+                    "source_fingerprint",
+                    "updated_at",
+                ]
+            )
+            return summary_obj
+
+        summary_obj.status = DealerAiSummary.STATUS_DONE
+        summary_obj.provider = settings.AI_PROVIDER
+        summary_obj.model = settings.AI_MODEL
+        summary_obj.prompt_version = settings.AI_PROMPT_VERSION
+        summary_obj.summary = validated["summary"]
+        summary_obj.pros = validated["pros"]
+        summary_obj.cons = validated["cons"]
+        summary_obj.sentiment = validated["sentiment"]
+        summary_obj.languages = validated["languages"]
+        summary_obj.export_friendly = validated["export_friendly"]
+        summary_obj.confidence = validated["confidence"]
+        summary_obj.source_review_count = review_count
+        summary_obj.source_fingerprint = fingerprint
+        summary_obj.raw_response = result
+        summary_obj.last_error = ""
+        summary_obj.generated_at = timezone.now()
+
+        delete_cached_ai_summary_payload(dealer.google_place_id)
+        summary_obj.save()
+
+        logger.info(
+            "AI summary generated successfully",
+            extra={
+                "event": "ai_summary_generated",
+                "dealer_id": dealer.pk,
+                "review_count": review_count,
+            },
+        )
         return summary_obj
 
-    summary_obj.status = DealerAiSummary.STATUS_DONE
-    summary_obj.provider = settings.AI_PROVIDER
-    summary_obj.model = settings.AI_MODEL
-    summary_obj.prompt_version = settings.AI_PROMPT_VERSION
-    summary_obj.summary = validated["summary"]
-    summary_obj.pros = validated["pros"]
-    summary_obj.cons = validated["cons"]
-    summary_obj.sentiment = validated["sentiment"]
-    summary_obj.languages = validated["languages"]
-    summary_obj.export_friendly = validated["export_friendly"]
-    summary_obj.confidence = validated["confidence"]
-    summary_obj.source_review_count = review_count
-    summary_obj.source_fingerprint = fingerprint
-    summary_obj.raw_response = result
-    summary_obj.last_error = ""
-    summary_obj.generated_at = timezone.now()
-
-    delete_cached_ai_summary_payload(dealer.google_place_id)
-
-    summary_obj.save()
-
-    logger.info(
-        "AI summary generated successfully",
-        extra={
-            "event": "ai_summary_generated",
-            "dealer_id": dealer.pk,
-            "review_count": review_count,
-        },
-    )
-
-    return summary_obj
+    finally:
+        release_ai_summary_lock(lock)

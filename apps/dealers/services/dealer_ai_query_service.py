@@ -58,10 +58,15 @@ def build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
                 f"Guest limit reached: {settings.ANON_AI_DAILY_LIMIT} AI summaries per day.\n"
                 f"Sign in to get {settings.FREE_AI_DAILY_LIMIT} summaries per day."
             )
-        elif error_code == "quota_exceeded_free":
+        elif error_code == "quota_exceeded_authenticated":
             message = (
-                f"Free plan limit reached: {settings.FREE_AI_DAILY_LIMIT} AI summaries per day.\n"
+                f"Daily AI limit reached for your account: {settings.FREE_AI_DAILY_LIMIT} summaries per day.\n"
                 f"Upgrade to Premium ({settings.PREMIUM_AI_DAILY_LIMIT} sum./day) for more daily AI summaries."
+            )
+        elif error_code == "quota_exceeded_premium":
+            message = (
+                f"Premium daily AI limit reached: {settings.PREMIUM_AI_DAILY_LIMIT} summaries per day.\n"
+                "Please try again tomorrow."
             )
 
         return {
