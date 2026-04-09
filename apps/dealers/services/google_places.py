@@ -11,6 +11,11 @@ from .google_places_cache_service import (
     get_cached_place_details,
     set_cached_place_details,
 )
+from .google_places_lock_service import (
+    acquire_place_details_lock,
+    release_place_details_lock,
+    wait_for_place_details_cache,
+)
 
 
 TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
@@ -201,6 +206,45 @@ def get_place_details(place_id: str) -> dict | None:
         },
     )
 
+    lock = acquire_place_details_lock(
+        place_id,
+        ttl_seconds=settings.GOOGLE_PLACE_DETAILS_LOCK_TTL_SECONDS,
+    )
+
+    if not lock:
+        logger.info(
+            "Google Place Details fetch deduplicated by lock, waiting for cache",
+            extra={
+                "event": "google_place_details_lock_wait_started",
+                "place_id": place_id,
+            },
+        )
+
+        waited_cached = wait_for_place_details_cache(
+            place_id,
+            attempts=settings.GOOGLE_PLACE_DETAILS_LOCK_WAIT_ATTEMPTS,
+            sleep_seconds=settings.GOOGLE_PLACE_DETAILS_LOCK_WAIT_SLEEP_SECONDS,
+            cache_getter=get_cached_place_details,
+        )
+
+        if waited_cached:
+            logger.info(
+                "Google Place Details served from Redis cache after waiting on lock",
+                extra={
+                    "event": "google_place_details_cache_hit_after_lock_wait",
+                    "place_id": place_id,
+                },
+            )
+            return waited_cached
+
+        logger.warning(
+            "Google Place Details cache still empty after lock wait, falling back to direct fetch",
+            extra={
+                "event": "google_place_details_lock_wait_timeout",
+                "place_id": place_id,
+            },
+        )
+
     headers = {
         "X-Goog-Api-Key": settings.GOOGLE_API_KEY,
         "X-Goog-FieldMask": ",".join(
@@ -232,6 +276,15 @@ def get_place_details(place_id: str) -> dict | None:
         )
         data = response.json()
         set_cached_place_details(place_id, data)
+
+        logger.info(
+            "Google Place Details fetched from API and cached",
+            extra={
+                "event": "google_place_details_fetched",
+                "place_id": place_id,
+            },
+        )
+
         return data
     except requests.RequestException:
         logger.exception(
@@ -242,3 +295,6 @@ def get_place_details(place_id: str) -> dict | None:
             },
         )
         return None
+    finally:
+        if lock:
+            release_place_details_lock(lock)
