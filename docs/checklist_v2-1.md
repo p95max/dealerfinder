@@ -29,7 +29,7 @@
   → Rate limit failed/pending job creation
 
 - [ ] Redis integration
-  * [ ] Cache AI summary
+  * [x] Cache AI summary
   * [ ] Cache Google Places
   * [ ] Deduplication lock
   * [ ] Quota counters (refactor to Redis)

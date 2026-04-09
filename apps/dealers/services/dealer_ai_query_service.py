@@ -4,11 +4,16 @@ import logging
 from django.conf import settings
 
 from apps.dealers.models import Dealer, DealerAiSummary
+from apps.dealers.services.dealer_ai_cache_service import (
+    get_cached_ai_summary_payload,
+    set_cached_ai_summary_payload,
+)
 from apps.dealers.services.dealer_ai_service import (
     generate_ai_summary_for_dealer,
     is_summary_fresh,
 )
 from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
+from apps.dealers.services.dealer_ai_cache_service import delete_cached_ai_summary_payload
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,7 @@ def build_ai_summary_payload(ai: DealerAiSummary | None) -> dict:
             "summary": "",
             "pros": [],
             "cons": [],
+            "error_code": "not_generated_yet",
         }
 
     if ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
@@ -120,13 +126,38 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
             404,
         )
 
+    cached_payload = get_cached_ai_summary_payload(place_id)
+    if cached_payload:
+        logger.info(
+            "AI summary payload served from Redis cache",
+            extra={
+                "event": "ai_summary_cache_hit",
+                "place_id": place_id,
+            },
+        )
+
+        return cached_payload, 200
+
+    else:
+        logger.info(
+            "AI summary payload Redis cache miss",
+            extra={
+                "event": "ai_summary_cache_miss",
+                "place_id": place_id,
+            },
+        )
+
     ai = getattr(dealer, "ai_summary", None)
 
     if ai and ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
-        return build_ai_summary_payload(ai), 200
+        payload = build_ai_summary_payload(ai)
+        set_cached_ai_summary_payload(place_id, payload)
+        return payload, 200
 
     if ai and ai.status == DealerAiSummary.STATUS_FAILED:
-        return build_ai_summary_payload(ai), 200
+        payload = build_ai_summary_payload(ai)
+        set_cached_ai_summary_payload(place_id, payload)
+        return payload, 200
 
     if request:
         try:
@@ -151,6 +182,7 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
             request=request,
         )
     except Exception:
+        delete_cached_ai_summary_payload(place_id)
         logger.exception("AI generation failed")
 
         return (
@@ -165,7 +197,9 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
             200,
         )
 
-    return build_ai_summary_payload(ai), 200
+    payload = build_ai_summary_payload(ai)
+    set_cached_ai_summary_payload(place_id, payload)
+    return payload, 200
 
 
 def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[dict, int]:
@@ -200,6 +234,7 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
             request=request,
         )
     except Exception:
+        delete_cached_ai_summary_payload(place_id)
         logger.exception("AI generation failed")
         return (
             {
@@ -213,4 +248,6 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
             200,
         )
 
-    return build_ai_summary_payload(ai), 200
+    payload = build_ai_summary_payload(ai)
+    set_cached_ai_summary_payload(place_id, payload)
+    return payload, 200
