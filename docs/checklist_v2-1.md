@@ -31,7 +31,7 @@
 - [ ] Redis integration
   * [x] Cache AI summary
   * [x] Cache Google Places
-  * [ ] Deduplication lock
+  * [ ] Deduplication lock(generate_ai_summary_for_dealer)
   * [ ] Quota counters (refactor to Redis)
   * [ ] Feature flags / plans (optional, next sprint)
 
