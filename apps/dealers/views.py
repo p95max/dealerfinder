@@ -29,6 +29,7 @@ from apps.users.services.quota_service import (
     get_anonymous_quota_status,
     get_authenticated_quota_status,
 )
+from apps.dealers.services.geocoding_service import is_german_city, reverse_geocode_city
 from django.conf import settings
 from utils.http import _get_client_ip
 
@@ -60,6 +61,11 @@ def search_view(request):
     user_lng = _parse_float(request.GET.get("user_lng"))
     max_distance_km = _parse_float(request.GET.get("max_distance_km"))
 
+    if not city and user_lat is not None and user_lng is not None:
+        resolved = reverse_geocode_city(user_lat, user_lng)
+        if resolved:
+            city = _normalize_city(resolved)
+            
     if request.GET.get("accept_terms") and not request.user.is_authenticated:
         request.session["anon_terms"] = True
 

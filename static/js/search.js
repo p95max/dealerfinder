@@ -1,58 +1,46 @@
 document.addEventListener("DOMContentLoaded", () => {
-    initLocationSearchForm();
+    initLocationButton();
     initCityAutocomplete();
 });
 
 
 /* =========================
-   GEOLOCATION
+   GEOLOCATION (BUTTON)
 ========================= */
-function initLocationSearchForm() {
+function initLocationButton() {
     const form = document.getElementById("dealerSearchForm");
-    const locationCheckbox = document.getElementById("use_my_location");
+    const button = document.getElementById("detectLocationBtn");
     const latInput = document.getElementById("user_lat");
     const lngInput = document.getElementById("user_lng");
-    const searchButton = form?.querySelector('button[type="submit"]');
     const locationHelp = document.getElementById("locationHelp");
 
-    if (!form || !locationCheckbox || !latInput || !lngInput || !searchButton) {
-        return;
-    }
+    if (!form || !button || !latInput || !lngInput) return;
 
-    let geoRequestInProgress = false;
+    if (button.dataset.geoInitialized === "1") return;
+    button.dataset.geoInitialized = "1";
 
-    function setMessage(msg, isError = false) {
+    function setMessage(message, isError = false) {
         if (!locationHelp) return;
-        locationHelp.textContent = msg;
+        locationHelp.textContent = message;
         locationHelp.classList.toggle("text-danger", isError);
     }
 
-    function clearCoords() {
-        latInput.value = "";
-        lngInput.value = "";
-    }
-
-    function hasCoords() {
-        return latInput.value && lngInput.value;
-    }
-
-    function setLoading(isLoading) {
-        geoRequestInProgress = isLoading;
-        searchButton.disabled = isLoading;
+    function setLoading(isLoading, loadingText = "Detecting...") {
+        button.disabled = isLoading;
 
         if (isLoading) {
-            searchButton.dataset.originalText = searchButton.textContent;
-            searchButton.textContent = "Detecting location...";
-        } else if (searchButton.dataset.originalText) {
-            searchButton.textContent = searchButton.dataset.originalText;
+            if (!button.dataset.originalText) {
+                button.dataset.originalText = button.textContent.trim();
+            }
+            button.textContent = loadingText;
+        } else if (button.dataset.originalText) {
+            button.textContent = button.dataset.originalText;
         }
     }
 
-    function requestLocation(cb = null) {
+    button.addEventListener("click", () => {
         if (!navigator.geolocation) {
-            setMessage("Geolocation not supported", true);
-            locationCheckbox.checked = false;
-            clearCoords();
+            setMessage("Geolocation is not supported by your browser.", true);
             return;
         }
 
@@ -60,57 +48,40 @@ function initLocationSearchForm() {
         setMessage("Detecting your location...");
 
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                latInput.value = pos.coords.latitude;
-                lngInput.value = pos.coords.longitude;
+            (position) => {
+                latInput.value = String(position.coords.latitude);
+                lngInput.value = String(position.coords.longitude);
 
                 setLoading(false);
-                setMessage("Location detected");
+                setMessage("Location detected. Now click Search dealers.");
+            },
+            (error) => {
+                let msg = "Unable to detect your location.";
 
-                if (cb) cb();
-            },
-            () => {
-                clearCoords();
-                locationCheckbox.checked = false;
+                if (error.code === 1) msg = "Permission denied.";
+                if (error.code === 2) msg = "Position unavailable.";
+                if (error.code === 3) msg = "Request timed out.";
+
                 setLoading(false);
-                setMessage("Location failed", true);
+                setMessage(msg, true);
             },
-            { timeout: 10000 }
+            {
+                enableHighAccuracy: false,
+                timeout: 10000,
+                maximumAge: 300000,
+            }
         );
-    }
-
-    locationCheckbox.addEventListener("change", () => {
-        if (!locationCheckbox.checked) {
-            clearCoords();
-            setMessage("Location is optional");
-            return;
-        }
-        requestLocation();
-    });
-
-    form.addEventListener("submit", (e) => {
-        if (!locationCheckbox.checked) return;
-
-        if (geoRequestInProgress) {
-            e.preventDefault();
-            return;
-        }
-
-        if (!hasCoords()) {
-            e.preventDefault();
-            requestLocation(() => form.submit());
-        }
     });
 }
 
 
 /* =========================
-   AUTOCOMPLETE
+   AUTOCOMPLETE (CITY)
 ========================= */
 function initCityAutocomplete() {
     fetch("/static/data/cities_de.json")
-        .then(r => r.json())
-        .then(cities => {
+        .then((r) => r.json())
+        .then((cities) => {
             const input = document.getElementById("city");
             const datalist = document.getElementById("cities-list");
             if (!input || !datalist) return;
@@ -122,9 +93,9 @@ function initCityAutocomplete() {
                 if (val.length < 2) return;
 
                 cities
-                    .filter(c => c.toLowerCase().startsWith(val))
+                    .filter((c) => c.toLowerCase().startsWith(val))
                     .slice(0, 10)
-                    .forEach(c => {
+                    .forEach((c) => {
                         const opt = document.createElement("option");
                         opt.value = c;
                         datalist.appendChild(opt);
@@ -150,29 +121,6 @@ function toSafeExternalUrl(value) {
     } catch {
         return null;
     }
-}
-
-function appendInfoRow(container, label, value, options = {}) {
-    if (!value) return;
-
-    const row = document.createElement("div");
-
-    const strong = document.createElement("b");
-    strong.textContent = `${label}: `;
-    row.appendChild(strong);
-
-    if (options.href) {
-        const link = document.createElement("a");
-        link.href = options.href;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = value;
-        row.appendChild(link);
-    } else {
-        row.appendChild(document.createTextNode(value));
-    }
-
-    container.appendChild(row);
 }
 
 function escapeHtml(str) {

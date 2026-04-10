@@ -61,3 +61,36 @@ def is_german_city(city: str) -> bool:
     if not geo:
         return False
     return geo.get("country_code") == "DE"
+
+
+def reverse_geocode_city(lat: float, lng: float) -> str | None:
+    cache_key = f"{CACHE_PREFIX}reverse:{lat:.4f},{lng:.4f}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    try:
+        response = requests.get(
+            GEOCODING_URL,
+            params={"latlng": f"{lat},{lng}", "key": settings.GOOGLE_API_KEY, "language": "en"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException:
+        logger.exception(
+            "Reverse geocoding request failed",
+            extra={"event": "google_reverse_geocoding_failed", "lat": lat, "lng": lng},
+        )
+        return None
+
+    if data.get("status") != "OK" or not data.get("results"):
+        return None
+
+    for component in data["results"][0].get("address_components", []):
+        if "locality" in component.get("types", []):
+            city = component["long_name"]
+            cache.set(cache_key, city, CACHE_TTL)
+            return city
+
+    return None
