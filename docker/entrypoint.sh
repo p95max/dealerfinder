@@ -1,27 +1,50 @@
 #!/bin/sh
 set -e
 
+echo "==> Waiting for Redis..."
+python - <<EOF
+import os
+import time
+import redis
+
+redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+client = redis.Redis.from_url(redis_url)
+
+for attempt in range(30):
+    try:
+        client.ping()
+        print("Redis is ready.")
+        break
+    except Exception:
+        time.sleep(1)
+else:
+    raise SystemExit("Redis is not available.")
+EOF
+
 echo "==> Running migrations..."
 python manage.py migrate --noinput
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "==> Creating cache table..."
-python manage.py createcachetable
-
 echo "==> Creating superuser..."
 python manage.py shell -c "
 from apps.users.models import User
+
 email = '$DJANGO_SUPERUSER_EMAIL'
 password = '$DJANGO_SUPERUSER_PASSWORD'
+
 if not email or not password:
     print('DJANGO_SUPERUSER_EMAIL or DJANGO_SUPERUSER_PASSWORD not set, skipping.')
 elif User.objects.filter(email=email).exists():
-    print(f'Superuser already exists, skipping.')
+    print('Superuser already exists, skipping.')
 else:
-    User.objects.create_superuser(username='admin', email=email, password=password)
-    print(f'Superuser created.')
+    User.objects.create_superuser(
+        username=email,
+        email=email,
+        password=password,
+    )
+    print('Superuser created.')
 "
 
 echo "==> Setting up Google SocialApp..."
