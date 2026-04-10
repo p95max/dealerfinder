@@ -348,6 +348,55 @@ function bindModalFavoriteButton(card) {
 
 const shareBtn = document.getElementById("modalShareBtn");
 const dealerModal = document.getElementById("dealerModal");
+function initShareButtons(modalEl) {
+    const copyBtn = document.getElementById("shareCopyBtn");
+    const telegramBtn = document.getElementById("shareTelegramBtn");
+    const whatsappBtn = document.getElementById("shareWhatsappBtn");
+    const emailBtn = document.getElementById("shareEmailBtn");
+
+    const title =
+        document.getElementById("modalDealerName")?.textContent?.trim() || "Dealer";
+
+    const placeId = modalEl.dataset.placeId || "";
+    const shareUrl = new URL(window.location.href);
+
+    if (placeId) {
+        shareUrl.searchParams.set("dealer", placeId);
+    }
+
+    const url = shareUrl.toString();
+    const text = `Take a look at this dealer: ${title}`;
+
+    // Copy
+    if (copyBtn) {
+        copyBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(url);
+                alert("Link copied");
+            } catch {
+                alert(url);
+            }
+        };
+    }
+
+    // Telegram
+    if (telegramBtn) {
+        telegramBtn.href =
+            `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    }
+
+    // WhatsApp
+    if (whatsappBtn) {
+        whatsappBtn.href =
+            `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`;
+    }
+
+    // Email
+    if (emailBtn) {
+        emailBtn.href =
+            `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text + "\n\n" + url)}`;
+    }
+}
 
 if (shareBtn && dealerModal) {
     shareBtn.addEventListener("click", async () => {
@@ -463,7 +512,8 @@ function openDealerModal(card) {
 
 
     modalEl.dataset.placeId = placeId;
-
+    
+    initShareButtons(modalEl);
     resetAiSummaryButton();
     bindAiSummaryButton(card, placeId, data);
     initAiConsent(data);
