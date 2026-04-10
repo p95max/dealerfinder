@@ -4,115 +4,125 @@
 
 {% block content %}
 
-<section class="hero py-5">
-    <div class="container">
-        <div class="hero-badge mb-3">🇩🇪 Made for Germany</div>
-        <h1 class="hero-title mb-3">Find the right car dealer.<br>Without the noise.</h1>
-        <p class="hero-text mb-0">
-            DealerFinder is a fast, cache-first search tool for finding reliable car dealers across Germany —
-            with smart filters, honest rankings, and a personal account to save your searches.
-        </p>
-    </div>
-</section>
-
 <section class="container mt-5">
     <div class="row g-4 align-items-center">
+
         <div class="col-lg-6">
-            <h2 class="section-title mb-3">Why we built this</h2>
+            <h2 class="section-title mb-3">Why this exists</h2>
             <p class="text-secondary">
-                Finding a trustworthy car dealer in Germany is harder than it should be.
-                Generic search engines return ads. Maps apps bury useful info under clutter.
-                Review platforms are gamed.
+                Finding a good dealer online is harder than it should be.
+                Search results are full of ads, and high ratings do not always mean quality.
             </p>
             <p class="text-secondary mb-0">
-                DealerFinder cuts through that. We query Google Places, cache the results,
-                apply real filters — rating confidence, working hours, contact availability —
-                and show you the dealers that actually deserve your attention.
+                DealerFinder focuses on what actually matters: consistent reviews,
+                real availability, and useful contact information — all in one place.
             </p>
         </div>
+
         <div class="col-lg-6">
-            <div class="surface-card p-4">
+            <div class="surface-card p-4 h-100">
                 <div class="d-flex flex-column gap-3 small">
-                    <div class="d-flex gap-3 align-items-start">
+
+                    <div class="d-flex gap-3">
                         <div class="feature-icon flex-shrink-0">⚡</div>
                         <div>
-                            <div class="fw-semibold mb-1">Cache-first speed</div>
-                            <div class="text-secondary">Results are cached for 24h. Most searches return instantly without hitting Google's API.</div>
+                            <div class="fw-semibold">Fast results</div>
+                            <div class="text-secondary">
+                                Most searches load instantly — no waiting, no unnecessary reloads.
+                            </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="feature-icon flex-shrink-0">🧠</div>
+
+                    <div class="d-flex gap-3">
+                        <div class="feature-icon flex-shrink-0">⭐</div>
                         <div>
-                            <div class="fw-semibold mb-1">Confidence-adjusted ranking</div>
-                            <div class="text-secondary">A dealer with 4.6★ and 800 reviews ranks above one with 4.9★ and 3 reviews. As it should.</div>
+                            <div class="fw-semibold">Smart ranking</div>
+                            <div class="text-secondary">
+                                Dealers are ranked not just by rating, but also by review count and reliability.
+                            </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="feature-icon flex-shrink-0">🔍</div>
+
+                    <div class="d-flex gap-3">
+                        <div class="feature-icon flex-shrink-0">🚫</div>
                         <div>
-                            <div class="fw-semibold mb-1">Real filters</div>
-                            <div class="text-secondary">Filter by radius, rating, open now, weekends, and contact availability — not just keywords.</div>
+                            <div class="fw-semibold">No ads</div>
+                            <div class="text-secondary">
+                                Results are not influenced by paid placements or promotions.
+                            </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
-    </div>
-</section>
 
-<section class="container mt-5">
-    <h2 class="section-title mb-4">Everything you get</h2>
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">📍</div>
-                <h5>City + radius search</h5>
-                <p class="text-muted small mb-0">Search any German city with a configurable radius. Results include address, coordinates, and a map.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">⭐</div>
-                <h5>Rating + review filters</h5>
-                <p class="text-muted small mb-0">Set a minimum rating. Rankings are weighted by review count so outliers don't skew results.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">🕐</div>
-                <h5>Hours-aware filtering</h5>
-                <p class="text-muted small mb-0">Filter by "open now" or "open on weekends". Dealers with missing hours are not excluded — just ranked lower.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">📞</div>
-                <h5>Contact availability</h5>
-                <p class="text-muted small mb-0">Filter to show only dealers with a phone number or website. No dead ends.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">🔒</div>
-                <h5>Google sign-in</h5>
-                <p class="text-muted small mb-0">One-click login via Google. No passwords, no forms. Your account unlocks a personal quota and saved searches.</p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="surface-card p-4 h-100">
-                <div class="feature-icon mb-3">✨</div>
-                <h5>AI review summary <span class="badge bg-secondary" style="font-size: 10px; vertical-align: middle;">v2</span></h5>
-                <p class="text-muted small mb-0">Coming soon: auto-generated review highlights — pros, cons, and key signals from Google reviews, powered by AI.</p>
-            </div>
-        </div>
     </div>
 </section>
 
 <section class="container mt-5 mb-5">
-    <div class="surface-card p-4 p-lg-5 text-center">
-        <h2 class="section-title mb-2">Ready to find your dealer?</h2>
-        <p class="text-secondary mb-4">Search is free. No account required to get started.</p>
-        <a href="{% url 'dealers:search' %}" class="btn btn-primary rounded-pill px-5">Start searching</a>
+    <div class="row g-4">
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">📍</div>
+                <h5>Search by location</h5>
+                <p class="text-muted small mb-0">
+                    Find dealers in any city and set your preferred search radius.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">⭐</div>
+                <h5>Filter by quality</h5>
+                <p class="text-muted small mb-0">
+                    Set a minimum rating and avoid dealers with too few reviews.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">🕐</div>
+                <h5>Check availability</h5>
+                <p class="text-muted small mb-0">
+                    See who is open now or works on weekends.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">📞</div>
+                <h5>Contact easily</h5>
+                <p class="text-muted small mb-0">
+                    Focus on dealers with phone numbers or websites — no dead ends.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">🧠</div>
+                <h5>AI review summaries</h5>
+                <p class="text-muted small mb-0">
+                    Get a quick overview of customer feedback — pros, cons, and key points.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <div class="surface-card p-4 h-100">
+                <div class="feature-icon mb-3">🔒</div>
+                <h5>Simple login</h5>
+        <p class="text-muted small mb-0">
+            Sign in with Google — no passwords, minimal personal data.
+        </p>
+            </div>
+        </div>
+
     </div>
 </section>
 
