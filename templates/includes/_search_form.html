@@ -81,7 +81,7 @@
                 type="button"
                 data-bs-toggle="collapse"
                 data-bs-target="#advancedFiltersCollapse"
-                aria-expanded="{% if request.GET.min_rating or request.GET.max_distance_km or request.GET.open_now or request.GET.weekends or request.GET.has_contacts or request.GET.user_lat %}true{% else %}false{% endif %}"
+               class="collapse {% if request.GET.min_rating or request.GET.max_distance_km or request.GET.open_now or request.GET.weekends or request.GET.has_contacts %}show{% endif %}"
                 aria-controls="advancedFiltersCollapse"
             >
                 <span class="search-advanced-toggle__left">
