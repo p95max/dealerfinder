@@ -13,7 +13,6 @@ from apps.dealers.services.dealer_ai_query_service import (
     get_dealer_ai_summary_payload,
 )
 from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
-from apps.dealers.services.geocoding_service import is_german_city
 from apps.dealers.services.google_places import is_google_cap_reached
 from apps.dealers.services.search_tracking_service import (
     build_search_discovery_context,
@@ -21,7 +20,6 @@ from apps.dealers.services.search_tracking_service import (
     track_popular_city,
     track_user_search_history,
 )
-from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
 from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
 from apps.users.services.quota_service import (
     consume_anonymous_search,
@@ -65,7 +63,7 @@ def search_view(request):
         resolved = reverse_geocode_city(user_lat, user_lng)
         if resolved:
             city = _normalize_city(resolved)
-            
+
     if request.GET.get("accept_terms") and not request.user.is_authenticated:
         request.session["anon_terms"] = True
 

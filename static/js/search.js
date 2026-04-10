@@ -12,6 +12,8 @@ function initLocationButton() {
     const button = document.getElementById("detectLocationBtn");
     const latInput = document.getElementById("user_lat");
     const lngInput = document.getElementById("user_lng");
+    const cityInput = document.getElementById("city");
+    const sortInput = document.getElementById("sort");
     const locationHelp = document.getElementById("locationHelp");
 
     if (!form || !button || !latInput || !lngInput) return;
@@ -38,6 +40,69 @@ function initLocationButton() {
         }
     }
 
+    function submitWithLocation(position) {
+        latInput.value = String(position.coords.latitude);
+        lngInput.value = String(position.coords.longitude);
+
+        // Important: clear city so backend can resolve it from coordinates
+        if (cityInput) {
+            cityInput.value = "";
+        }
+
+        // Optional but useful: show nearby results first
+        if (sortInput) {
+            sortInput.value = "distance";
+        }
+
+        setLoading(false);
+        setMessage("Location detected. Searching near you...");
+
+        form.requestSubmit();
+    }
+
+    function handleError(error) {
+        console.warn("Geolocation error:", {
+            code: error.code,
+            message: error.message,
+        });
+
+        let msg = "Unable to detect your location.";
+
+        if (error.code === 1) msg = "Permission denied.";
+        if (error.code === 2) msg = "Position unavailable.";
+        if (error.code === 3) msg = "Request timed out. Try again.";
+
+        setLoading(false);
+        setMessage(msg, true);
+    }
+
+    function requestPosition() {
+        navigator.geolocation.getCurrentPosition(
+            submitWithLocation,
+            (error) => {
+                if (error.code === 3) {
+                    navigator.geolocation.getCurrentPosition(
+                        submitWithLocation,
+                        handleError,
+                        {
+                            enableHighAccuracy: false,
+                            timeout: 25000,
+                            maximumAge: 0,
+                        }
+                    );
+                    return;
+                }
+
+                handleError(error);
+            },
+            {
+                enableHighAccuracy: false,
+                timeout: 7000,
+                maximumAge: 600000,
+            }
+        );
+    }
+
     button.addEventListener("click", () => {
         if (!navigator.geolocation) {
             setMessage("Geolocation is not supported by your browser.", true);
@@ -47,30 +112,7 @@ function initLocationButton() {
         setLoading(true);
         setMessage("Detecting your location...");
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                latInput.value = String(position.coords.latitude);
-                lngInput.value = String(position.coords.longitude);
-
-                setLoading(false);
-                setMessage("Location detected. Now click Search dealers.");
-            },
-            (error) => {
-                let msg = "Unable to detect your location.";
-
-                if (error.code === 1) msg = "Permission denied.";
-                if (error.code === 2) msg = "Position unavailable.";
-                if (error.code === 3) msg = "Request timed out.";
-
-                setLoading(false);
-                setMessage(msg, true);
-            },
-            {
-                enableHighAccuracy: false,
-                timeout: 10000,
-                maximumAge: 300000,
-            }
-        );
+        requestPosition();
     });
 }
 
