@@ -158,3 +158,33 @@
 .search-discovery-block {
     padding: 4px 2px 0;
 }
+
+.search-form-sidebar .search-control,
+.search-form-sidebar .form-select {
+    width: 100%;
+}
+
+.search-form-sidebar .search-submit-btn {
+    margin-top: 4px;
+}
+
+.search-form-sidebar .filter-pills {
+    gap: 8px;
+}
+
+.search-form-sidebar .filter-pill span {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px 14px;
+    border-radius: 14px;
+}
+
+.search-form-sidebar .quick-chip-list {
+    gap: 8px;
+}
+
+.search-form-sidebar + .search-discovery-block .quick-chip {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+}

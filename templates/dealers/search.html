@@ -4,26 +4,24 @@
 {% block title %}Dealer search — DealerFinder{% endblock %}
 
 {% block content %}
-<section class="border-bottom" style="background: var(--df-surface);">
-    <div class="container py-4 py-lg-5">
-        <div class="mb-4">
-            <h1 class="section-title mb-2">Dealer search</h1>
-            <p class="section-subtitle mb-0">
-                Search, filter, and review reliable dealers with cache-first results.
-            </p>
-        </div>
-
-        {% include "includes/_search_form.html" %}
-    </div>
-</section>
-
-<section class="py-5">
+<section class="py-4 py-lg-5">
     <div class="container">
-        <div class="row g-4">
+        <div class="row g-4 align-items-start">
 
-            <!-- Sidebar -->
+            <!-- Left panel -->
             <div class="col-12 col-lg-4 col-xl-3">
-                <div class="surface-card-muted p-4 sticky-panel">
+                <div class="surface-card p-4 sticky-panel">
+                    <div class="mb-4">
+                        <h1 class="section-title mb-2">Dealer search</h1>
+                        <p class="section-subtitle mb-0">
+                            Search, filter, and review reliable dealers with cache-first results.
+                        </p>
+                    </div>
+
+                    {% include "includes/_search_form.html" %}
+
+                    <hr class="my-4">
+
                     <div class="fw-semibold mb-2">Search summary</div>
 
                     {% if city %}
@@ -43,130 +41,126 @@
                 </div>
             </div>
 
-            <!-- Results -->
+            <!-- Right panel -->
             <div class="col-12 col-lg-8 col-xl-9">
+                <div class="surface-card p-4">
 
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                    <div>
-                        <h2 class="h4 mb-1">Results</h2>
-                                    <div class="small text-muted">
-                                        👆 Click card to view details
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <h2 class="h4 mb-1">Results</h2>
+                            <div class="small text-muted">
+                                👆 Click card to view details
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if dealers %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for d in dealers %}
+                                <article
+                                    class="dealer-card p-4 js-open-dealer-modal"
+                                    style="cursor: pointer;"
+                                    data-dealer-place-id="{{ d.place_id|default:'' }}"
+                                    data-dealer-city="{{ city|escapejs }}"
+                                    data-dealer-name="{{ d.name|escapejs }}"
+                                    data-dealer-address="{{ d.address|default:''|escapejs }}"
+                                    data-dealer-phone="{{ d.phone|default:''|escapejs }}"
+                                    data-dealer-website="{{ d.website|default:''|escapejs }}"
+                                    data-dealer-rating="{{ d.rating|default:'' }}"
+                                    data-dealer-reviews="{{ d.reviews|default:'' }}"
+                                    data-dealer-lat="{{ d.lat|default:'' }}"
+                                    data-dealer-lng="{{ d.lng|default:'' }}"
+                                    data-dealer-distance="{{ d.distance_km|default:'' }}"
+                                    data-dealer-is-favorite="{% if d.is_favorite %}1{% else %}0{% endif %}"
+                                    data-dealer-ai-summary="{{ d.ai_summary.summary|default:''|escapejs }}"
+                                    data-dealer-ai-pros="{{ d.ai_summary.pros|default:'[]'|escapejs }}"
+                                    data-dealer-ai-cons="{{ d.ai_summary.cons|default:'[]'|escapejs }}"
+                                    data-dealer-ai-status="{{ d.ai_summary.status|default:'pending' }}"
+                                >
+                                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                                        <div class="flex-grow-1">
+                                            <div class="dealer-name">{{ d.name }}</div>
+
+                                            {% if d.address %}
+                                                <div class="dealer-meta mb-2">{{ d.address }}</div>
+                                            {% endif %}
+
+                                            <div class="d-flex flex-wrap gap-2 mb-2 dealer-badges">
+                                                {% if d.rating %}
+                                                    <span class="score-badge">
+                                                        ⭐ {{ d.rating }}
+                                                        {% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
+                                                    </span>
+                                                {% endif %}
+
+                                                {% if d.distance_km %}
+                                                    <span class="score-badge">
+                                                        📍 {{ d.distance_km }} km
+                                                    </span>
+                                                {% endif %}
+
+                                                {% if d.website or d.phone %}
+                                                    <span class="contact-badge">Contacts</span>
+                                                {% endif %}
+
+                                                {% if d.open_now %}
+                                                    <span class="status-badge">Open now</span>
+                                                {% endif %}
+
+                                                {% if d.is_favorite %}
+                                                    <span class="status-badge">⭐ In favorites</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
-                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state p-5 text-center">
+                            <h3 class="h4 mb-2">No dealers found</h3>
+                            <p class="text-secondary mb-0">
+                                Try adjusting filters or search for another city.
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    {% if page_obj.has_other_pages %}
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{% querystring page=page_obj.previous_page_number %}">←</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                        <a class="page-link" href="{% querystring page=num %}">{{ num }}</a>
+                                    </li>
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{% querystring page=page_obj.next_page_number %}">→</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+
                 </div>
-
-                {% if dealers %}
-                    <div class="d-flex flex-column gap-3">
-
-                {% for d in dealers %}
-                <article
-    class="dealer-card p-4 js-open-dealer-modal"
-    style="cursor: pointer;"
-    data-dealer-place-id="{{ d.place_id|default:'' }}"
-    data-dealer-city="{{ city|escapejs }}"
-    data-dealer-name="{{ d.name|escapejs }}"
-    data-dealer-address="{{ d.address|default:''|escapejs }}"
-    data-dealer-phone="{{ d.phone|default:''|escapejs }}"
-    data-dealer-website="{{ d.website|default:''|escapejs }}"
-    data-dealer-rating="{{ d.rating|default:'' }}"
-    data-dealer-reviews="{{ d.reviews|default:'' }}"
-    data-dealer-lat="{{ d.lat|default:'' }}"
-    data-dealer-lng="{{ d.lng|default:'' }}"
-    data-dealer-distance="{{ d.distance_km|default:'' }}"
-    data-dealer-is-favorite="{% if d.is_favorite %}1{% else %}0{% endif %}"
-    data-dealer-ai-summary="{{ d.ai_summary.summary|default:''|escapejs }}"
-    data-dealer-ai-pros="{{ d.ai_summary.pros|default:'[]'|escapejs }}"
-    data-dealer-ai-cons="{{ d.ai_summary.cons|default:'[]'|escapejs }}"
-    data-dealer-ai-status="{{ d.ai_summary.status|default:'pending' }}"
->
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
-        <div class="flex-grow-1">
-            <div class="dealer-name">{{ d.name }}</div>
-
-            {% if d.address %}
-                <div class="dealer-meta mb-2">{{ d.address }}</div>
-            {% endif %}
-
-            <div class="d-flex flex-wrap gap-2 mb-2 dealer-badges">
-                {% if d.rating %}
-                    <span class="score-badge">
-                        ⭐ {{ d.rating }}
-                        {% if d.reviews %} · {{ d.reviews }} reviews{% endif %}
-                    </span>
-                {% endif %}
-
-                {% if d.distance_km %}
-                    <span class="score-badge">
-                        📍 {{ d.distance_km }} km
-                    </span>
-                {% endif %}
-
-                {% if d.website or d.phone %}
-                    <span class="contact-badge">Contacts</span>
-                {% endif %}
-
-                {% if d.open_now %}
-                    <span class="status-badge">Open now</span>
-                {% endif %}
-
-                {% if d.is_favorite %}
-                    <span class="status-badge">⭐ In favorites</span>
-                {% endif %}
             </div>
 
-        </div>
-    </div>
-</article>
-                {% endfor %}
-
-                    </div>
-                {% else %}
-                    <div class="empty-state p-5 text-center">
-                        <h3 class="h4 mb-2">No dealers found</h3>
-                        <p class="text-secondary mb-0">
-                            Try adjusting filters or search for another city.
-                        </p>
-                    </div>
-                {% endif %}
-
-                <!-- Pagination -->
-                {% if page_obj.has_other_pages %}
-                <nav class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="{% querystring page=page_obj.previous_page_number %}">←</a>
-                            </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
-                                <a class="page-link" href="{% querystring page=num %}">{{ num }}</a>
-                            </li>
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="{% querystring page=page_obj.next_page_number %}">→</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-
-            </div>
         </div>
     </div>
 </section>
 
 {% include "includes/_dealer_details.html" %}
-
 {% endblock %}
 
 {% block extra_js %}
-
 <script src="{% static 'js/search.js' %}"></script>
 <script src="{% static 'js/favourites.js' %}" defer></script>
 <script src="{% static 'js/dealer-details-modal.js' %}" defer></script>
-
 {% endblock %}
