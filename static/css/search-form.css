@@ -243,3 +243,17 @@
 .search-discovery-block {
     padding: 4px 2px 0;
 }
+
+@media (min-width: 992px) {
+    .sticky-sidebar {
+        position: sticky;
+        top: 72px;
+        align-self: flex-start;
+    }
+
+    .sticky-sidebar .surface-card {
+        max-height: calc(100vh - 88px);
+        overflow-y: auto;
+        scrollbar-gutter: stable;
+    }
+}

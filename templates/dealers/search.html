@@ -9,8 +9,8 @@
         <div class="row g-4 align-items-start">
 
             <!-- Left panel -->
-            <div class="col-12 col-lg-4 col-xl-3">
-                <div class="surface-card p-4 sticky-panel">
+            <div class="col-12 col-lg-4 col-xl-3 sticky-sidebar">
+                <div class="surface-card p-4">
                     <div class="mb-4">
                         <h1 class="section-title mb-2">Dealer search</h1>
                         <p class="section-subtitle mb-0">
@@ -22,22 +22,6 @@
 
                     <hr class="my-4">
 
-                    <div class="fw-semibold mb-2">Search summary</div>
-
-                    {% if city %}
-                        <div class="small text-secondary mb-3">
-                            Query for <span class="fw-semibold text-dark">{{ city }}</span>
-                        </div>
-                    {% endif %}
-
-                    <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
-                        <li><span class="text-secondary">Radius:</span> {{ radius }} km</li>
-                        <li><span class="text-secondary">Min. rating:</span> {{ min_rating|default:"Any" }}</li>
-                        <li><span class="text-secondary">Max distance:</span> {{ request.GET.max_distance_km|default:"Any" }}</li>
-                        <li><span class="text-secondary">Open now:</span> {% if open_now %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Weekends:</span> {% if weekends %}Yes{% else %}No{% endif %}</li>
-                        <li><span class="text-secondary">Has contacts:</span> {% if has_contacts %}Yes{% else %}No{% endif %}</li>
-                    </ul>
                 </div>
             </div>
 
