@@ -32,7 +32,7 @@
   * [x] Cache AI summary
   * [x] Cache Google Places
   * [x] Deduplication lock(generate_ai_summary_for_dealer + google places)
-  * [ ] Quota counters (refactor to Redis)
+  * [x] Quota counters (refactor to Redis)
   * [ ] Feature flags / plans (optional, next sprint)
 
 - [ ] Add retry logic for failed jobs  

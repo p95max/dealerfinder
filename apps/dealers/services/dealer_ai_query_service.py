@@ -14,6 +14,7 @@ from apps.dealers.services.dealer_ai_service import (
 )
 from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
 from apps.dealers.services.dealer_ai_cache_service import delete_cached_ai_summary_payload
+from common.services.feature_flags import is_feature_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +209,22 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
 
 
 def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[dict, int]:
+    if not is_feature_enabled(
+        "ai_summary_enabled",
+        default=settings.FEATURE_AI_SUMMARY_ENABLED,
+    ):
+        return (
+            {
+                "status": "failed",
+                "summary": "",
+                "pros": [],
+                "cons": [],
+                "error_code": "feature_disabled",
+                "message": "AI summaries are temporarily unavailable.",
+            },
+            200,
+        )
+
     try:
         dealer = Dealer.objects.get(google_place_id=place_id)
     except Dealer.DoesNotExist:

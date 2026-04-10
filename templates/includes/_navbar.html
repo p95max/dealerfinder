@@ -13,10 +13,17 @@
                href="{% url 'contact:contact' %}">Contact</a>
         </li>
         <li class="nav-item">
-            <span class="nav-link nav-link-pill disabled-upgrade">
-                Premium <span class="badge-soon">soon</span>
-            </span>
-        </li>
+            {% if feature_premium_enabled %}
+                <li class="nav-item">
+                    <a class="nav-link nav-link-pill" href="{% url 'users:pricing' %}">Premium</a>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <span class="nav-link nav-link-pill disabled-upgrade">
+                        Premium <span class="badge-soon">soon</span>
+                    </span>
+                </li>
+            {% endif %}
     </ul>
 
     <div class="d-flex align-items-center gap-2">

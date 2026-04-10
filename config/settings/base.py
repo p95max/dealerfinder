@@ -88,6 +88,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.turnstile",
                 "config.context_processors.user_quota_context",
+                "config.context_processors.feature_flags",
             ],
         },
     },
@@ -290,3 +291,5 @@ AI_SUMMARY_TTL_DAYS = int(os.getenv("AI_SUMMARY_TTL_DAYS", "7"))
 AI_FAILED_RETRY_HOURS = int(os.getenv("AI_FAILED_RETRY_HOURS", "12"))
 AI_PENDING_STALE_MINUTES = int(os.getenv("AI_PENDING_STALE_MINUTES", "30"))
 AI_SYNC_LIMIT = int(os.getenv("AI_SYNC_LIMIT", "5"))
+FEATURE_AI_SUMMARY_ENABLED = os.getenv("FEATURE_AI_SUMMARY_ENABLED", "True") == "True"
+FEATURE_PREMIUM_ENABLED = os.getenv("FEATURE_PREMIUM_ENABLED", "False") == "True"

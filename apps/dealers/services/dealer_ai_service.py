@@ -25,6 +25,7 @@ from apps.users.services.ai_quota_service import (
     get_anonymous_ai_quota_status,
     get_authenticated_ai_quota_status,
 )
+from common.services.feature_flags import is_feature_enabled
 from integrations.ai_client import AiClientError, generate_dealer_summary
 
 logger = logging.getLogger(__name__)
@@ -219,7 +220,10 @@ def generate_ai_summary_for_dealer(
 ) -> DealerAiSummary:
     summary_obj = ensure_ai_summary_record(dealer)
 
-    if not settings.AI_ENABLED:
+    if not settings.AI_ENABLED or not is_feature_enabled(
+            "ai_summary_enabled",
+            default=settings.FEATURE_AI_SUMMARY_ENABLED,
+    ):
         delete_cached_ai_summary_payload(dealer.google_place_id)
         summary_obj.status = DealerAiSummary.STATUS_FAILED
         summary_obj.last_error = "ai_disabled"
