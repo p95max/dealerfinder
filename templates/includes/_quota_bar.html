@@ -2,15 +2,21 @@
     <div class="small text-secondary mb-1">{{ label }}</div>
 
     <div class="d-flex align-items-center gap-2">
-        <span class="fw-semibold">
+        <span
+            class="fw-semibold"
+            {% if type == "search" %}data-quota-search-text{% endif %}
+            {% if type == "ai" %}data-quota-ai-text{% endif %}
+        >
             {{ used }} / {{ total }}
         </span>
     </div>
 </div>
 
 <div class="nav-quota-track">
-    <div class="nav-quota-fill
-        {% if used >= total %}bg-danger{% endif %}"
+    <div
+        class="nav-quota-fill {% if used >= total %}bg-danger{% endif %}"
+        {% if type == "search" %}data-quota-search-bar{% endif %}
+        {% if type == "ai" %}data-quota-ai-bar{% endif %}
         style="width: {% if total %}{% widthratio used total 100 %}{% else %}0{% endif %}%">
     </div>
 </div>

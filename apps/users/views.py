@@ -113,9 +113,15 @@ def pricing_view(request):
 
 @login_required
 def quota_status(request):
-    quota = get_authenticated_quota_status(request.user)
-    return JsonResponse({"used": quota.used, "limit": quota.limit})
+    search_quota = get_authenticated_quota_status(request.user)
+    ai_quota = get_authenticated_ai_quota_status(request.user)
 
+    return JsonResponse({
+        "search_used": search_quota.used,
+        "search_limit": search_quota.limit,
+        "ai_used": ai_quota.used,
+        "ai_limit": ai_quota.limit,
+    })
 
 @login_required
 def favorites_view(request):

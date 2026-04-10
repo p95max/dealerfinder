@@ -1,36 +1,54 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const quotaCounter = document.getElementById("quota-counter");
-    if (!quotaCounter) {
-        return;
-    }
-
-    const quotaUrl = quotaCounter.dataset.url;
-    if (!quotaUrl) {
-        return;
-    }
-
-    function refreshQuota() {
-        fetch(quotaUrl)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to load quota");
-                }
-                return response.json();
-            })
-            .then((data) => {
-                quotaCounter.textContent = `${data.used} / ${data.limit}`;
-            })
-            .catch(() => {
-                // silent fail
+    async function refreshQuotaCounters() {
+        try {
+            const response = await fetch("/users/quota-status/", {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                credentials: "same-origin",
             });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+
+            const searchText = document.querySelector("[data-quota-search-text]");
+            const aiText = document.querySelector("[data-quota-ai-text]");
+            const searchBar = document.querySelector("[data-quota-search-bar]");
+            const aiBar = document.querySelector("[data-quota-ai-bar]");
+
+            if (searchText) {
+                searchText.textContent = `${data.search_used} / ${data.search_limit}`;
+            }
+
+            if (aiText) {
+                aiText.textContent = `${data.ai_used} / ${data.ai_limit}`;
+            }
+
+            if (searchBar) {
+                const percent = data.search_limit
+                    ? Math.min((data.search_used / data.search_limit) * 100, 100)
+                    : 0;
+
+                searchBar.style.width = `${percent}%`;
+                searchBar.classList.toggle("bg-danger", data.search_used >= data.search_limit);
+            }
+
+            if (aiBar) {
+                const percent = data.ai_limit
+                    ? Math.min((data.ai_used / data.ai_limit) * 100, 100)
+                    : 0;
+
+                aiBar.style.width = `${percent}%`;
+                aiBar.classList.toggle("bg-danger", data.ai_used >= data.ai_limit);
+            }
+        } catch (_error) {
+            // silent fail
+        }
     }
 
-    refreshQuota();
-
-    const searchForm = document.getElementById("dealerSearchForm");
-    if (searchForm) {
-        searchForm.addEventListener("submit", () => {
-            setTimeout(refreshQuota, 500);
-        });
-    }
+    refreshQuotaCounters();
+    setInterval(refreshQuotaCounters, 30000);
 });
