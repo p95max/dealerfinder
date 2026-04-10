@@ -1,13 +1,6 @@
 <form method="get" action="{% url 'dealers:search' %}" id="dealerSearchForm" class="search-form-modern search-form-sidebar">
     <div class="d-flex flex-column gap-3">
 
-        {% if city %}
-            <div class="small text-secondary">
-                Current city:
-                <span class="fw-semibold" style="color: var(--df-text);">{{ city }}</span>
-            </div>
-        {% endif %}
-
         <div>
             <label class="form-label search-label" for="city">City</label>
             <div class="search-input-wrap">
@@ -67,98 +60,118 @@
         <input type="hidden" name="user_lat" id="user_lat" value="{{ request.GET.user_lat }}">
         <input type="hidden" name="user_lng" id="user_lng" value="{{ request.GET.user_lng }}">
 
-        <div class="search-advanced-panel">
-            <div class="fw-semibold mb-3">Advanced filters</div>
+        <div class="search-advanced-wrap">
+            <button
+                class="search-advanced-toggle collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#advancedFiltersCollapse"
+                aria-expanded="{% if request.GET.min_rating or request.GET.max_distance_km or request.GET.open_now or request.GET.weekends or request.GET.has_contacts or request.GET.user_lat %}true{% else %}false{% endif %}"
+                aria-controls="advancedFiltersCollapse"
+            >
+                <span class="search-advanced-toggle__left">
+                    <span class="search-advanced-toggle__title">Advanced filters</span>
+                    <span class="search-advanced-toggle__meta">Optional filters for more precise results</span>
+                </span>
+                <span class="search-advanced-toggle__icon">⌄</span>
+            </button>
 
-            <div class="d-flex flex-column gap-3">
-                <div>
-                    <label class="form-label search-label" for="min_rating">Min. rating</label>
-                    <div class="search-input-wrap">
-                        <input
-                            type="number"
-                            id="min_rating"
-                            name="min_rating"
-                            class="form-control search-control"
-                            step="0.1"
-                            min="1"
-                            max="5"
-                            placeholder="e.g. 4.0"
-                            value="{{ request.GET.min_rating }}"
-                        >
-                        <span class="search-input-suffix">★</span>
-                    </div>
-                </div>
+            <div
+                id="advancedFiltersCollapse"
+                class="collapse {% if request.GET.min_rating or request.GET.max_distance_km or request.GET.open_now or request.GET.weekends or request.GET.has_contacts or request.GET.user_lat %}show{% endif %}"
+            >
+                <div class="search-advanced-panel mt-3">
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <label class="form-label search-label" for="min_rating">Min. rating</label>
+                            <div class="search-input-wrap">
+                                <input
+                                    type="number"
+                                    id="min_rating"
+                                    name="min_rating"
+                                    class="form-control search-control"
+                                    step="0.1"
+                                    min="1"
+                                    max="5"
+                                    placeholder="e.g. 4.0"
+                                    value="{{ request.GET.min_rating }}"
+                                >
+                                <span class="search-input-suffix">★</span>
+                            </div>
+                        </div>
 
-                <div>
-                    <label class="form-label search-label" for="max_distance_km">Distance from me</label>
-                    <div class="search-input-wrap">
-                        <input
-                            type="number"
-                            id="max_distance_km"
-                            name="max_distance_km"
-                            class="form-control search-control"
-                            min="1"
-                            max="300"
-                            step="1"
-                            placeholder="Optional"
-                            value="{{ request.GET.max_distance_km }}"
-                        >
-                        <span class="search-input-suffix">km</span>
-                    </div>
-                </div>
+                        <div>
+                            <label class="form-label search-label" for="max_distance_km">Distance from me</label>
+                            <div class="search-input-wrap">
+                                <input
+                                    type="number"
+                                    id="max_distance_km"
+                                    name="max_distance_km"
+                                    class="form-control search-control"
+                                    min="1"
+                                    max="300"
+                                    step="1"
+                                    placeholder="Optional"
+                                    value="{{ request.GET.max_distance_km }}"
+                                >
+                                <span class="search-input-suffix">km</span>
+                            </div>
+                        </div>
 
-                <div>
-                    <label class="form-label search-label d-block mb-2">Options</label>
+                        <div>
+                            <label class="form-label search-label d-block mb-2">Options</label>
 
-                    <div class="filter-pills">
-                        <label class="filter-pill">
-                            <input
-                                type="checkbox"
-                                name="open_now"
-                                id="open_now"
-                                value="1"
-                                {% if request.GET.open_now %}checked{% endif %}
-                            >
-                            <span>🟢 Open now</span>
-                        </label>
+                            <div class="filter-pills">
+                                <label class="filter-pill">
+                                    <input
+                                        type="checkbox"
+                                        name="open_now"
+                                        id="open_now"
+                                        value="1"
+                                        {% if request.GET.open_now %}checked{% endif %}
+                                    >
+                                    <span>🟢 Open now</span>
+                                </label>
 
-                        <label class="filter-pill">
-                            <input
-                                type="checkbox"
-                                name="weekends"
-                                id="weekends"
-                                value="1"
-                                {% if request.GET.weekends %}checked{% endif %}
-                            >
-                            <span>📅 Weekends</span>
-                        </label>
+                                <label class="filter-pill">
+                                    <input
+                                        type="checkbox"
+                                        name="weekends"
+                                        id="weekends"
+                                        value="1"
+                                        {% if request.GET.weekends %}checked{% endif %}
+                                    >
+                                    <span>📅 Weekends</span>
+                                </label>
 
-                        <label class="filter-pill">
-                            <input
-                                type="checkbox"
-                                name="has_contacts"
-                                id="has_contacts"
-                                value="1"
-                                {% if request.GET.has_contacts %}checked{% endif %}
-                            >
-                            <span>📞 Has contacts</span>
-                        </label>
+                                <label class="filter-pill">
+                                    <input
+                                        type="checkbox"
+                                        name="has_contacts"
+                                        id="has_contacts"
+                                        value="1"
+                                        {% if request.GET.has_contacts %}checked{% endif %}
+                                    >
+                                    <span>📞 Has contacts</span>
+                                </label>
 
-                        <label class="filter-pill">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                id="use_my_location"
-                                {% if request.GET.user_lat and request.GET.user_lng %}checked{% endif %}
-                            >
-                            <span>📍 Use my location</span>
-                        </label>
-                    </div>
-                </div>
+                                <label class="filter-pill">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="use_my_location"
+                                        {% if request.GET.user_lat and request.GET.user_lng %}checked{% endif %}
+                                    >
+                                    <span>📍 Use my location</span>
+                                </label>
+                            </div>
+                        </div>
 
-                <div>
-                    <div id="locationHelp" class="form-text">
-                        Location is optional. If enabled, we will use your coordinates only for distance-based filtering and sorting.
+                        <div>
+                            <div id="locationHelp" class="form-text">
+                                Location is optional. If enabled, we will use your coordinates only for distance-based filtering and sorting.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
