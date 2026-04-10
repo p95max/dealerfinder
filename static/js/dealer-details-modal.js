@@ -252,6 +252,10 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 ai_message: ai.message || ai.error || "",
             });
 
+            if (typeof refreshQuotaCounters === "function") {
+                refreshQuotaCounters();
+}
+
             if ((ai.status || "") === "done") {
                 summaryBtn.classList.add("d-none");
                 return;
