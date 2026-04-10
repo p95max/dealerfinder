@@ -34,11 +34,17 @@
                         📍 Get directions
                     </a>
 
+                    <button id="modalShareBtn"
+                            class="btn btn-outline-secondary flex-grow-1"
+                            type="button">
+                        🔗 Share
+                    </button>
+
                     {% if user.is_authenticated %}
                     <button class="btn btn-outline-secondary flex-grow-1"
                             id="modalFavoriteBtn"
                             type="button">
-                        ☆ Add to favorites
+                        ⭐ Add to favorites
                     </button>
                     {% endif %}
                 </div>

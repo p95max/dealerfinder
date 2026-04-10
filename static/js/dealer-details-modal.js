@@ -343,6 +343,66 @@ function bindModalFavoriteButton(card) {
 }
 
 /* =========================
+   SHARE BUTTON
+========================= */
+
+const shareBtn = document.getElementById("modalShareBtn");
+const dealerModal = document.getElementById("dealerModal");
+
+if (shareBtn && dealerModal) {
+    shareBtn.addEventListener("click", async () => {
+        const title =
+            document.getElementById("modalDealerName")?.textContent?.trim() || "Dealer";
+
+        const placeId = dealerModal.dataset.placeId || "";
+        const shareUrl = new URL(window.location.href);
+
+        if (placeId) {
+            shareUrl.searchParams.set("dealer", placeId);
+        }
+
+        const finalUrl = shareUrl.toString();
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title,
+                    url: finalUrl,
+                });
+                return;
+            } catch (err) {
+                console.warn("Share canceled:", err);
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(finalUrl);
+            alert("Dealer link copied to clipboard");
+        } catch (err) {
+            console.error("Clipboard write failed:", err);
+            alert(finalUrl);
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const dealerPlaceId = params.get("dealer");
+
+    if (!dealerPlaceId) {
+        return;
+    }
+
+    const trigger = document.querySelector(
+        `.js-open-dealer-modal[data-dealer-place-id="${CSS.escape(dealerPlaceId)}"]`
+    );
+
+    if (trigger) {
+        openDealerModal(trigger);
+    }
+});
+
+/* =========================
    MODAL/ORCHESTRATOR
 ========================= */
 function openDealerModal(card) {
@@ -400,6 +460,9 @@ function openDealerModal(card) {
     }
 
     const placeId = card.dataset.dealerPlaceId || "";
+
+
+    modalEl.dataset.placeId = placeId;
 
     resetAiSummaryButton();
     bindAiSummaryButton(card, placeId, data);
