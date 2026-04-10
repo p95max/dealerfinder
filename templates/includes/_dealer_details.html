@@ -34,37 +34,7 @@
                         📍 Get directions
                     </a>
 
-                <div class="dropdown flex-grow-1">
-                    <button class="btn btn-outline-secondary dropdown-toggle w-100"
-                            type="button"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                        🔗 Share
-                    </button>
-
-                    <ul class="dropdown-menu w-100">
-                        <li>
-                            <button class="dropdown-item" type="button" id="shareCopyBtn">
-                                Copy link
-                            </button>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" id="shareTelegramBtn" target="_blank" rel="noopener noreferrer">
-                                Telegram
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" id="shareWhatsappBtn" target="_blank" rel="noopener noreferrer">
-                                WhatsApp
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" id="shareEmailBtn">
-                                Email
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+             {% include 'includes/_share_dropdown.html' %}
 
                     {% if user.is_authenticated %}
                     <button class="btn btn-outline-secondary flex-grow-1"

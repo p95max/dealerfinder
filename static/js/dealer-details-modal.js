@@ -346,110 +346,86 @@ function bindModalFavoriteButton(card) {
    SHARE BUTTON
 ========================= */
 
-const shareBtn = document.getElementById("modalShareBtn");
-const dealerModal = document.getElementById("dealerModal");
-function initShareButtons(modalEl) {
-    const copyBtn = document.getElementById("shareCopyBtn");
-    const telegramBtn = document.getElementById("shareTelegramBtn");
-    const whatsappBtn = document.getElementById("shareWhatsappBtn");
-    const emailBtn = document.getElementById("shareEmailBtn");
-
+function buildDealerShareData(modalEl) {
     const title =
         document.getElementById("modalDealerName")?.textContent?.trim() || "Dealer";
 
-    const placeId = modalEl.dataset.placeId || "";
+    const placeId = modalEl?.dataset.placeId || "";
     const shareUrl = new URL(window.location.href);
 
     if (placeId) {
         shareUrl.searchParams.set("dealer", placeId);
     }
 
-    const url = shareUrl.toString();
-    const text = `Take a look at this dealer: ${title}`;
+    return {
+        title,
+        url: shareUrl.toString(),
+        text: `Take a look at this dealer: ${title}`,
+    };
+}
 
-    // Copy
+function initShareButtons(modalEl) {
+    const shareBtn = document.getElementById("modalShareBtn");
+    const shareMenu = document.getElementById("modalShareMenu");
+    const copyBtn = document.getElementById("shareCopyBtn");
+    const telegramBtn = document.getElementById("shareTelegramBtn");
+    const whatsappBtn = document.getElementById("shareWhatsappBtn");
+    const emailBtn = document.getElementById("shareEmailBtn");
+
+    if (!shareBtn || !shareMenu || !modalEl) {
+        return;
+    }
+
+    const { title, url, text } = buildDealerShareData(modalEl);
+
+    if (telegramBtn) {
+        telegramBtn.href =
+            `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    }
+
+    if (whatsappBtn) {
+        whatsappBtn.href =
+            `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`;
+    }
+
+    if (emailBtn) {
+        emailBtn.href =
+            `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text + "\n\n" + url)}`;
+    }
+
     if (copyBtn) {
         copyBtn.onclick = async () => {
             try {
                 await navigator.clipboard.writeText(url);
                 alert("Link copied");
             } catch {
-                alert(url);
+                window.prompt("Copy this link:", url);
             }
         };
     }
 
-    // Telegram
-    if (telegramBtn) {
-        telegramBtn.href =
-            `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-    }
+    shareBtn.onclick = async (event) => {
+        const canUseNativeShare =
+            typeof navigator.share === "function" &&
+            typeof navigator.canShare === "function"
+                ? navigator.canShare({ title, text, url })
+                : typeof navigator.share === "function";
 
-    // WhatsApp
-    if (whatsappBtn) {
-        whatsappBtn.href =
-            `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`;
-    }
-
-    // Email
-    if (emailBtn) {
-        emailBtn.href =
-            `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text + "\n\n" + url)}`;
-    }
-}
-
-if (shareBtn && dealerModal) {
-    shareBtn.addEventListener("click", async () => {
-        const title =
-            document.getElementById("modalDealerName")?.textContent?.trim() || "Dealer";
-
-        const placeId = dealerModal.dataset.placeId || "";
-        const shareUrl = new URL(window.location.href);
-
-        if (placeId) {
-            shareUrl.searchParams.set("dealer", placeId);
+        if (!canUseNativeShare) {
+            return;
         }
 
-        const finalUrl = shareUrl.toString();
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title,
-                    url: finalUrl,
-                });
-                return;
-            } catch (err) {
-                console.warn("Share canceled:", err);
-            }
-        }
+        event.preventDefault();
+        event.stopPropagation();
 
         try {
-            await navigator.clipboard.writeText(finalUrl);
-            alert("Dealer link copied to clipboard");
-        } catch (err) {
-            console.error("Clipboard write failed:", err);
-            alert(finalUrl);
+            await navigator.share({ title, text, url });
+        } catch (error) {
+            // user canceled — do nothing
+            console.warn("Share canceled or failed:", error);
         }
-    });
+    };
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const dealerPlaceId = params.get("dealer");
-
-    if (!dealerPlaceId) {
-        return;
-    }
-
-    const trigger = document.querySelector(
-        `.js-open-dealer-modal[data-dealer-place-id="${CSS.escape(dealerPlaceId)}"]`
-    );
-
-    if (trigger) {
-        openDealerModal(trigger);
-    }
-});
 
 /* =========================
    MODAL/ORCHESTRATOR
@@ -512,7 +488,7 @@ function openDealerModal(card) {
 
 
     modalEl.dataset.placeId = placeId;
-    
+
     initShareButtons(modalEl);
     resetAiSummaryButton();
     bindAiSummaryButton(card, placeId, data);
