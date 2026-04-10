@@ -325,7 +325,17 @@ function bindModalFavoriteButton(card) {
         };
     } else {
         favoriteBtn.className = "btn btn-outline-secondary flex-grow-1";
-        favoriteBtn.textContent = "☆ Add to favorites";
+        favoriteBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     width="16"
+                     height="16"
+                     fill="currentColor"
+                     viewBox="0 0 16 16"
+                     aria-hidden="true">
+                    <path d="M2 2.5A1.5 1.5 0 0 1 3.5 1h9A1.5 1.5 0 0 1 14 2.5v12a.5.5 0 0 1-.79.407L8 11.101l-5.21 3.806A.5.5 0 0 1 2 14.5v-12z"/>
+                </svg>
+                <span>Add to favorites</span>
+            `;
 
         favoriteBtn.onclick = function () {
             addFavorite(favoriteBtn, {
@@ -461,9 +471,23 @@ function openDealerModal(card) {
     appendInfoRow(infoEl, "Address", data.address);
     appendInfoRow(infoEl, "Phone", data.phone);
 
+    function formatWebsiteLabel(url) {
+        try {
+            const u = new URL(url);
+            return u.hostname.replace("www.", "");
+        } catch {
+            return "Website";
+        }
+    }
+
     const safeWebsite = toSafeExternalUrl(data.website);
     if (safeWebsite) {
-        appendInfoRow(infoEl, "Website", safeWebsite, { href: safeWebsite });
+            appendInfoRow(
+                infoEl,
+                "Website",
+                formatWebsiteLabel(safeWebsite),
+                { href: safeWebsite }
+            );
     }
 
     appendInfoRow(infoEl, "Rating", data.rating);
