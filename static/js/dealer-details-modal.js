@@ -15,6 +15,30 @@ function parseJsonArray(value) {
     }
 }
 
+function appendInfoRow(container, label, value, options = {}) {
+    if (!container || !value) return;
+
+    const row = document.createElement("div");
+    row.className = "mb-2";
+
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}: `;
+    row.appendChild(strong);
+
+    if (options.href) {
+        const link = document.createElement("a");
+        link.href = options.href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = value;
+        row.appendChild(link);
+    } else {
+        row.appendChild(document.createTextNode(value));
+    }
+
+    container.appendChild(row);
+}
+
 /* =========================
    AI SUMMARY
 ========================= */
