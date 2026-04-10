@@ -10,9 +10,7 @@ class UserAdmin(BaseUserAdmin):
         "email",
         "plan",
         "daily_quota",
-        "used_today",
         "ai_daily_quota",
-        "ai_used_today",
         "is_active",
         "date_joined",
     )
@@ -27,8 +25,6 @@ class UserAdmin(BaseUserAdmin):
                 "fields": (
                     "plan",
                     "daily_quota",
-                    "used_today",
-                    "last_quota_reset",
                 )
             },
         ),
@@ -37,8 +33,6 @@ class UserAdmin(BaseUserAdmin):
             {
                 "fields": (
                     "ai_daily_quota",
-                    "ai_used_today",
-                    "last_ai_quota_reset",
                 )
             },
         ),

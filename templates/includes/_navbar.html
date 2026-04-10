@@ -46,9 +46,8 @@
                 <div class="nav-user-menu dropdown-menu show">
                     <div class="px-3 py-2 border-bottom">
 
-                    {% include "includes/_quota_bar.html" with label="Searches today" used=user.used_today total=user.daily_quota %}
-
-                    {% include "includes/_quota_bar.html" with label="AI summaries today" used=user.ai_used_today total=user.ai_daily_quota %}
+            {% include "includes/_quota_bar.html" with label="Searches today" used=search_quota_used total=search_quota_limit %}
+            {% include "includes/_quota_bar.html" with label="AI summaries today" used=ai_quota_used total=ai_quota_limit %}
 
                     </div>
                     <a class="dropdown-item py-2" href="{% url 'users:profile' %}">Profile</a>

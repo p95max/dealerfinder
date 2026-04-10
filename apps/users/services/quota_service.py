@@ -5,10 +5,8 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import F
 from django.utils import timezone
 
-from apps.users.models import User
 from utils.http import _get_client_ip
 
 
@@ -19,35 +17,20 @@ class QuotaStatus:
     limit: int
 
 
-def reset_quota_if_new_day(user: User) -> None:
-    today = timezone.localdate()
-    if user.last_quota_reset != today:
-        User.objects.filter(pk=user.pk).update(
-            used_today=0,
-            last_quota_reset=today,
-        )
-
-
-def get_authenticated_quota_status(user: User) -> QuotaStatus:
-    reset_quota_if_new_day(user)
-    user.refresh_from_db(fields=["used_today", "daily_quota", "last_quota_reset"])
-
-    return QuotaStatus(
-        allowed=user.used_today < user.daily_quota,
-        used=user.used_today,
-        limit=user.daily_quota,
-    )
-
-
-def consume_authenticated_search(user: User) -> None:
-    reset_quota_if_new_day(user)
-    User.objects.filter(pk=user.pk).update(used_today=F("used_today") + 1)
-
-
 def _seconds_until_next_local_midnight() -> int:
     now = timezone.localtime()
-    next_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    next_midnight = now.replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    ) + timedelta(days=1)
     return int((next_midnight - now).total_seconds())
+
+
+def _build_authenticated_quota_key(user) -> str:
+    today = timezone.localdate().isoformat()
+    return f"quota:user:{user.pk}:{today}"
 
 
 def _build_anon_quota_key(request) -> str:
@@ -56,9 +39,43 @@ def _build_anon_quota_key(request) -> str:
     return f"quota:anon:{client_ip}:{today}"
 
 
+def _get_counter_value(key: str) -> int:
+    value = cache.get(key, 0)
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _increment_counter(key: str, *, timeout: int) -> int:
+    try:
+        return cache.incr(key)
+    except ValueError:
+        cache.set(key, 1, timeout=timeout)
+        return 1
+
+
+def get_authenticated_quota_status(user) -> QuotaStatus:
+    key = _build_authenticated_quota_key(user)
+    used = _get_counter_value(key)
+    limit = int(getattr(user, "daily_quota", settings.FREE_DAILY_LIMIT))
+
+    return QuotaStatus(
+        allowed=used < limit,
+        used=used,
+        limit=limit,
+    )
+
+
+def consume_authenticated_search(user) -> int:
+    key = _build_authenticated_quota_key(user)
+    timeout = _seconds_until_next_local_midnight()
+    return _increment_counter(key, timeout=timeout)
+
+
 def get_anonymous_quota_status(request) -> QuotaStatus:
     key = _build_anon_quota_key(request)
-    used = cache.get(key, 0)
+    used = _get_counter_value(key)
     limit = settings.ANON_DAILY_LIMIT
 
     return QuotaStatus(
@@ -68,11 +85,13 @@ def get_anonymous_quota_status(request) -> QuotaStatus:
     )
 
 
-def consume_anonymous_search(request) -> None:
+def consume_anonymous_search(request) -> int:
     key = _build_anon_quota_key(request)
     timeout = _seconds_until_next_local_midnight()
+    return _increment_counter(key, timeout=timeout)
 
-    try:
-        cache.incr(key)
-    except ValueError:
-        cache.set(key, 1, timeout=timeout)
+
+def get_request_quota_status(request) -> QuotaStatus:
+    if request.user.is_authenticated:
+        return get_authenticated_quota_status(request.user)
+    return get_anonymous_quota_status(request)

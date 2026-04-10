@@ -22,28 +22,49 @@
         </div>
 
         <div class="border-top pt-3 d-flex flex-column gap-2 small">
-            <div class="d-flex justify-content-between">
-                <span class="text-secondary">Plan</span>
-                <span class="fw-semibold text-capitalize">{{ user.plan }}</span>
+    <div class="d-flex justify-content-between">
+        <span class="text-secondary">Plan</span>
+        <span class="fw-semibold text-capitalize">{{ user.plan }}</span>
+    </div>
+
+    <div class="mb-2 d-flex justify-content-between">
+        <span class="text-secondary">Searches today</span>
+        <span class="fw-semibold">{{ search_quota_used }} / {{ search_quota_limit }}</span>
+    </div>
+
+    <div class="progress" style="height: 6px; border-radius: 999px;">
+        <div class="progress-bar
+            {% if search_quota_used >= search_quota_limit %}
+                bg-danger
+            {% elif search_quota_used >= search_quota_limit|add:'-5' %}
+                bg-warning
+            {% else %}
+                bg-primary
+            {% endif %}"
+            style="width: {% if search_quota_limit %}{% widthratio search_quota_used search_quota_limit 100 %}{% else %}0{% endif %}%;">
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <div class="mb-2 d-flex justify-content-between">
+            <span class="text-secondary">AI summaries today</span>
+            <span class="fw-semibold">{{ ai_quota_used }} / {{ ai_quota_limit }}</span>
+        </div>
+
+        <div class="progress" style="height: 6px; border-radius: 999px;">
+            <div class="progress-bar
+                {% if ai_quota_used >= ai_quota_limit %}
+                    bg-danger
+                {% elif ai_quota_used >= ai_quota_limit|add:'-2' %}
+                    bg-warning
+                {% else %}
+                    bg-primary
+                {% endif %}"
+                style="width: {% if ai_quota_limit %}{% widthratio ai_quota_used ai_quota_limit 100 %}{% else %}0{% endif %}%;">
             </div>
-
-                <div class="mb-2 d-flex justify-content-between">
-                    <span class="text-secondary">Searches today</span>
-                    <span class="fw-semibold">{{ user.used_today }} / {{ user.daily_quota }}</span>
-                </div>
-
-                <div class="progress" style="height: 6px; border-radius: 999px;">
-                    <div class="progress-bar
-                        {% if user.used_today >= user.daily_quota %}
-                            bg-danger
-                        {% elif user.used_today >= user.daily_quota|add:"-5" %}
-                            bg-warning
-                        {% else %}
-                            bg-primary
-                        {% endif %}"
-                        style="width: {% if user.daily_quota %}{% widthratio user.used_today user.daily_quota 100 %}{% else %}0{% endif %}%;">
-                    </div>
-                </div>
+        </div>
+    </div>
+</div>
 
                 <div class="mt-3">
     <div class="mb-2 d-flex justify-content-between">

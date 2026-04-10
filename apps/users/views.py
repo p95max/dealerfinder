@@ -9,10 +9,10 @@ from django.urls import reverse
 
 from utils.http import _get_client_ip
 from integrations.turnstile import verify_turnstile
-from apps.users.services.quota_service import reset_quota_if_new_day
 from apps.dealers.models import DealerAiSummary
 from .models import Favorite
-from .services.ai_quota_service import reset_ai_quota_if_new_day
+from apps.users.services.quota_service import get_authenticated_quota_status
+from apps.users.services.ai_quota_service import get_authenticated_ai_quota_status
 
 
 def login_gate_view(request):
@@ -39,19 +39,16 @@ def google_oauth_start_view(request):
 
 @login_required
 def profile_view(request):
-    reset_quota_if_new_day(request.user)
-    reset_ai_quota_if_new_day(request.user)
-    request.user.refresh_from_db(
-        fields=[
-            "used_today",
-            "daily_quota",
-            "last_quota_reset",
-            "ai_used_today",
-            "ai_daily_quota",
-            "last_ai_quota_reset",
-        ]
-    )
-    return render(request, "users/profile.html")
+    search_quota = get_authenticated_quota_status(request.user)
+    ai_quota = get_authenticated_ai_quota_status(request.user)
+
+    context = {
+        "search_quota_used": search_quota.used,
+        "search_quota_limit": search_quota.limit,
+        "ai_quota_used": ai_quota.used,
+        "ai_quota_limit": ai_quota.limit,
+    }
+    return render(request, "users/profile.html", context)
 
 
 @login_required
@@ -116,10 +113,8 @@ def pricing_view(request):
 
 @login_required
 def quota_status(request):
-    user = request.user
-    reset_quota_if_new_day(user)
-    user.refresh_from_db(fields=["used_today", "daily_quota"])
-    return JsonResponse({"used": user.used_today, "limit": user.daily_quota})
+    quota = get_authenticated_quota_status(request.user)
+    return JsonResponse({"used": quota.used, "limit": quota.limit})
 
 
 @login_required
