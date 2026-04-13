@@ -28,12 +28,14 @@
 - [x] Implement anti-spam guard (user-level + system-level)  
   → Rate limit failed/pending job creation
 
-- [ ] Redis integration
+- [x] Redis integration
   * [x] Cache AI summary
   * [x] Cache Google Places
   * [x] Deduplication lock(generate_ai_summary_for_dealer + google places)
   * [x] Quota counters (refactor to Redis)
-  * [ ] Feature flags / plans (optional, next sprint)
+  * [x] Feature flags / plans (optional, next sprint)
+
+
 
 - [ ] Add retry logic for failed jobs  
   → Avoid permanent broken states
@@ -60,21 +62,3 @@
   → Regenerate if data outdated
 
 ---
-
-## Sprint 4 — Product Improvements (Optional)
-- [ ] Build full dealer detail page  
-  → Central place for dealer info + AI summary
-
-- [ ] Add `tags` to AI JSON response  
-  → Enable filtering and UX improvements
-
-- [ ] Add fallback UI for missing summaries  
-  → Improve resilience
-
----
-
-## Notes
-- Sprint 1 is blocking release (must-have)
-- Sprint 2 protects from financial risk
-- Sprint 3 required for compliance (Germany / DSGVO)
-- Sprint 4 is product polish
