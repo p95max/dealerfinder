@@ -18,34 +18,34 @@ Quick picks based on real customer reviews
 
 ## План по спринтам
 
-### Sprint 0 — move LLM-related logic into `apps/dealers/ai/`
+### [ ] Sprint 0 — move LLM-related logic into `apps/dealers/ai/`
 - [ ] вынести low-level LLM logic в `apps/dealers/ai/`
 - [ ] prompts / parsers / client держать отдельно от business logic
 - [ ] orchestration оставить в `services/`
 
-### Sprint 1 — UI + baseline scoring
+### [ ] Sprint 1 — UI + baseline scoring
 - [ ] добавить `smart_pick` в search view
 - [ ] вывести панель в UI, передавать режим через GET
 - [ ] baseline scoring: `rating * log(review_count + 1)`
 
-### Sprint 2 — deterministic scoring
+### [ ] Sprint 2 — deterministic scoring
 - [ ] отдельные формулы для каждого режима
 - [ ] детерминированная сортировка с tie-break по `id`
 - [ ] unit tests для каждого режима
 
-### Sprint 3 — AI signals
+### [ ] Sprint 3 — AI signals
 - [ ] `review_signal_service`: извлечение структурированных signals из отзывов
 - [ ] cache в Redis: `ai_signals:{dealer_id}`, TTL 24h
 - [ ] интеграция signals в `scoring.compute()`
 - [ ] fallback на baseline scoring, если signals недоступны
 
-### Sprint 4 — production hardening
+### [ ] Sprint 4 — production hardening
 - [ ] полный fallback при недоступности AI
 - [ ] rate limiting для LLM API
 - [ ] feature flag: `SMART_PICK_ENABLED`
 - [ ] логирование: mode, latency, AI used / fallback used
 
-### Sprint 5 — explainability (optional)
+### [ ] Sprint 5 — explainability (optional)
 - [ ] `GET /dealers/{id}/shortlist-reason/?mode=...`
 - [ ] UI: блок или tooltip “Why this dealer?”
 
