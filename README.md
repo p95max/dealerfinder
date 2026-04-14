@@ -12,41 +12,17 @@
 - Авторизация только через Google OAuth
 - Anti-abuse: Cloudflare Turnstile + квоты (Redis) + троттлинг
 
-### 🤖 AI (опционально)
+## 🤖 AI
 
-AI-функциональность является **необязательным слоем обогащения**, а не критической частью системы:
+AI summary — это необязательный слой обогащения данных.
+Он не влияет на поиск, фильтрацию и ранжирование результатов.
 
-- AI summary генерируется асинхронно через Celery + OpenAI
-- система полностью работоспособна без AI (degrades gracefully)
-- AI `может быть отключён` через feature flag (`FEATURE_AI_SUMMARY_ENABLED`)
-- используется только для улучшения UX (summaries, pros/cons, sentiment)
+- async generation via Celery + OpenAI
+- optional, can be disabled via feature flag
+- used only for UX enrichment
 
-> ⚠️ Важно: поиск, фильтрация и выдача результатов полностью независимы от AI.
+Подробнее: [docs/ai_architecture.md](docs/ai_architecture.md)
 
-### ⚡ Client-side AI handling (UX optimization)
-
-Часть AI-логики реализована на клиенте (JavaScript) для улучшения отзывчивости интерфейса.
-Клиент не содержит доменной логики и не влияет на корректность данных.
-
-Причины:
-
-- снижение latency — UI не блокируется ожиданием AI-ответа
-- асинхронная модель — генерация происходит в фоне (Celery), клиент лишь опрашивает состояние
-- мгновенная обратная связь — пользователь сразу видит `pending` состояние
-- меньше нагрузки на сервер — нет долгих HTTP-запросов
-
-Клиент отвечает за:
-- триггер генерации (`POST /ai-summary/generate/`)
-- получение текущего состояния (`GET /ai-summary/`)
-- обновление UI (pending → done / failed)
-
-Сервер отвечает за:
-- постановку задач в очередь
-- генерацию AI summary
-- кэширование и контроль квот
-
-> ⚠️ Важно: бизнес-логика и генерация AI полностью остаются на сервере.
-> Клиент реализует только orchestration и UI-обновление.
 
 ---
 
@@ -185,65 +161,9 @@ dealerfinder/
 
 ## 🔁 Request Flow
 
-### 🔍 Search
+Search flow: cache-first → Google Places (on miss) → filtering → optional AI enrichment.
 
-```
-GET /search/?city=Berlin&radius=10
-       ↓
-ThrottleMiddleware — rate limit по user.pk / IP (Django cache, 60s time window)
-       ↓
-search_view
-       ↓
-quota_service — get_authenticated_quota_status() / get_anonymous_quota_status()
-    → denied → 200 + warning message
-       ↓
-is_german_city() — Geocoding API (кэш 30 дней)
-       ↓
-search_dealers()
-    → cache HIT  → return (data, from_cache=True)
-    → cache MISS → Google Places API → normalize → sync_dealers_to_db() → set_cache() → return (data, False)
-       ↓
-Quota consume — только если cache MISS
-       ↓
-filter_and_sort_dealers() — in-memory фильтрация и сортировка
-       ↓
-enqueue_ai_summaries_for_dealers() — top-N дилеров в Celery (если AI_ENABLED)
-       ↓
-attach_ai_summaries_to_dealers() — прикрепить готовые AI-саммари к текущей странице
-       ↓
-Paginator (20/страница) → Template render
-```
-
-### 📍 Place Details
-
-```
-GET /dealer/{place_id}/ai-summary/       → get_dealer_ai_summary_payload() → JsonResponse
-POST /dealer/{place_id}/ai-summary/generate/ → generate_dealer_ai_summary_payload() → JsonResponse
-```
-
-### 🤖 AI Summary (Celery)
-
-```
-generate_dealer_ai_summary_task.delay(place_id)
-       ↓
-acquire_ai_summary_lock()
-       ↓
-get_place_details()  # Redis cache + lock around Place Details
-       ↓
-build AI context + validate review availability
-       ↓
-freshness / retry / fingerprint checks
-       ↓
-check AI quota (per-user/IP + system cap)
-       ↓
-OpenAI API
-       ↓
-DealerAiSummary.save(status=done/failed)
-       ↓
-invalidate cached payload
-       ↓
-release_ai_summary_lock()
-```
+Подробнее: [docs/request_flow.md](docs/request_flow.md)
 
 ---
 
@@ -307,92 +227,15 @@ release_ai_summary_lock()
 
 ---
 
-## 🗄️ Data Storage
+## 🗄️ Data Model
 
-### `Dealer`
+Основные сущности:
+- Dealer
+- SearchCache
+- User
+- Favorite
 
-| Поле | Тип |
-|------|-----|
-| `google_place_id` | str (unique) |
-| `name`, `address`, `city` | str |
-| `lat`, `lng` | float |
-| `rating` | float \| null |
-| `user_ratings_total` | int |
-| `website`, `phone` | str \| null |
-| `last_synced_at` | datetime (auto_now) |
-
-### `DealerAiSummary`
-
-OneToOne к `Dealer` (related_name `ai_summary`). Создаётся автоматически при `sync_dealers_to_db`.
-
-| Поле | Тип |
-|------|-----|
-| `status` | `pending` / `done` / `failed` |
-| `provider`, `model`, `prompt_version` | str |
-| `summary` | text |
-| `pros`, `cons` | JSON array |
-| `sentiment` | `positive` / `mixed` / `negative` \| blank |
-| `languages` | JSON array |
-| `export_friendly` | bool \| null |
-| `confidence` | float \| null |
-| `source_review_count` | int |
-| `source_fingerprint` | str (SHA-64, идемпотентность) |
-| `raw_response` | JSON \| null |
-| `last_error` | text |
-| `generated_at`, `updated_at` | datetime |
-
-Freshness: `AI_SUMMARY_TTL_DAYS`. Retry failed: `AI_FAILED_RETRY_HOURS`. Stale pending: `AI_PENDING_STALE_MINUTES`.
-
-### `SearchCache`
-
-| Поле | Тип |
-|------|-----|
-| `query_key` | str (unique) |
-| `results_json` | json |
-| `created_at` | datetime |
-
-### `User`
-
-| Поле | Тип |
-|------|-----|
-| `email` | str (unique, USERNAME_FIELD) |
-| `google_sub` | str \| null (unique) |
-| `plan` | str (`free` / `premium`) |
-| `daily_quota` | int (default 15) |
-| `ai_daily_quota` | int (default 15) |
-| `terms_accepted` | bool |
-
-> ℹ️ Счётчики использования (`used_today`) вынесены в Redis: `quota:user:{pk}:{date}` и `quota:anon:{ip}:{date}`, TTL до следующей полуночи.
-
-### `Favorite`
-
-| Поле | Тип |
-|------|-----|
-| `user` | FK→User |
-| `place_id` | str |
-| `name`, `address`, `city` | str |
-| `rating` | float \| null |
-| `phone`, `website` | str |
-| `lat`, `lng` | float \| null |
-| `created_at` | datetime |
-
-unique_together: `(user, place_id)`
-
-### `PopularSearch`
-
-| Поле | Тип |
-|------|-----|
-| `city` | str (unique) |
-| `count` | int |
-| `updated_at` | datetime (auto_now) |
-
-### `UserSearchHistory`
-
-| Поле | Тип |
-|------|-----|
-| `user` | FK→User |
-| `city` | str |
-| `searched_at` | datetime |
+Подробнее: [docs/data_model.md](docs/data_model.md)
 
 ---
 
@@ -533,31 +376,6 @@ Sort modes: `score` (weighted rating × log1p reviews), `rating`, `reviews`, `di
 - **Popular cities:** `PopularSearch` инкрементируется при каждом поиске. Топ-10 на главной и в search view.
 - **Search history:** авторизованные — `UserSearchHistory` (20 записей); анонимы — `session["search_history_cities"]` (8 городов, LIFO).
 - `build_search_discovery_context(request)` — единая точка сборки для home и search view.
-
----
-
-## 🤖 AI Integration
-
-### Endpoints
-
-| Метод | URL | Описание |
-|-------|-----|----------|
-| `GET` | `/dealer/{place_id}/ai-summary/` | Получить текущий AI-саммари (из кэша или БД) |
-| `POST` | `/dealer/{place_id}/ai-summary/generate/` | Принудительно запустить генерацию (force=True) |
-
-### Statuses
-
-- `pending` — задача создана / в очереди
-- `done` — успешно сгенерировано (свежее)
-- `failed` — ошибка (с `error_code`): `system_quota_exceeded`, `quota_exceeded_anon`, `quota_exceeded_authenticated`, `quota_exceeded_premium`
-
-### Enqueue logic (conservative mode, search flow)
-
-Задача диспатчится только если: summary только создан | `done` + stalе | `failed` + retry cooldown прошёл | `pending` + stale (завис).
-
-### Feature flags
-
-`FEATURE_AI_SUMMARY_ENABLED` — включает/выключает AI-саммари в UI. Управляется через `common/services/feature_flags.py` (Redis).
 
 ---
 
