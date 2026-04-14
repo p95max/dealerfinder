@@ -222,19 +222,26 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
         return payload, 200
 
     try:
-        enqueue_ai_summaries_for_dealers(
+        enqueued_count = enqueue_ai_summaries_for_dealers(
             [place_id],
             limit=1,
             user_id=user.id if user else None,
             client_ip=client_ip,
             force=True,
         )
+
         return (
             {
                 "status": "pending",
                 "summary": "",
                 "pros": [],
                 "cons": [],
+                "enqueued": enqueued_count > 0,
+                "message": (
+                    "AI summary is being generated."
+                    if enqueued_count > 0
+                    else "AI summary is already being generated. Please wait."
+                ),
             },
             202,
         )

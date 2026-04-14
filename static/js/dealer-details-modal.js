@@ -132,17 +132,19 @@ function renderAiSummary(data) {
     container.classList.add("d-none");
     container.innerHTML = "";
 
-    if (status === "pending") {
+        if (status === "pending") {
+        const pendingMessage =
+            data.ai_message || "AI summary is being prepared. This may take a few seconds.";
+
         container.classList.remove("d-none");
         container.innerHTML = `
             <div class="alert alert-secondary mt-3 mb-0 small d-flex align-items-center gap-2">
                 <div class="spinner-border spinner-border-sm" role="status"></div>
-                <span>AI summary is being prepared. This may take a few seconds.</span>
+                <span>${escapeHtml(pendingMessage)}</span>
             </div>
         `;
         return;
     }
-
     if (status === "done" && summary) {
         const prosHtml = pros.map((item) => `
             <div class="ai-summary-point ai-summary-point--pros">
@@ -366,7 +368,7 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 summaryBtn.disabled = true;
                 summaryBtn.textContent = "Preparing...";
 
-                if (!activeAiPolls.has(placeId)) {
+                if (ai.enqueued === true) {
                     pollAiSummary(placeId, baseData, card, summaryBtn);
                 }
 
