@@ -23,7 +23,12 @@ def geocode_city(city: str) -> dict | None:
     try:
         response = requests.get(
             GEOCODING_URL,
-            params={"address": city, "key": settings.GOOGLE_API_KEY},
+            params={
+                "address": city,
+                "components": "country:DE",
+                "language": "en",
+                "key": settings.GOOGLE_API_KEY,
+            },
             timeout=10,
         )
         response.raise_for_status()
@@ -38,22 +43,25 @@ def geocode_city(city: str) -> dict | None:
     if data.get("status") != "OK" or not data.get("results"):
         return None
 
-    result = data["results"][0]
-    location = result["geometry"]["location"]
+    for result in data["results"]:
+        location = result.get("geometry", {}).get("location", {})
+        country_code = None
 
-    country_code = None
-    for component in result.get("address_components", []):
-        if "country" in component.get("types", []):
-            country_code = component.get("short_name")
-            break
+        for component in result.get("address_components", []):
+            if "country" in component.get("types", []):
+                country_code = component.get("short_name")
+                break
 
-    geo = {
-        "lat": location["lat"],
-        "lng": location["lng"],
-        "country_code": country_code,
-    }
-    cache.set(cache_key, geo, CACHE_TTL)
-    return geo
+        if country_code == "DE" and "lat" in location and "lng" in location:
+            geo = {
+                "lat": location["lat"],
+                "lng": location["lng"],
+                "country_code": country_code,
+            }
+            cache.set(cache_key, geo, CACHE_TTL)
+            return geo
+
+    return None
 
 
 def is_german_city(city: str) -> bool:

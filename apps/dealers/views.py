@@ -388,7 +388,10 @@ def _apply_empty_search_message(request, dealers: list[dict]) -> None:
             "Live search is temporarily unavailable. Try a city that was searched before.",
         )
     elif not dealers:
-        messages.warning(request, "No dealers found. Please enter a city in Germany.")
+        messages.info(
+            request,
+            "No dealers found for this city and radius. Try another city or a larger radius.",
+        )
 
 
 # =========================

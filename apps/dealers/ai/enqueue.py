@@ -31,6 +31,7 @@ def enqueue_ai_summaries_for_dealers(
     - stable ordering
     - Redis dedup (anti-spam)
     - less aggressive retry
+    - forced requests bypass enqueue dedup
     """
 
     if not settings.AI_ENABLED:
@@ -53,16 +54,7 @@ def enqueue_ai_summaries_for_dealers(
 
     for dealer in dealers:
         place_id = dealer.google_place_id
-
         lock_key = f"ai:lock:{place_id}"
-        if redis_client.get(lock_key):
-            logger.info(
-                "AI enqueue skipped (dedup)",
-                extra={"event": "ai_enqueue_skipped_dedup", "place_id": place_id},
-            )
-            continue
-
-        redis_client.setex(lock_key, 60, 1)
 
         summary, created = DealerAiSummary.objects.get_or_create(
             dealer=dealer,
@@ -76,20 +68,24 @@ def enqueue_ai_summaries_for_dealers(
         )
 
         if force:
+            redis_client.setex(lock_key, 60, 1)
+
             if summary.status != DealerAiSummary.STATUS_PENDING:
                 summary.status = DealerAiSummary.STATUS_PENDING
                 summary.provider = settings.AI_PROVIDER
                 summary.model = settings.AI_MODEL
                 summary.prompt_version = settings.AI_PROMPT_VERSION
                 summary.last_error = ""
-                summary.save(update_fields=[
-                    "status",
-                    "provider",
-                    "model",
-                    "prompt_version",
-                    "last_error",
-                    "updated_at",
-                ])
+                summary.save(
+                    update_fields=[
+                        "status",
+                        "provider",
+                        "model",
+                        "prompt_version",
+                        "last_error",
+                        "updated_at",
+                    ]
+                )
 
             result = generate_dealer_ai_summary_task.delay(
                 place_id=place_id,
@@ -109,6 +105,15 @@ def enqueue_ai_summaries_for_dealers(
 
             enqueued += 1
             continue
+
+        if redis_client.get(lock_key):
+            logger.info(
+                "AI enqueue skipped (dedup)",
+                extra={"event": "ai_enqueue_skipped_dedup", "place_id": place_id},
+            )
+            continue
+
+        redis_client.setex(lock_key, 60, 1)
 
         if created:
             result = generate_dealer_ai_summary_task.delay(
@@ -130,9 +135,6 @@ def enqueue_ai_summaries_for_dealers(
             enqueued += 1
             continue
 
-        # =========================
-        # RETRY / STALE LOGIC
-        # =========================
         should_enqueue = False
 
         if (
@@ -163,14 +165,16 @@ def enqueue_ai_summaries_for_dealers(
         summary.prompt_version = settings.AI_PROMPT_VERSION
         summary.last_error = ""
 
-        summary.save(update_fields=[
-            "status",
-            "provider",
-            "model",
-            "prompt_version",
-            "last_error",
-            "updated_at",
-        ])
+        summary.save(
+            update_fields=[
+                "status",
+                "provider",
+                "model",
+                "prompt_version",
+                "last_error",
+                "updated_at",
+            ]
+        )
 
         result = generate_dealer_ai_summary_task.delay(
             place_id=place_id,

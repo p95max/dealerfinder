@@ -15,7 +15,7 @@ class Dealer(models.Model):
     rating = models.FloatField(null=True)
     user_ratings_total = models.IntegerField(default=0)
 
-    website = models.URLField(null=True, blank=True)
+    website = models.URLField(max_length=500, null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
 
     last_synced_at = models.DateTimeField(auto_now=True)
