@@ -61,12 +61,31 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    entrypoint: ["/celery-entrypoint.sh"]
     command: celery -A config worker -l info --concurrency=2
     env_file:
       - ../.env
     depends_on:
-      - redis
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    entrypoint: ["/celery-entrypoint.sh"]
+    command: celery -A config beat -l info
+    env_file:
+      - ../.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:

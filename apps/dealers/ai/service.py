@@ -29,187 +29,17 @@ from integrations.ai_client import AiClientError, generate_dealer_summary
 
 logger = logging.getLogger(__name__)
 
+NON_RETRYABLE_ERROR_CODES = {
+    "ai_disabled",
+    "quota_exceeded_anon",
+    "quota_exceeded_authenticated",
+    "quota_exceeded_premium",
+    "system_quota_exceeded",
+}
 
-def ensure_ai_summary_record(dealer: Dealer) -> DealerAiSummary:
-    obj, _ = DealerAiSummary.objects.get_or_create(dealer=dealer)
-    return obj
-
-
-def build_dealer_ai_context(place_details: dict) -> dict:
-    reviews = []
-
-    for review in place_details.get("reviews", []):
-        if not isinstance(review, dict):
-            continue
-
-        text_obj = review.get("text")
-        if isinstance(text_obj, dict):
-            text = text_obj.get("text")
-        else:
-            text = None
-
-        if isinstance(text, str) and text.strip():
-            reviews.append(text.strip())
-
-    display_name = place_details.get("displayName", {})
-    if isinstance(display_name, dict):
-        name = display_name.get("text")
-    else:
-        name = None
-
-    return {
-        "name": name,
-        "rating": place_details.get("rating"),
-        "total_reviews": place_details.get("userRatingCount"),
-        "price_level": place_details.get("priceLevel"),
-        "opening_hours": place_details.get("regularOpeningHours"),
-        "open_now": place_details.get("currentOpeningHours", {}).get("openNow"),
-        "website": place_details.get("websiteUri"),
-        "phone": place_details.get("nationalPhoneNumber"),
-        "types": place_details.get("types", []),
-        "reviews": reviews,
-    }
-
-
-def build_source_fingerprint(context: dict) -> str:
-    raw = json.dumps(
-        {
-            "rating": context.get("rating"),
-            "total_reviews": context.get("total_reviews"),
-            "reviews": context.get("reviews", []),
-        },
-        ensure_ascii=False,
-        sort_keys=True,
-    )
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
-
-
-def is_summary_up_to_date(summary_obj: DealerAiSummary, fingerprint: str) -> bool:
-    return (
-        summary_obj.status == DealerAiSummary.STATUS_DONE
-        and is_summary_fresh(summary_obj)
-        and summary_obj.source_fingerprint == fingerprint
-        and summary_obj.prompt_version == settings.AI_PROMPT_VERSION
-        and summary_obj.model == settings.AI_MODEL
-        and summary_obj.provider == settings.AI_PROVIDER
-    )
-
-
-def is_summary_fresh(summary_obj: DealerAiSummary) -> bool:
-    if not summary_obj.generated_at:
-        return False
-
-    ttl = timedelta(days=settings.AI_SUMMARY_TTL_DAYS)
-    return summary_obj.generated_at >= timezone.now() - ttl
-
-
-def can_retry_failed_summary(summary_obj: DealerAiSummary) -> bool:
-    if summary_obj.status != DealerAiSummary.STATUS_FAILED:
-        return False
-
-    cooldown = timedelta(hours=settings.AI_FAILED_RETRY_HOURS)
-    return summary_obj.updated_at <= timezone.now() - cooldown
-
-
-def is_stale_pending_summary(summary_obj: DealerAiSummary) -> bool:
-    if summary_obj.status != DealerAiSummary.STATUS_PENDING:
-        return False
-
-    stale_after = timedelta(minutes=settings.AI_PENDING_STALE_MINUTES)
-    return summary_obj.updated_at <= timezone.now() - stale_after
-
-
-def validate_ai_result(data: dict) -> dict:
-    summary = str(data.get("summary") or "").strip()
-    pros = [str(x).strip() for x in (data.get("pros") or []) if str(x).strip()]
-    cons = [str(x).strip() for x in (data.get("cons") or []) if str(x).strip()]
-    sentiment = str(data.get("sentiment") or "").strip()
-    languages = [
-        str(x).strip().lower()
-        for x in (data.get("languages") or [])
-        if str(x).strip()
-    ]
-    export_friendly = data.get("export_friendly")
-    confidence = data.get("confidence")
-
-    if not summary:
-        raise ValueError("AI result missing summary")
-
-    if sentiment not in {"positive", "mixed", "negative"}:
-        raise ValueError("Invalid sentiment")
-
-    if confidence is not None:
-        confidence = float(confidence)
-        if confidence < 0 or confidence > 1:
-            raise ValueError("Confidence must be between 0 and 1")
-
-    return {
-        "summary": summary[:500],
-        "pros": pros[:3],
-        "cons": cons[:3],
-        "sentiment": sentiment,
-        "languages": languages[:5],
-        "export_friendly": (
-            export_friendly
-            if isinstance(export_friendly, bool) or export_friendly is None
-            else None
-        ),
-        "confidence": confidence,
-    }
-
-
-def _get_authenticated_quota_error_code(user) -> str:
-    if getattr(user, "plan", "") == "premium":
-        return "quota_exceeded_premium"
-    return "quota_exceeded_authenticated"
-
-
-def _mark_summary_failed_no_reviews(
-    summary_obj: DealerAiSummary,
-    *,
-    error_message: str,
-    review_count: int = 0,
-    fingerprint: str = "",
-) -> DealerAiSummary:
-    summary_obj.status = DealerAiSummary.STATUS_FAILED
-    summary_obj.summary = ""
-    summary_obj.pros = []
-    summary_obj.cons = []
-    summary_obj.sentiment = ""
-    summary_obj.languages = []
-    summary_obj.export_friendly = None
-    summary_obj.confidence = None
-    summary_obj.source_review_count = review_count
-    summary_obj.source_fingerprint = fingerprint
-    summary_obj.raw_response = None
-    summary_obj.generated_at = None
-    summary_obj.last_error = error_message
-    summary_obj.provider = settings.AI_PROVIDER
-    summary_obj.model = settings.AI_MODEL
-    summary_obj.prompt_version = settings.AI_PROMPT_VERSION
-    summary_obj.save(
-        update_fields=[
-            "status",
-            "summary",
-            "pros",
-            "cons",
-            "sentiment",
-            "languages",
-            "export_friendly",
-            "confidence",
-            "source_review_count",
-            "source_fingerprint",
-            "raw_response",
-            "generated_at",
-            "last_error",
-            "provider",
-            "model",
-            "prompt_version",
-            "updated_at",
-        ]
-    )
-    return summary_obj
-
+# =========================
+# CORE
+# =========================
 
 def generate_ai_summary_for_dealer(
     dealer: Dealer,
@@ -462,3 +292,195 @@ def generate_ai_summary_for_dealer(
 
     finally:
         release_ai_summary_lock(lock)
+
+# =========================
+# DECISION HELPERS
+# =========================
+
+def is_summary_up_to_date(summary_obj: DealerAiSummary, fingerprint: str) -> bool:
+    return (
+        summary_obj.status == DealerAiSummary.STATUS_DONE
+        and is_summary_fresh(summary_obj)
+        and summary_obj.source_fingerprint == fingerprint
+        and summary_obj.prompt_version == settings.AI_PROMPT_VERSION
+        and summary_obj.model == settings.AI_MODEL
+        and summary_obj.provider == settings.AI_PROVIDER
+    )
+
+
+def is_summary_fresh(summary_obj: DealerAiSummary) -> bool:
+    if not summary_obj.generated_at:
+        return False
+
+    ttl = timedelta(days=settings.AI_SUMMARY_TTL_DAYS)
+    return summary_obj.generated_at >= timezone.now() - ttl
+
+
+def can_retry_failed_summary(summary_obj: DealerAiSummary) -> bool:
+    if summary_obj.status != DealerAiSummary.STATUS_FAILED:
+        return False
+
+    if summary_obj.last_error in NON_RETRYABLE_ERROR_CODES:
+        return False
+
+    cooldown = timedelta(hours=settings.AI_FAILED_RETRY_HOURS)
+
+    return summary_obj.updated_at <= timezone.now() - cooldown
+
+
+def is_stale_pending_summary(summary_obj: DealerAiSummary) -> bool:
+    if summary_obj.status != DealerAiSummary.STATUS_PENDING:
+        return False
+
+    stale_after = timedelta(minutes=settings.AI_PENDING_STALE_MINUTES)
+    return summary_obj.updated_at <= timezone.now() - stale_after
+
+# =========================
+# HELPERS
+# =========================
+
+
+def ensure_ai_summary_record(dealer: Dealer) -> DealerAiSummary:
+    obj, _ = DealerAiSummary.objects.get_or_create(dealer=dealer)
+    return obj
+
+
+def build_dealer_ai_context(place_details: dict) -> dict:
+    reviews = []
+
+    for review in place_details.get("reviews", []):
+        if not isinstance(review, dict):
+            continue
+
+        text_obj = review.get("text")
+        if isinstance(text_obj, dict):
+            text = text_obj.get("text")
+        else:
+            text = None
+
+        if isinstance(text, str) and text.strip():
+            reviews.append(text.strip())
+
+    display_name = place_details.get("displayName", {})
+    if isinstance(display_name, dict):
+        name = display_name.get("text")
+    else:
+        name = None
+
+    return {
+        "name": name,
+        "rating": place_details.get("rating"),
+        "total_reviews": place_details.get("userRatingCount"),
+        "price_level": place_details.get("priceLevel"),
+        "opening_hours": place_details.get("regularOpeningHours"),
+        "open_now": place_details.get("currentOpeningHours", {}).get("openNow"),
+        "website": place_details.get("websiteUri"),
+        "phone": place_details.get("nationalPhoneNumber"),
+        "types": place_details.get("types", []),
+        "reviews": reviews,
+    }
+
+
+def build_source_fingerprint(context: dict) -> str:
+    raw = json.dumps(
+        {
+            "rating": context.get("rating"),
+            "total_reviews": context.get("total_reviews"),
+            "reviews": context.get("reviews", []),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def validate_ai_result(data: dict) -> dict:
+    summary = str(data.get("summary") or "").strip()
+    pros = [str(x).strip() for x in (data.get("pros") or []) if str(x).strip()]
+    cons = [str(x).strip() for x in (data.get("cons") or []) if str(x).strip()]
+    sentiment = str(data.get("sentiment") or "").strip()
+    languages = [
+        str(x).strip().lower()
+        for x in (data.get("languages") or [])
+        if str(x).strip()
+    ]
+    export_friendly = data.get("export_friendly")
+    confidence = data.get("confidence")
+
+    if not summary:
+        raise ValueError("AI result missing summary")
+
+    if sentiment not in {"positive", "mixed", "negative"}:
+        raise ValueError("Invalid sentiment")
+
+    if confidence is not None:
+        confidence = float(confidence)
+        if confidence < 0 or confidence > 1:
+            raise ValueError("Confidence must be between 0 and 1")
+
+    return {
+        "summary": summary[:500],
+        "pros": pros[:3],
+        "cons": cons[:3],
+        "sentiment": sentiment,
+        "languages": languages[:5],
+        "export_friendly": (
+            export_friendly
+            if isinstance(export_friendly, bool) or export_friendly is None
+            else None
+        ),
+        "confidence": confidence,
+    }
+
+
+def _get_authenticated_quota_error_code(user) -> str:
+    if getattr(user, "plan", "") == "premium":
+        return "quota_exceeded_premium"
+    return "quota_exceeded_authenticated"
+
+
+def _mark_summary_failed_no_reviews(
+    summary_obj: DealerAiSummary,
+    *,
+    error_message: str,
+    review_count: int = 0,
+    fingerprint: str = "",
+) -> DealerAiSummary:
+    summary_obj.status = DealerAiSummary.STATUS_FAILED
+    summary_obj.summary = ""
+    summary_obj.pros = []
+    summary_obj.cons = []
+    summary_obj.sentiment = ""
+    summary_obj.languages = []
+    summary_obj.export_friendly = None
+    summary_obj.confidence = None
+    summary_obj.source_review_count = review_count
+    summary_obj.source_fingerprint = fingerprint
+    summary_obj.raw_response = None
+    summary_obj.generated_at = None
+    summary_obj.last_error = error_message
+    summary_obj.provider = settings.AI_PROVIDER
+    summary_obj.model = settings.AI_MODEL
+    summary_obj.prompt_version = settings.AI_PROMPT_VERSION
+    summary_obj.save(
+        update_fields=[
+            "status",
+            "summary",
+            "pros",
+            "cons",
+            "sentiment",
+            "languages",
+            "export_friendly",
+            "confidence",
+            "source_review_count",
+            "source_fingerprint",
+            "raw_response",
+            "generated_at",
+            "last_error",
+            "provider",
+            "model",
+            "prompt_version",
+            "updated_at",
+        ]
+    )
+    return summary_obj

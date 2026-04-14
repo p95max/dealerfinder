@@ -306,3 +306,11 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TASK_TIME_LIMIT = 120
 CELERY_TASK_SOFT_TIME_LIMIT = 90
+
+CELERY_BEAT_SCHEDULE = {
+    "retry-dealer-ai-summaries-every-15-minutes": {
+        "task": "apps.dealers.tasks.retry_dealer_ai_summaries_task",
+        "schedule": 60 * 15,
+        "args": (20,),
+    },
+}

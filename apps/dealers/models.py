@@ -24,7 +24,6 @@ class Dealer(models.Model):
         return self.name
 
 
-
 class DealerAiSummary(models.Model):
     STATUS_PENDING = "pending"
     STATUS_DONE = "done"
@@ -77,6 +76,10 @@ class DealerAiSummary(models.Model):
 
     raw_response = models.JSONField(null=True, blank=True)
     last_error = models.TextField(blank=True)
+
+    retry_count = models.PositiveSmallIntegerField(default=0)
+    last_retry_at = models.DateTimeField(null=True, blank=True)
+
     generated_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 

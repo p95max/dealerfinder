@@ -37,7 +37,7 @@
 
 
 
-- [ ] Add retry logic for failed jobs  
+- [x] Add retry logic for failed jobs  
   → Avoid permanent broken states
 
 ---
