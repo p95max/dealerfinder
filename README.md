@@ -12,6 +12,17 @@
 - Авторизация только через Google OAuth
 - Anti-abuse: Cloudflare Turnstile + квоты (Redis) + троттлинг
 
+---
+
+## ⚙️ Tech Stack
+
+**Backend:** Python 3.12, Django 6.x (FBV), PostgreSQL 18, Redis 7, Celery 5
+**Frontend:** Django Templates, Bootstrap 5.3, Vanilla JS
+**External APIs:** Google Places API (New), Google Geocoding API, Geolocation API, Google OAuth, OpenAI API, Telegram Bot API
+**Infra:** Docker Compose v2, Gunicorn (2 workers), Nginx, Redis 7
+
+---
+
 ## 🤖 AI
 
 AI summary — это необязательный слой обогащения данных.
@@ -22,7 +33,6 @@ AI summary — это необязательный слой обогащения
 - used only for UX enrichment
 
 Подробнее: [docs/ai_architecture.md](docs/ai_architecture.md)
-
 
 ---
 
@@ -255,18 +265,6 @@ Search flow: cache-first → Google Places (on miss) → filtering → optional 
 ### Ранжирование
 
 Sort modes: `score` (weighted rating × log1p reviews), `rating`, `reviews`, `distance` (если переданы координаты пользователя). Permissive filtering: если часы/выходные не заполнены — не исключается.
-
----
-
-## ⚙️ Tech Stack
-
-**Backend:** Python 3.12, Django 6.x (FBV), PostgreSQL 18, Redis 7, Celery 5
-
-**Frontend:** Django Templates, Bootstrap 5.3, Vanilla JS
-
-**External APIs:** Google Places API (New), Google Geocoding API, Geolocation API, Google OAuth, OpenAI API, Telegram Bot API
-
-**Infra:** Docker Compose v2, Gunicorn (2 workers), Nginx, Redis 7
 
 ---
 
