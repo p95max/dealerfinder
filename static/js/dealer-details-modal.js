@@ -127,8 +127,9 @@ function renderAiSummary(data) {
     if (status === "pending") {
         container.classList.remove("d-none");
         container.innerHTML = `
-            <div class="alert alert-secondary mt-3 mb-0 small">
-                AI summary is being prepared. This may take a few seconds.
+            <div class="alert alert-secondary mt-3 mb-0 small d-flex align-items-center gap-2">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span>AI summary is being prepared. This may take a few seconds.</span>
             </div>
         `;
         return;

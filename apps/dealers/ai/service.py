@@ -93,6 +93,10 @@ def generate_ai_summary_for_dealer(
 
         reviews_total_count = int(context.get("total_reviews") or 0)
 
+        is_limited_sample = (
+                review_count < settings.AI_MIN_REVIEWS_FOR_RELIABLE_SUMMARY
+        )
+
         if review_count == 0:
             logger.info(
                 "AI summary skipped because no reviews are available",
@@ -246,6 +250,7 @@ def generate_ai_summary_for_dealer(
             summary_obj.last_error = str(exc)[:1000]
             summary_obj.source_review_count = review_count
             summary_obj.reviews_total_count_at_sync = reviews_total_count
+            summary_obj.is_limited_sample = is_limited_sample
             summary_obj.source_fingerprint = fingerprint
             summary_obj.save(
                 update_fields=[
@@ -265,6 +270,7 @@ def generate_ai_summary_for_dealer(
                     "last_error",
                     "source_review_count",
                     "reviews_total_count_at_sync",
+                    "is_limited_sample",
                     "source_fingerprint",
                     "updated_at",
                 ]
@@ -284,6 +290,7 @@ def generate_ai_summary_for_dealer(
         summary_obj.confidence = validated["confidence"]
         summary_obj.source_review_count = review_count
         summary_obj.reviews_total_count_at_sync = reviews_total_count
+        summary_obj.is_limited_sample = is_limited_sample
         summary_obj.source_fingerprint = fingerprint
         summary_obj.raw_response = result
         summary_obj.last_error = ""
@@ -477,6 +484,7 @@ def _mark_summary_failed_no_reviews(
     summary_obj.source_fingerprint = fingerprint
     summary_obj.raw_response = None
     summary_obj.generated_at = None
+    summary_obj.is_limited_sample = True
     summary_obj.last_error = error_message
     summary_obj.provider = settings.AI_PROVIDER
     summary_obj.model = settings.AI_MODEL
@@ -493,6 +501,7 @@ def _mark_summary_failed_no_reviews(
             "confidence",
             "source_review_count",
             "reviews_total_count_at_sync",
+            "is_limited_sample",
             "source_fingerprint",
             "raw_response",
             "generated_at",

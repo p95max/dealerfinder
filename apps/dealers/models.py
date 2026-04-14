@@ -70,6 +70,7 @@ class DealerAiSummary(models.Model):
     languages = models.JSONField(default=list, blank=True)
     export_friendly = models.BooleanField(null=True, blank=True)
     confidence = models.FloatField(null=True, blank=True)
+    is_limited_sample = models.BooleanField(default=False)
 
     source_review_count = models.PositiveIntegerField(default=0)
     reviews_total_count_at_sync = models.PositiveIntegerField(default=0)
@@ -77,7 +78,6 @@ class DealerAiSummary(models.Model):
 
     raw_response = models.JSONField(null=True, blank=True)
     last_error = models.TextField(blank=True)
-
     retry_count = models.PositiveSmallIntegerField(default=0)
     last_retry_at = models.DateTimeField(null=True, blank=True)
 
