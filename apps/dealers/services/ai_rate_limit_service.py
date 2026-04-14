@@ -6,8 +6,8 @@ class AiRateLimitService:
     def __init__(self):
         self.limiter = RedisRateLimiter("ai")
 
-    def check(self, user, request):
-        identifier = self._get_identifier(user, request)
+    def check(self, *, user=None, client_ip: str | None = None):
+        identifier = self._get_identifier(user=user, client_ip=client_ip)
 
         self.limiter.check(
             identifier=identifier,
@@ -15,10 +15,8 @@ class AiRateLimitService:
             window_sec=60,
         )
 
-    def _get_identifier(self, user, request):
-        if user.is_authenticated:
+    def _get_identifier(self, *, user=None, client_ip: str | None = None):
+        if user is not None and getattr(user, "is_authenticated", False):
             return f"user:{user.id}"
-        return f"anon:{self._get_ip(request)}"
 
-    def _get_ip(self, request):
-        return getattr(request, "client_ip", "unknown")
+        return f"anon:{(client_ip or 'unknown').strip() or 'unknown'}"

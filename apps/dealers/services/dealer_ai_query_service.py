@@ -8,6 +8,7 @@ from apps.dealers.services.dealer_ai_cache_service import (
     get_cached_ai_summary_payload,
     set_cached_ai_summary_payload,
 )
+from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
 from apps.dealers.services.dealer_ai_service import (
     generate_ai_summary_for_dealer,
     is_summary_fresh,
@@ -15,6 +16,7 @@ from apps.dealers.services.dealer_ai_service import (
 from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
 from apps.dealers.services.dealer_ai_cache_service import delete_cached_ai_summary_payload
 from common.services.feature_flags import is_feature_enabled
+from utils.http import _get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -141,17 +143,15 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
                 "place_id": place_id,
             },
         )
-
         return cached_payload, 200
 
-    else:
-        logger.info(
-            "AI summary payload Redis cache miss",
-            extra={
-                "event": "ai_summary_cache_miss",
-                "place_id": place_id,
-            },
-        )
+    logger.info(
+        "AI summary payload Redis cache miss",
+        extra={
+            "event": "ai_summary_cache_miss",
+            "place_id": place_id,
+        },
+    )
 
     ai = getattr(dealer, "ai_summary", None)
 
@@ -165,47 +165,7 @@ def get_dealer_ai_summary_payload(place_id: str, request=None) -> tuple[dict, in
         set_cached_ai_summary_payload(place_id, payload)
         return payload, 200
 
-    if request:
-        try:
-            AiRateLimitService().check(request.user, request)
-        except RateLimitExceeded:
-            return (
-                {
-                    "status": "failed",
-                    "summary": "",
-                    "pros": [],
-                    "cons": [],
-                    "error_code": "rate_limited",
-                    "message": "Too many requests. Please slow down.",
-                },
-                429,
-            )
-
-    try:
-        ai = generate_ai_summary_for_dealer(
-            dealer,
-            user=request.user if request and request.user.is_authenticated else None,
-            request=request,
-        )
-    except Exception:
-        delete_cached_ai_summary_payload(place_id)
-        logger.exception("AI generation failed")
-
-        return (
-            {
-                "status": "failed",
-                "summary": "",
-                "pros": [],
-                "cons": [],
-                "error_code": "ai_error",
-                "message": "AI service temporarily unavailable.",
-            },
-            200,
-        )
-
-    payload = build_ai_summary_payload(ai)
-    set_cached_ai_summary_payload(place_id, payload)
-    return payload, 200
+    return build_ai_summary_payload(ai), 200
 
 
 def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[dict, int]:
@@ -233,9 +193,15 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
             404,
         )
 
+    user = request.user if request and request.user.is_authenticated else None
+    client_ip = _get_client_ip(request) if request else None
+
     if request:
         try:
-            AiRateLimitService().check(request.user, request)
+            AiRateLimitService().check(
+                user=user,
+                client_ip=client_ip,
+            )
         except RateLimitExceeded:
             return (
                 {
@@ -249,15 +215,33 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
                 429,
             )
 
+    ai = getattr(dealer, "ai_summary", None)
+
+    if ai and ai.status == DealerAiSummary.STATUS_DONE and is_summary_fresh(ai):
+        payload = build_ai_summary_payload(ai)
+        set_cached_ai_summary_payload(place_id, payload)
+        return payload, 200
+
     try:
-        ai = generate_ai_summary_for_dealer(
-            dealer,
-            user=request.user if request and request.user.is_authenticated else None,
-            request=request,
+        enqueue_ai_summaries_for_dealers(
+            [place_id],
+            limit=1,
+            user_id=user.id if user else None,
+            client_ip=client_ip,
+            force=True,
+        )
+        return (
+            {
+                "status": "pending",
+                "summary": "",
+                "pros": [],
+                "cons": [],
+            },
+            202,
         )
     except Exception:
         delete_cached_ai_summary_payload(place_id)
-        logger.exception("AI generation failed")
+        logger.exception("AI generation enqueue failed")
         return (
             {
                 "status": "failed",
@@ -269,7 +253,3 @@ def generate_dealer_ai_summary_payload(place_id: str, *, request=None) -> tuple[
             },
             200,
         )
-
-    payload = build_ai_summary_payload(ai)
-    set_cached_ai_summary_payload(place_id, payload)
-    return payload, 200

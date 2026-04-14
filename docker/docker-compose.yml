@@ -57,6 +57,17 @@ services:
       - web
     restart: unless-stopped
 
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: celery -A config worker -l info --concurrency=2
+    env_file:
+      - ../.env
+    depends_on:
+      - redis
+      - db
+
 volumes:
   postgres_data:
   static_volume:

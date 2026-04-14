@@ -205,13 +205,18 @@ def search_view(request):
             sort=sort,
         )
 
-        if not from_cache and dealers:
+        if dealers:
             top_place_ids = [
                 dealer.get("place_id")
                 for dealer in dealers[:settings.AI_SYNC_LIMIT]
                 if dealer.get("place_id")
             ]
-            enqueue_ai_summaries_for_dealers(top_place_ids, limit=settings.AI_SYNC_LIMIT)
+            enqueue_ai_summaries_for_dealers(
+                top_place_ids,
+                limit=settings.AI_SYNC_LIMIT,
+                user_id=request.user.id if request.user.is_authenticated else None,
+                client_ip=_get_client_ip(request),
+            )
 
         if request.user.is_authenticated and dealers:
             favorite_place_ids = set(request.user.favorites.values_list("place_id", flat=True))

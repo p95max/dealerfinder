@@ -39,6 +39,74 @@ function appendInfoRow(container, label, value, options = {}) {
     container.appendChild(row);
 }
 
+async function pollAiSummary(placeId, baseData, card, summaryBtn) {
+    const maxAttempts = 15;
+    let attempts = 0;
+    const modalEl = document.getElementById("dealerModal");
+
+    while (attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        if (
+            !modalEl ||
+            modalEl.dataset.placeId !== placeId ||
+            !modalEl.classList.contains("show")
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/dealer/${placeId}/ai-summary/`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            });
+
+            if (!response.ok) {
+                break;
+            }
+
+            const ai = await response.json();
+
+            card.dataset.dealerAiStatus = ai.status || "failed";
+            card.dataset.dealerAiSummary = ai.summary || "";
+            card.dataset.dealerAiPros = JSON.stringify(ai.pros || []);
+            card.dataset.dealerAiCons = JSON.stringify(ai.cons || []);
+            card.dataset.dealerAiErrorCode = ai.error_code || "";
+            card.dataset.dealerAiMessage = ai.message || ai.error || "";
+
+            renderAiSummary({
+                ...baseData,
+                ai_status: ai.status || "failed",
+                ai_summary: ai.summary || "",
+                ai_pros: ai.pros || [],
+                ai_cons: ai.cons || [],
+                ai_error_code: ai.error_code || "",
+                ai_message: ai.message || ai.error || "",
+            });
+
+            if (ai.status === "done") {
+                summaryBtn.classList.add("d-none");
+                return;
+            }
+
+            if (ai.status === "failed") {
+                summaryBtn.disabled = false;
+                summaryBtn.textContent = "Try again";
+                return;
+            }
+        } catch (error) {
+            console.error("Polling failed", error);
+            break;
+        }
+
+        attempts += 1;
+    }
+
+    summaryBtn.disabled = false;
+    summaryBtn.textContent = "Try again";
+}
+
 /* =========================
    AI SUMMARY
 ========================= */
@@ -246,12 +314,12 @@ function bindAiSummaryButton(card, placeId, baseData) {
 
         try {
             const response = await fetch(`/dealer/${placeId}/ai-summary/generate/`, {
-                    method: "POST",
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRFToken": getCsrfToken(),
-                    },
-                });
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": getCsrfToken(),
+                },
+            });
 
             if (!response.ok) {
                 throw new Error("AI summary request failed");
@@ -276,12 +344,19 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 ai_message: ai.message || ai.error || "",
             });
 
-            if (typeof refreshQuotaCounters === "function") {
+            if (window.isAuthenticated && typeof refreshQuotaCounters === "function") {
                 refreshQuotaCounters();
-}
+            }
 
             if ((ai.status || "") === "done") {
                 summaryBtn.classList.add("d-none");
+                return;
+            }
+
+            if ((ai.status || "") === "pending") {
+                summaryBtn.disabled = true;
+                summaryBtn.textContent = "Preparing...";
+                pollAiSummary(placeId, baseData, card, summaryBtn);
                 return;
             }
 
@@ -294,6 +369,8 @@ function bindAiSummaryButton(card, placeId, baseData) {
                 ai_summary: "",
                 ai_pros: [],
                 ai_cons: [],
+                ai_error_code: "",
+                ai_message: "AI summary unavailable.",
             });
 
             summaryBtn.disabled = false;

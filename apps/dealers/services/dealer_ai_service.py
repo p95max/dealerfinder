@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.dealers.models import Dealer, DealerAiSummary
+from apps.dealers.services.ai_quota_service import get_anonymous_ai_quota_status_by_ip, consume_anonymous_ai_quota_by_ip
 from apps.dealers.services.ai_system_quota_service import (
     consume_ai_system_quota,
     get_ai_system_quota_status,
@@ -216,7 +217,7 @@ def generate_ai_summary_for_dealer(
     dealer: Dealer,
     *,
     user=None,
-    request=None,
+    client_ip=None,
 ) -> DealerAiSummary:
     summary_obj = ensure_ai_summary_record(dealer)
 
@@ -339,8 +340,8 @@ def generate_ai_summary_for_dealer(
 
             consume_authenticated_ai_quota(user)
 
-        elif request is not None:
-            quota = get_anonymous_ai_quota_status(request)
+        elif client_ip is not None:
+            quota = get_anonymous_ai_quota_status_by_ip(client_ip)
 
             if not quota.allowed:
                 delete_cached_ai_summary_payload(dealer.google_place_id)
@@ -370,7 +371,7 @@ def generate_ai_summary_for_dealer(
                 )
                 return summary_obj
 
-            consume_anonymous_ai_quota(request)
+            consume_anonymous_ai_quota_by_ip(client_ip)
             consume_ai_system_quota()
 
         try:
