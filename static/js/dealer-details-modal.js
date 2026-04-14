@@ -39,27 +39,32 @@ function appendInfoRow(container, label, value, options = {}) {
     container.appendChild(row);
 }
 
+const activeAiPolls = new Set();
 async function pollAiSummary(placeId, baseData, card, summaryBtn) {
-    const maxAttempts = 15;
-    let attempts = 0;
-    const modalEl = document.getElementById("dealerModal");
+    if (activeAiPolls.has(placeId)) {
+        return;
+    }
 
-    while (attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+    activeAiPolls.add(placeId);
 
-        if (
-            !modalEl ||
-            modalEl.dataset.placeId !== placeId ||
-            !modalEl.classList.contains("show")
-        ) {
-            return;
-        }
+    try {
+        const maxAttempts = 8;
+        let attempts = 0;
+        const modalEl = document.getElementById("dealerModal");
 
-        try {
+        while (attempts < maxAttempts) {
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
+            if (
+                !modalEl ||
+                modalEl.dataset.placeId !== placeId ||
+                !modalEl.classList.contains("show")
+            ) {
+                return;
+            }
+
             const response = await fetch(`/dealer/${placeId}/ai-summary/`, {
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                },
+                headers: { "X-Requested-With": "XMLHttpRequest" },
             });
 
             if (!response.ok) {
@@ -95,16 +100,19 @@ async function pollAiSummary(placeId, baseData, card, summaryBtn) {
                 summaryBtn.textContent = "Try again";
                 return;
             }
-        } catch (error) {
-            console.error("Polling failed", error);
-            break;
+
+            attempts += 1;
         }
 
-        attempts += 1;
+        summaryBtn.disabled = false;
+        summaryBtn.textContent = "Try again";
+    } catch (error) {
+        console.error("Polling failed", error);
+        summaryBtn.disabled = false;
+        summaryBtn.textContent = "Try again";
+    } finally {
+        activeAiPolls.delete(placeId);
     }
-
-    summaryBtn.disabled = false;
-    summaryBtn.textContent = "Try again";
 }
 
 /* =========================
@@ -357,10 +365,13 @@ function bindAiSummaryButton(card, placeId, baseData) {
             if ((ai.status || "") === "pending") {
                 summaryBtn.disabled = true;
                 summaryBtn.textContent = "Preparing...";
-                pollAiSummary(placeId, baseData, card, summaryBtn);
+
+                if (!activeAiPolls.has(placeId)) {
+                    pollAiSummary(placeId, baseData, card, summaryBtn);
+                }
+
                 return;
             }
-
             summaryBtn.disabled = false;
             summaryBtn.textContent = "Try again";
         } catch (error) {

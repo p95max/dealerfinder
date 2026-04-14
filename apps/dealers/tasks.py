@@ -34,39 +34,88 @@ def generate_dealer_ai_summary_task(self, place_id, user_id=None, client_ip=None
         raise self.retry(exc=exc, countdown=60)
 
 
+def _get_retry_reason(summary: DealerAiSummary) -> str | None:
+
+    if (
+        summary.status == DealerAiSummary.STATUS_FAILED
+        and can_retry_failed_summary(summary)
+    ):
+        return "failed"
+
+    if (
+        summary.status == DealerAiSummary.STATUS_PENDING
+        and is_stale_pending_summary(summary)
+    ):
+        return "pending_stale"
+
+    return None
+
+
 @shared_task
-def retry_dealer_ai_summaries_task(limit: int = 20):
+def retry_dealer_ai_summaries_task(limit: int = 20) -> int:
     candidates = list(
         DealerAiSummary.objects.select_related("dealer").order_by("updated_at")[: limit * 3]
     )
 
-    retried = 0
+    retry_items: list[dict] = []
 
-    for item in candidates:
-        should_retry = (
-            item.status == DealerAiSummary.STATUS_PENDING
-            and is_stale_pending_summary(item)
-        ) or (
-            item.status == DealerAiSummary.STATUS_FAILED
-            and can_retry_failed_summary(item)
-        )
-
-        if not should_retry:
+    for summary in candidates:
+        reason = _get_retry_reason(summary)
+        if not reason:
             continue
 
-        generate_dealer_ai_summary_task.delay(place_id=item.dealer.google_place_id)
-        retried += 1
+        retry_items.append(
+            {
+                "place_id": summary.dealer.google_place_id,
+                "dealer_id": summary.dealer_id,
+                "dealer_name": summary.dealer.name,
+                "reason": reason,
+                "status": summary.status,
+            }
+        )
 
-        if retried >= limit:
+        if len(retry_items) >= limit:
             break
+
+    logger.info(
+        "AI summary retry sweep started",
+        extra={
+            "event": "ai_summary_retry_sweep_started",
+            "candidate_count": len(candidates),
+            "retry_count": len(retry_items),
+            "place_ids": [item["place_id"] for item in retry_items],
+            "reasons": [item["reason"] for item in retry_items],
+        },
+    )
+
+    dispatched = 0
+
+    for item in retry_items:
+        result = generate_dealer_ai_summary_task.delay(place_id=item["place_id"])
+
+        logger.info(
+            "AI summary retry task dispatched",
+            extra={
+                "event": "ai_summary_retry_task_dispatched",
+                "place_id": item["place_id"],
+                "dealer_id": item["dealer_id"],
+                "dealer_name": item["dealer_name"],
+                "reason": item["reason"],
+                "previous_status": item["status"],
+                "task_id": result.id,
+            },
+        )
+
+        dispatched += 1
 
     logger.info(
         "AI summary retry sweep finished",
         extra={
             "event": "ai_summary_retry_sweep_finished",
             "limit": limit,
-            "retried": retried,
+            "dispatched_count": dispatched,
+            "retry_items": retry_items,
         },
     )
 
-    return retried
+    return dispatched
