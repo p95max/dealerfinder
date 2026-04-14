@@ -1,6 +1,6 @@
 import math
 
-from .cache_service import get_cache, set_cache
+from .search_cache import get_cache, set_cache
 from .distance_service import attach_distance_to_dealers
 from .google_places import search_all_places, is_google_cap_reached
 from apps.dealers.models import Dealer, DealerAiSummary

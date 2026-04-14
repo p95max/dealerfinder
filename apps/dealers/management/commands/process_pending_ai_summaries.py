@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.core.management.base import BaseCommand
 
 from apps.dealers.models import DealerAiSummary
-from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
+from apps.dealers.ai.service import generate_ai_summary_for_dealer
 
 
 class Command(BaseCommand):

@@ -1,18 +1,21 @@
 import logging
 import re
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from apps.dealers.services.dealer_ai_query_service import (
+from apps.dealers.ai.enqueue import enqueue_ai_summaries_for_dealers
+from apps.dealers.ai.queries import (
     attach_ai_summaries_to_dealers,
     generate_dealer_ai_summary_payload,
     get_dealer_ai_summary_payload,
 )
 from apps.dealers.services.dealer_service import filter_and_sort_dealers, search_dealers
+from apps.dealers.services.geocoding_service import is_german_city, reverse_geocode_city
 from apps.dealers.services.google_places import is_google_cap_reached
 from apps.dealers.services.search_tracking_service import (
     build_search_discovery_context,
@@ -20,15 +23,12 @@ from apps.dealers.services.search_tracking_service import (
     track_popular_city,
     track_user_search_history,
 )
-from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
 from apps.users.services.quota_service import (
     consume_anonymous_search,
     consume_authenticated_search,
     get_anonymous_quota_status,
     get_authenticated_quota_status,
 )
-from apps.dealers.services.geocoding_service import is_german_city, reverse_geocode_city
-from django.conf import settings
 from utils.http import _get_client_ip
 
 logger = logging.getLogger(__name__)

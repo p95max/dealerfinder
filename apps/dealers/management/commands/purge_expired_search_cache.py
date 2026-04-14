@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.dealers.models import SearchCache
-from apps.dealers.services.cache_service import TTL
+from apps.dealers.services.search_cache import TTL
 
 
 class Command(BaseCommand):

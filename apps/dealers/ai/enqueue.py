@@ -4,7 +4,7 @@ from django.conf import settings
 
 from apps.dealers.models import Dealer, DealerAiSummary
 from apps.dealers.tasks import generate_dealer_ai_summary_task
-from apps.dealers.services.dealer_ai_service import (
+from apps.dealers.ai.service import (
     can_retry_failed_summary,
     is_stale_pending_summary,
     is_summary_fresh,

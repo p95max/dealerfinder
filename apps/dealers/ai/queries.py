@@ -4,17 +4,16 @@ import logging
 from django.conf import settings
 
 from apps.dealers.models import Dealer, DealerAiSummary
-from apps.dealers.services.dealer_ai_cache_service import (
+from apps.dealers.ai.cache import (
     get_cached_ai_summary_payload,
     set_cached_ai_summary_payload,
 )
-from apps.dealers.services.dealer_ai_enqueue_service import enqueue_ai_summaries_for_dealers
-from apps.dealers.services.dealer_ai_service import (
-    generate_ai_summary_for_dealer,
+from apps.dealers.ai.enqueue import enqueue_ai_summaries_for_dealers
+from apps.dealers.ai.service import (
     is_summary_fresh,
 )
-from apps.dealers.services.ai_rate_limit_service import AiRateLimitService, RateLimitExceeded
-from apps.dealers.services.dealer_ai_cache_service import delete_cached_ai_summary_payload
+from apps.dealers.ai.rate_limits import AiRateLimitService, RateLimitExceeded
+from apps.dealers.ai.cache import delete_cached_ai_summary_payload
 from common.services.feature_flags import is_feature_enabled
 from utils.http import _get_client_ip
 

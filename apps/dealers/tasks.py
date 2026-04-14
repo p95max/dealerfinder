@@ -2,7 +2,7 @@ import logging
 from celery import shared_task
 
 from apps.dealers.models import Dealer
-from apps.dealers.services.dealer_ai_service import generate_ai_summary_for_dealer
+from apps.dealers.ai.service import generate_ai_summary_for_dealer
 from apps.users.models import User
 
 logger = logging.getLogger(__name__)

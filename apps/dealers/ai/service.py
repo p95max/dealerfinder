@@ -7,23 +7,21 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.dealers.models import Dealer, DealerAiSummary
-from apps.dealers.services.ai_quota_service import get_anonymous_ai_quota_status_by_ip, consume_anonymous_ai_quota_by_ip
-from apps.dealers.services.ai_system_quota_service import (
+from apps.dealers.ai.quotas import get_anonymous_ai_quota_status_by_ip, consume_anonymous_ai_quota_by_ip
+from apps.dealers.ai.system_quota import (
     consume_ai_system_quota,
     get_ai_system_quota_status,
 )
-from apps.dealers.services.dealer_ai_cache_service import (
+from apps.dealers.ai.cache import (
     delete_cached_ai_summary_payload,
 )
-from apps.dealers.services.dealer_ai_lock_service import (
+from apps.dealers.ai.locks import (
     acquire_ai_summary_lock,
     release_ai_summary_lock,
 )
 from apps.dealers.services.google_places import get_place_details
 from apps.users.services.ai_quota_service import (
-    consume_anonymous_ai_quota,
     consume_authenticated_ai_quota,
-    get_anonymous_ai_quota_status,
     get_authenticated_ai_quota_status,
 )
 from common.services.feature_flags import is_feature_enabled
