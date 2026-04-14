@@ -336,6 +336,19 @@ def _enqueue_ai_summaries_if_needed(request, dealers: list[dict]) -> None:
         if dealer.get("place_id")
     ]
 
+    logger.info(
+        "AI enqueue candidates prepared",
+        extra={
+            "event": "ai_enqueue_candidates_prepared",
+            "total_results": len(dealers),
+            "ai_sync_limit": settings.AI_SYNC_LIMIT,
+            "selected_count": len(top_place_ids),
+            "place_ids": top_place_ids,
+            "user_id": request.user.pk if request.user.is_authenticated else None,
+            "client_ip": _get_client_ip(request),
+        },
+    )
+
     enqueue_ai_summaries_for_dealers(
         top_place_ids,
         limit=settings.AI_SYNC_LIMIT,
