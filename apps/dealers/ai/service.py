@@ -15,7 +15,10 @@ from apps.dealers.ai.system_quota import (
     consume_ai_system_quota,
     get_ai_system_quota_status,
 )
-from apps.dealers.ai.cache import delete_cached_ai_summary_payload
+from apps.dealers.ai.cache import (
+    delete_cached_ai_summary_payload,
+    set_cached_ai_summary_payload,
+)
 from apps.dealers.ai.locks import (
     acquire_ai_summary_lock,
     release_ai_summary_lock,
@@ -399,6 +402,19 @@ def apply_ai_success(
     summary_obj.last_error = ""
     summary_obj.generated_at = timezone.now()
     summary_obj.save()
+
+    payload = {
+        "status": "done",
+        "summary": summary_obj.summary or "",
+        "pros": summary_obj.pros or [],
+        "cons": summary_obj.cons or [],
+    }
+
+    set_cached_ai_summary_payload(
+        summary_obj.dealer.google_place_id,
+        payload,
+    )
+    
     return summary_obj
 
 
