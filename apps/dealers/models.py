@@ -72,6 +72,7 @@ class DealerAiSummary(models.Model):
     confidence = models.FloatField(null=True, blank=True)
 
     source_review_count = models.PositiveIntegerField(default=0)
+    reviews_total_count_at_sync = models.PositiveIntegerField(default=0)
     source_fingerprint = models.CharField(max_length=64, blank=True)
 
     raw_response = models.JSONField(null=True, blank=True)

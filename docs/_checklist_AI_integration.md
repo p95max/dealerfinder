@@ -43,7 +43,7 @@
 ---
 
 ## Sprint 3 — Data Correctness / UX / Legal
-- [ ] Add `reviews_total_count_at_sync` field  
+- [x] Add `reviews_total_count_at_sync` field  
   → Detect stale summaries
 
 - [ ] Implement “limited sample” warning  

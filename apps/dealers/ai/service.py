@@ -83,11 +83,15 @@ def generate_ai_summary_for_dealer(
             return _mark_summary_failed_no_reviews(
                 summary_obj,
                 error_message="No reviews available for AI summary",
+                review_count=0,
+                reviews_total_count=0,
             )
 
         context = build_dealer_ai_context(details)
         reviews = context.get("reviews", [])
         review_count = len(reviews)
+
+        reviews_total_count = int(context.get("total_reviews") or 0)
 
         if review_count == 0:
             logger.info(
@@ -102,12 +106,17 @@ def generate_ai_summary_for_dealer(
                 summary_obj,
                 error_message="No reviews available for AI summary",
                 review_count=0,
+                reviews_total_count=reviews_total_count,
                 fingerprint=build_source_fingerprint(context),
             )
 
         fingerprint = build_source_fingerprint(context)
 
-        if is_summary_up_to_date(summary_obj, fingerprint):
+        if is_summary_up_to_date(
+                summary_obj,
+                fingerprint,
+                reviews_total_count,
+        ):
             logger.info(
                 "AI summary skipped because it is up to date",
                 extra={
@@ -236,6 +245,7 @@ def generate_ai_summary_for_dealer(
             summary_obj.generated_at = None
             summary_obj.last_error = str(exc)[:1000]
             summary_obj.source_review_count = review_count
+            summary_obj.reviews_total_count_at_sync = reviews_total_count
             summary_obj.source_fingerprint = fingerprint
             summary_obj.save(
                 update_fields=[
@@ -254,6 +264,7 @@ def generate_ai_summary_for_dealer(
                     "generated_at",
                     "last_error",
                     "source_review_count",
+                    "reviews_total_count_at_sync",
                     "source_fingerprint",
                     "updated_at",
                 ]
@@ -272,6 +283,7 @@ def generate_ai_summary_for_dealer(
         summary_obj.export_friendly = validated["export_friendly"]
         summary_obj.confidence = validated["confidence"]
         summary_obj.source_review_count = review_count
+        summary_obj.reviews_total_count_at_sync = reviews_total_count
         summary_obj.source_fingerprint = fingerprint
         summary_obj.raw_response = result
         summary_obj.last_error = ""
@@ -297,11 +309,16 @@ def generate_ai_summary_for_dealer(
 # DECISION HELPERS
 # =========================
 
-def is_summary_up_to_date(summary_obj: DealerAiSummary, fingerprint: str) -> bool:
+def is_summary_up_to_date(
+    summary_obj: DealerAiSummary,
+    fingerprint: str,
+    reviews_total_count: int,
+) -> bool:
     return (
         summary_obj.status == DealerAiSummary.STATUS_DONE
         and is_summary_fresh(summary_obj)
         and summary_obj.source_fingerprint == fingerprint
+        and summary_obj.reviews_total_count_at_sync == reviews_total_count
         and summary_obj.prompt_version == settings.AI_PROMPT_VERSION
         and summary_obj.model == settings.AI_MODEL
         and summary_obj.provider == settings.AI_PROVIDER
@@ -444,6 +461,7 @@ def _mark_summary_failed_no_reviews(
     *,
     error_message: str,
     review_count: int = 0,
+    reviews_total_count: int = 0,
     fingerprint: str = "",
 ) -> DealerAiSummary:
     summary_obj.status = DealerAiSummary.STATUS_FAILED
@@ -455,6 +473,7 @@ def _mark_summary_failed_no_reviews(
     summary_obj.export_friendly = None
     summary_obj.confidence = None
     summary_obj.source_review_count = review_count
+    summary_obj.reviews_total_count_at_sync = reviews_total_count
     summary_obj.source_fingerprint = fingerprint
     summary_obj.raw_response = None
     summary_obj.generated_at = None
@@ -473,6 +492,7 @@ def _mark_summary_failed_no_reviews(
             "export_friendly",
             "confidence",
             "source_review_count",
+            "reviews_total_count_at_sync",
             "source_fingerprint",
             "raw_response",
             "generated_at",
