@@ -46,7 +46,7 @@
 - [x] Add `reviews_total_count_at_sync` field  
   → Detect stale summaries
 
-- [ ] Implement “limited sample” warning  
+- [x] Implement “limited sample” warning  
   → Show when data is insufficient
 
 - [ ] Add AI disclaimer in runtime (AGB / UI)  
