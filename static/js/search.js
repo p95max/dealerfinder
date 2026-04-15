@@ -1,25 +1,31 @@
 document.addEventListener("DOMContentLoaded", () => {
-    initLocationButton();
+    initLocationFeatures();
     initCityAutocomplete();
 });
 
 
 /* =========================
-   GEOLOCATION (BUTTON)
+   GEOLOCATION FEATURES
 ========================= */
-function initLocationButton() {
+function initLocationFeatures() {
     const form = document.getElementById("dealerSearchForm");
-    const button = document.getElementById("detectLocationBtn");
-    const latInput = document.getElementById("user_lat");
-    const lngInput = document.getElementById("user_lng");
+    const detectButton = document.getElementById("detectLocationBtn");
     const cityInput = document.getElementById("city");
     const sortInput = document.getElementById("sort");
     const locationHelp = document.getElementById("locationHelp");
 
-    if (!form || !button || !latInput || !lngInput) return;
+    const searchLatInput = document.getElementById("search_lat");
+    const searchLngInput = document.getElementById("search_lng");
 
-    if (button.dataset.geoInitialized === "1") return;
-    button.dataset.geoInitialized = "1";
+    const originLatInput = document.getElementById("origin_lat");
+    const originLngInput = document.getElementById("origin_lng");
+    const showDistanceCheckbox = document.getElementById("show_distance_from_me");
+
+    if (!form) return;
+    if (form.dataset.geoInitialized === "1") return;
+    form.dataset.geoInitialized = "1";
+
+    const GEO_CACHE_KEY = "dealerfinder_user_geolocation";
 
     function setMessage(message, isError = false) {
         if (!locationHelp) return;
@@ -27,63 +33,84 @@ function initLocationButton() {
         locationHelp.classList.toggle("text-danger", isError);
     }
 
-    function setLoading(isLoading, loadingText = "Detecting...") {
-        button.disabled = isLoading;
+    function setButtonLoading(isLoading, loadingText = "Detecting...") {
+        if (!detectButton) return;
+
+        detectButton.disabled = isLoading;
 
         if (isLoading) {
-            if (!button.dataset.originalText) {
-                button.dataset.originalText = button.textContent.trim();
+            if (!detectButton.dataset.originalText) {
+                detectButton.dataset.originalText = detectButton.textContent.trim();
             }
-            button.textContent = loadingText;
-        } else if (button.dataset.originalText) {
-            button.textContent = button.dataset.originalText;
+            detectButton.textContent = loadingText;
+        } else if (detectButton.dataset.originalText) {
+            detectButton.textContent = detectButton.dataset.originalText;
         }
     }
 
-    function submitWithLocation(position) {
-        latInput.value = String(position.coords.latitude);
-        lngInput.value = String(position.coords.longitude);
+    function readCachedPosition() {
+        try {
+            const raw = sessionStorage.getItem(GEO_CACHE_KEY);
+            if (!raw) return null;
 
-        // Important: clear city so backend can resolve it from coordinates
-        if (cityInput) {
-            cityInput.value = "";
+            const data = JSON.parse(raw);
+            if (
+                !data ||
+                !isFiniteCoordinate(data.lat, -90, 90) ||
+                !isFiniteCoordinate(data.lng, -180, 180)
+            ) {
+                return null;
+            }
+
+            return data;
+        } catch {
+            return null;
         }
-
-        // Optional but useful: show nearby results first
-        if (sortInput) {
-            sortInput.value = "distance";
-        }
-
-        setLoading(false);
-        setMessage("Location detected. Searching near you...");
-
-        form.requestSubmit();
     }
 
-    function handleError(error) {
-        console.warn("Geolocation error:", {
-            code: error.code,
-            message: error.message,
-        });
-
-        let msg = "Unable to detect your location.";
-
-        if (error.code === 1) msg = "Permission denied.";
-        if (error.code === 2) msg = "Position unavailable.";
-        if (error.code === 3) msg = "Request timed out. Try again.";
-
-        setLoading(false);
-        setMessage(msg, true);
+    function cachePosition(lat, lng) {
+        try {
+            sessionStorage.setItem(
+                GEO_CACHE_KEY,
+                JSON.stringify({
+                    lat,
+                    lng,
+                    savedAt: Date.now(),
+                })
+            );
+        } catch {
+            // ignore storage failures
+        }
     }
 
-    function requestPosition() {
+    function requestBrowserPosition({ onSuccess, onError }) {
+        if (!navigator.geolocation) {
+            onError({
+                code: -1,
+                message: "Geolocation is not supported by your browser.",
+            });
+            return;
+        }
+
         navigator.geolocation.getCurrentPosition(
-            submitWithLocation,
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                cachePosition(lat, lng);
+                onSuccess({ lat, lng });
+            },
             (error) => {
                 if (error.code === 3) {
                     navigator.geolocation.getCurrentPosition(
-                        submitWithLocation,
-                        handleError,
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+
+                            cachePosition(lat, lng);
+                            onSuccess({ lat, lng });
+                        },
+                        onError,
                         {
                             enableHighAccuracy: false,
                             timeout: 25000,
@@ -93,7 +120,7 @@ function initLocationButton() {
                     return;
                 }
 
-                handleError(error);
+                onError(error);
             },
             {
                 enableHighAccuracy: false,
@@ -103,17 +130,118 @@ function initLocationButton() {
         );
     }
 
-    button.addEventListener("click", () => {
-        if (!navigator.geolocation) {
-            setMessage("Geolocation is not supported by your browser.", true);
+    function fillGeoSearchCoords(lat, lng) {
+        if (searchLatInput) searchLatInput.value = String(lat);
+        if (searchLngInput) searchLngInput.value = String(lng);
+    }
+
+    function clearGeoSearchCoords() {
+        if (searchLatInput) searchLatInput.value = "";
+        if (searchLngInput) searchLngInput.value = "";
+    }
+
+    function fillOriginCoords(lat, lng) {
+        if (originLatInput) originLatInput.value = String(lat);
+        if (originLngInput) originLngInput.value = String(lng);
+    }
+
+    function clearOriginCoords() {
+        if (originLatInput) originLatInput.value = "";
+        if (originLngInput) originLngInput.value = "";
+    }
+
+    function handleGeoError(error) {
+        console.warn("Geolocation error:", {
+            code: error.code,
+            message: error.message,
+        });
+
+        let msg = "Unable to detect your location.";
+        if (error.code === 1) msg = "Permission denied.";
+        if (error.code === 2) msg = "Position unavailable.";
+        if (error.code === 3) msg = "Request timed out. Try again.";
+        if (error.code === -1) msg = error.message;
+
+        setButtonLoading(false);
+        setMessage(msg, true);
+    }
+
+    function handleUseMyLocationClick() {
+        setButtonLoading(true);
+        setMessage("Detecting your location...");
+
+        requestBrowserPosition({
+            onSuccess: ({ lat, lng }) => {
+                fillGeoSearchCoords(lat, lng);
+
+                // For geo search scenario we intentionally clear manual city
+                if (cityInput) {
+                    cityInput.value = "";
+                }
+
+                // Distance sorting makes sense for "near me"
+                if (sortInput) {
+                    sortInput.value = "distance";
+                }
+
+                setButtonLoading(false);
+                setMessage("Location detected. Searching near you...");
+                form.requestSubmit();
+            },
+            onError: handleGeoError,
+        });
+    }
+
+    async function ensureOriginCoordsBeforeSubmit(event) {
+        if (!showDistanceCheckbox || !showDistanceCheckbox.checked) {
+            clearOriginCoords();
             return;
         }
 
-        setLoading(true);
-        setMessage("Detecting your location...");
+        const cached = readCachedPosition();
+        if (cached) {
+            fillOriginCoords(cached.lat, cached.lng);
+            setMessage("Your location will be used to show dealer distance.");
+            return;
+        }
 
-        requestPosition();
-    });
+        event.preventDefault();
+        setMessage("Detecting your location for distance calculation...");
+
+        requestBrowserPosition({
+            onSuccess: ({ lat, lng }) => {
+                fillOriginCoords(lat, lng);
+                setMessage("Location detected. Distance from you is enabled.");
+                form.requestSubmit();
+            },
+            onError: (error) => {
+                clearOriginCoords();
+                handleGeoError(error);
+            },
+        });
+    }
+
+    if (detectButton) {
+        detectButton.addEventListener("click", handleUseMyLocationClick);
+    }
+
+    form.addEventListener("submit", ensureOriginCoordsBeforeSubmit);
+
+    if (showDistanceCheckbox) {
+        showDistanceCheckbox.addEventListener("change", () => {
+            if (!showDistanceCheckbox.checked) {
+                clearOriginCoords();
+                setMessage("");
+                return;
+            }
+
+            const cached = readCachedPosition();
+            if (cached) {
+                fillOriginCoords(cached.lat, cached.lng);
+                setMessage("Distance from you is enabled.");
+            }
+        });
+    }
 }
 
 

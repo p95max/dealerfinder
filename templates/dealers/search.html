@@ -83,11 +83,15 @@
                                                     </span>
                                                 {% endif %}
 
-                                                {% if d.distance_km %}
-                                                    <span class="score-badge">
-                                                        📍 {{ d.distance_km }} km
-                                                    </span>
-                                                {% endif %}
+                                            {% if request.GET.show_distance_from_me and d.distance_km %}
+                                                <span class="score-badge">
+                                                    📍 {{ d.distance_km }} km from you
+                                                </span>
+                                            {% elif d.distance_km and not request.GET.show_distance_from_me and request.GET.search_lat %}
+                                                <span class="score-badge">
+                                                    📍 {{ d.distance_km }} km
+                                                </span>
+                                            {% endif %}
 
                                                 {% if d.website or d.phone %}
                                                     <span class="contact-badge">Contacts</span>

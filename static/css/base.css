@@ -206,3 +206,12 @@ rect {
         width: 100%;
     }
 }
+
+.form-check.form-switch {
+    background: #f8f9fa;
+    transition: background 0.2s ease;
+}
+
+.form-check.form-switch:hover {
+    background: #f1f3f5;
+}

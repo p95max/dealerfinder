@@ -47,8 +47,8 @@ def search_view(request):
     _apply_anon_terms(request)
 
     city = params["city"]
-    if not city and params["user_lat"] is not None and params["user_lng"] is not None:
-        resolved = reverse_geocode_city(params["user_lat"], params["user_lng"])
+    if not city and params["search_lat"] is not None and params["search_lng"] is not None:
+        resolved = reverse_geocode_city(params["search_lat"], params["search_lng"])
         if resolved:
             city = _normalize_city(resolved)
             params["city"] = city
@@ -67,6 +67,11 @@ def search_view(request):
             "open_now": params["open_now"],
             "weekends": params["weekends"],
             "has_contacts": params["has_contacts"],
+            "show_distance_from_me": params["show_distance_from_me"],
+            "search_lat": params["search_lat"],
+            "search_lng": params["search_lng"],
+            "origin_lat": params["origin_lat"],
+            "origin_lng": params["origin_lng"],
             "total": 0,
             **extra,
         }
@@ -118,8 +123,8 @@ def search_view(request):
             open_now=bool(params["open_now"]),
             weekends=bool(params["weekends"]),
             has_contacts=bool(params["has_contacts"]),
-            user_lat=params["user_lat"],
-            user_lng=params["user_lng"],
+            user_lat=params["origin_lat"],
+            user_lng=params["origin_lng"],
             max_distance_km=params["max_distance_km"],
             sort=params["sort"],
         )
@@ -179,6 +184,8 @@ def _restore_last_search_redirect(request):
 
 
 def _extract_search_params(request) -> dict:
+    show_distance_from_me = bool(request.GET.get("show_distance_from_me"))
+
     return {
         "city": _normalize_city(request.GET.get("city") or ""),
         "radius": _parse_radius(request.GET.get("radius")),
@@ -188,8 +195,17 @@ def _extract_search_params(request) -> dict:
         "weekends": request.GET.get("weekends"),
         "has_contacts": request.GET.get("has_contacts"),
         "page_number": request.GET.get("page", 1),
-        "user_lat": _parse_float(request.GET.get("user_lat")),
-        "user_lng": _parse_float(request.GET.get("user_lng")),
+
+        # Feature 1: geo search
+        "search_lat": _parse_float(request.GET.get("search_lat")),
+        "search_lng": _parse_float(request.GET.get("search_lng")),
+
+        # Feature 2: optional distance from user
+        "show_distance_from_me": show_distance_from_me,
+        "origin_lat": _parse_float(request.GET.get("origin_lat")) if show_distance_from_me else None,
+        "origin_lng": _parse_float(request.GET.get("origin_lng")) if show_distance_from_me else None,
+
+        # Existing filter
         "max_distance_km": _parse_float(request.GET.get("max_distance_km")),
     }
 
