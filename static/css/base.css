@@ -208,10 +208,64 @@ rect {
 }
 
 .form-check.form-switch {
-    background: #f8f9fa;
-    transition: background 0.2s ease;
+    background: var(--df-surface);
+    border-color: var(--df-border) !important;
+    color: var(--df-text);
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .form-check.form-switch:hover {
-    background: #f1f3f5;
+    background: var(--df-surface-muted);
+}
+
+.form-check.form-switch .form-check-label {
+    color: var(--df-text);
+}
+
+.form-check.form-switch .form-check-input {
+    cursor: pointer;
+}
+
+.search-panel {
+    margin-top: -16px;
+}
+
+.search-panel-card {
+    background: color-mix(in srgb, var(--df-surface) 92%, transparent);
+    border: 1px solid var(--df-border);
+    border-radius: 28px;
+    box-shadow: var(--df-shadow);
+    padding: 28px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.search-panel-card-wide {
+    max-width: 1280px;
+}
+
+@media (max-width: 991.98px) {
+    .search-panel-card {
+        padding: 24px;
+        border-radius: 24px;
+    }
+
+    .search-panel-card-wide {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .search-panel {
+        margin-top: 0;
+    }
+
+    .search-panel-card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+}
+
+.form-check.form-switch.small {
+    padding: 6px 10px;
 }

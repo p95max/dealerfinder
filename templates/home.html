@@ -22,7 +22,9 @@
 </section>
 
 <section class="container search-panel">
-    {% include "includes/_search_form.html" %}
+    <div class="search-panel-card search-panel-card-wide mx-auto">
+        {% include "includes/_search_form.html" with compact_mode=False hide_discovery=True %}
+    </div>
 </section>
 
 <section class="container mt-5 mb-5">

@@ -12,7 +12,7 @@
                         type="text"
                         id="city"
                         name="city"
-                        class="form-control search-control search-control-lg"
+                        class="form-control search-control {% if not compact_mode %}search-control-lg{% endif %}"
                         placeholder="Enter city in Germany..."
                         value="{{ request.GET.city }}"
                         maxlength="100"
@@ -50,7 +50,6 @@
 
         <input type="hidden" name="search_lat" id="search_lat" value="{{ request.GET.search_lat }}">
         <input type="hidden" name="search_lng" id="search_lng" value="{{ request.GET.search_lng }}">
-
         <input type="hidden" name="origin_lat" id="origin_lat" value="{{ request.GET.origin_lat }}">
         <input type="hidden" name="origin_lng" id="origin_lng" value="{{ request.GET.origin_lng }}">
 
@@ -211,7 +210,8 @@
     </div>
 </form>
 
-{% if history_cities or popular_cities %}
+{% if not hide_discovery %}
+    {% if history_cities or popular_cities %}
     <div class="search-discovery-block mt-4">
         {% if history_cities %}
             <div class="mb-3">
@@ -229,20 +229,21 @@
             </div>
         {% endif %}
 
-    {% if popular_cities %}
-        <div>
-            <div class="small text-secondary mb-2 fw-semibold">🔥 Top 10 searched cities</div>
-            <div class="quick-chip-list">
-                {% for popular_city in popular_cities %}
-                    <a
-                        href="{% url 'dealers:search' %}?city={{ popular_city|urlencode }}&radius=20"
-                        class="quick-chip quick-chip-hot"
-                    >
-                        <span>{{ popular_city }}</span>
-                    </a>
-                {% endfor %}
+        {% if popular_cities %}
+            <div>
+                <div class="small text-secondary mb-2 fw-semibold">🔥 Top 10 searched cities</div>
+                <div class="quick-chip-list">
+                    {% for popular_city in popular_cities %}
+                        <a
+                            href="{% url 'dealers:search' %}?city={{ popular_city|urlencode }}&radius=20"
+                            class="quick-chip quick-chip-hot"
+                        >
+                            <span>{{ popular_city }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
     </div>
+{% endif %}
 {% endif %}
