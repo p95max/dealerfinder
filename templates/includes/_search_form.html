@@ -54,54 +54,103 @@
         <input type="hidden" name="origin_lng" id="origin_lng" value="{{ request.GET.origin_lng }}">
 
         <div class="row g-3">
-            <div class="col-6">
-                <label class="form-label search-label" for="radius">Radius</label>
-                <div class="search-input-wrap">
-                    <input
-                        type="number"
-                        id="radius"
-                        name="radius"
-                        class="form-control search-control"
-                        value="{{ request.GET.radius|default:20 }}"
-                        min="1"
-                        max="300"
-                        step="1"
-                    >
-                    <span class="search-input-suffix">km</span>
-                </div>
-            </div>
-
-            <div class="col-6">
-                <label class="form-label search-label" for="sort">Sort by</label>
-                <select name="sort" id="sort" class="form-select search-control">
-                    <option value="score" {% if request.GET.sort == "score" or not request.GET.sort %}selected{% endif %}>Best match</option>
-                    <option value="rating" {% if request.GET.sort == "rating" %}selected{% endif %}>Rating</option>
-                    <option value="reviews" {% if request.GET.sort == "reviews" %}selected{% endif %}>Reviews</option>
-                    <option value="distance" {% if request.GET.sort == "distance" %}selected{% endif %}>Distance</option>
-                </select>
-            </div>
-
-            <div class="col-12">
-                <label class="form-label search-label d-block mb-2" for="show_distance_from_me">
-                    Distance from me
-                </label>
-
-                <div class="form-check form-switch d-flex align-items-center justify-content-between px-3 py-2 border rounded search-control">
-                    <label class="form-check-label mb-0" for="show_distance_from_me">
-                        Use my location
-                    </label>
-                    <input
-                        class="form-check-input ms-3"
-                        type="checkbox"
-                        role="switch"
-                        name="show_distance_from_me"
-                        id="show_distance_from_me"
-                        value="1"
-                        {% if request.GET.show_distance_from_me %}checked{% endif %}
-                    >
-                </div>
+    {% if hide_discovery %}
+        <div class="col-md-4 col-12">
+            <label class="form-label search-label" for="radius">Radius</label>
+            <div class="search-input-wrap">
+                <input
+                    type="number"
+                    id="radius"
+                    name="radius"
+                    class="form-control search-control"
+                    value="{{ request.GET.radius|default:20 }}"
+                    min="1"
+                    max="300"
+                    step="1"
+                >
+                <span class="search-input-suffix">km</span>
             </div>
         </div>
+
+        <div class="col-md-4 col-12">
+            <label class="form-label search-label" for="sort">Sort by</label>
+            <select name="sort" id="sort" class="form-select search-control">
+                <option value="score" {% if request.GET.sort == "score" or not request.GET.sort %}selected{% endif %}>Best match</option>
+                <option value="rating" {% if request.GET.sort == "rating" %}selected{% endif %}>Rating</option>
+                <option value="reviews" {% if request.GET.sort == "reviews" %}selected{% endif %}>Reviews</option>
+                <option value="distance" {% if request.GET.sort == "distance" %}selected{% endif %}>Distance</option>
+            </select>
+        </div>
+
+        <div class="col-md-4 col-12">
+            <label class="form-label search-label d-block mb-2" for="show_distance_from_me">
+                Distance from me
+            </label>
+            <div class="form-check form-switch d-flex align-items-center justify-content-between px-2 py-2 border rounded">
+                <label class="form-check-label mb-0 small" for="show_distance_from_me">
+                    Use my location
+                </label>
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    name="show_distance_from_me"
+                    id="show_distance_from_me"
+                    value="1"
+                    {% if request.GET.show_distance_from_me %}checked{% endif %}
+                >
+            </div>
+        </div>
+    {% else %}
+        <div class="col-6">
+            <label class="form-label search-label" for="radius">Radius</label>
+            <div class="search-input-wrap">
+                <input
+                    type="number"
+                    id="radius"
+                    name="radius"
+                    class="form-control search-control"
+                    value="{{ request.GET.radius|default:20 }}"
+                    min="1"
+                    max="300"
+                    step="1"
+                >
+                <span class="search-input-suffix">km</span>
+            </div>
+        </div>
+
+        <div class="col-6">
+            <label class="form-label search-label" for="sort">Sort by</label>
+            <select name="sort" id="sort" class="form-select search-control">
+                <option value="score" {% if request.GET.sort == "score" or not request.GET.sort %}selected{% endif %}>Best match</option>
+                <option value="rating" {% if request.GET.sort == "rating" %}selected{% endif %}>Rating</option>
+                <option value="reviews" {% if request.GET.sort == "reviews" %}selected{% endif %}>Reviews</option>
+                <option value="distance" {% if request.GET.sort == "distance" %}selected{% endif %}>Distance</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label search-label d-block mb-2" for="show_distance_from_me">
+                Distance from me
+            </label>
+
+            <div class="form-check form-switch d-flex align-items-center justify-content-between px-3 py-2 border rounded search-control">
+                <label class="form-check-label mb-0" for="show_distance_from_me">
+                    Use my location
+                </label>
+                <input
+                    class="form-check-input ms-3"
+                    type="checkbox"
+                    role="switch"
+                    name="show_distance_from_me"
+                    id="show_distance_from_me"
+                    value="1"
+                    {% if request.GET.show_distance_from_me %}checked{% endif %}
+                >
+            </div>
+        </div>
+    {% endif %}
+</div>
 
         <div class="search-advanced-wrap">
             <button
@@ -212,38 +261,38 @@
 
 {% if not hide_discovery %}
     {% if history_cities or popular_cities %}
-    <div class="search-discovery-block mt-4">
-        {% if history_cities %}
-            <div class="mb-3">
-                <div class="small text-secondary mb-2 fw-semibold">🕘 Recent searches</div>
-                <div class="quick-chip-list">
-                    {% for history_city in history_cities %}
-                        <a
-                            href="{% url 'dealers:search' %}?city={{ history_city|urlencode }}&radius=20"
-                            class="quick-chip quick-chip-muted"
-                        >
-                            <span>{{ history_city }}</span>
-                        </a>
-                    {% endfor %}
+        <div class="search-discovery-block mt-4">
+            {% if history_cities %}
+                <div class="mb-3">
+                    <div class="small text-secondary mb-2 fw-semibold">🕘 Recent searches</div>
+                    <div class="quick-chip-list">
+                        {% for history_city in history_cities %}
+                            <a
+                                href="{% url 'dealers:search' %}?city={{ history_city|urlencode }}&radius=20"
+                                class="quick-chip quick-chip-muted"
+                            >
+                                <span>{{ history_city }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
                 </div>
-            </div>
-        {% endif %}
+            {% endif %}
 
-        {% if popular_cities %}
-            <div>
-                <div class="small text-secondary mb-2 fw-semibold">🔥 Top 10 searched cities</div>
-                <div class="quick-chip-list">
-                    {% for popular_city in popular_cities %}
-                        <a
-                            href="{% url 'dealers:search' %}?city={{ popular_city|urlencode }}&radius=20"
-                            class="quick-chip quick-chip-hot"
-                        >
-                            <span>{{ popular_city }}</span>
-                        </a>
-                    {% endfor %}
+            {% if popular_cities %}
+                <div>
+                    <div class="small text-secondary mb-2 fw-semibold">🔥 Top 10 searched cities</div>
+                    <div class="quick-chip-list">
+                        {% for popular_city in popular_cities %}
+                            <a
+                                href="{% url 'dealers:search' %}?city={{ popular_city|urlencode }}&radius=20"
+                                class="quick-chip quick-chip-hot"
+                            >
+                                <span>{{ popular_city }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
                 </div>
-            </div>
-        {% endif %}
-    </div>
-{% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
 {% endif %}
