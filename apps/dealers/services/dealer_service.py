@@ -1,7 +1,8 @@
 import math
 
 from .search_cache import get_cache, set_cache
-from .distance_service import attach_distance_to_dealers
+from .distance_service import attach_distance_to_dealers, haversine_km
+from .geocoding_service import geocode_city
 from .google_places import search_all_places, is_google_cap_reached
 from apps.dealers.models import Dealer, DealerAiSummary
 
@@ -39,7 +40,6 @@ def normalize(data):
         })
     return results
 
-
 def search_dealers(city, radius) -> tuple[list, bool]:
     key = build_query_key(city, radius)
 
@@ -51,11 +51,34 @@ def search_dealers(city, radius) -> tuple[list, bool]:
     if is_google_cap_reached():
         return [], True
 
-    raw = search_all_places(city=city, radius=radius)
+    geo = geocode_city(city)
+
+    raw = search_all_places(city=city, radius=radius, geo=geo)
     if not raw:
         return [], True
 
     normalized = normalize(raw)
+
+    if geo:
+        try:
+            radius_km = float(radius)
+            if radius_km <= 0:
+                radius_km = 20.0
+        except (TypeError, ValueError):
+            radius_km = 20.0
+
+        normalized = [
+            item for item in normalized
+            if item.get("lat") is not None
+            and item.get("lng") is not None
+            and haversine_km(
+                geo["lat"],
+                geo["lng"],
+                item["lat"],
+                item["lng"],
+            ) <= radius_km
+        ]
+
     normalized = sorted(
         normalized,
         key=lambda x: (x["rating"] or 0) * math.log1p(x["reviews"] or 0),

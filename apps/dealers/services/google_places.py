@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from .geocoding_service import geocode_city
 from .google_places_cache_service import (
     get_cached_place_details,
     set_cached_place_details,
@@ -90,7 +89,13 @@ def _request_with_retry(
     raise last_exc
 
 
-def search_places(city: str, radius: int | str, page_token: str | None = None) -> dict | None:
+def search_places(
+    city: str,
+    radius: int | str,
+    page_token: str | None = None,
+    *,
+    geo: dict | None = None,
+) -> dict | None:
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": settings.GOOGLE_API_KEY,
@@ -115,8 +120,6 @@ def search_places(city: str, radius: int | str, page_token: str | None = None) -
         radius_m = int(float(radius or 20)) * 1000
     except (TypeError, ValueError):
         radius_m = 20_000
-
-    geo = geocode_city(city)
 
     payload = {
         "textQuery": f"car dealer in {city}, Germany",
@@ -160,18 +163,28 @@ def search_places(city: str, radius: int | str, page_token: str | None = None) -
             extra={
                 "event": "google_places_search_failed",
                 "city": city,
-                "radius": radius,
+                "radius": radius_m,
             },
         )
         return None
 
 
-def search_all_places(city: str, radius: int | str) -> dict | None:
+def search_all_places(
+    city: str,
+    radius: int | str,
+    *,
+    geo: dict | None = None,
+) -> dict | None:
     all_places = []
     page_token = None
 
     for _ in range(MAX_PAGES):
-        data = search_places(city=city, radius=radius, page_token=page_token)
+        data = search_places(
+            city=city,
+            radius=radius,
+            page_token=page_token,
+            geo=geo,
+        )
         if not data:
             return None
 
