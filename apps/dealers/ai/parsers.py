@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+import logging
+
 from typing import Any
 
 from common.exceptions import AiClientError
+
+logger = logging.getLogger(__name__)
 
 
 def safe_parse_json(text: str) -> dict[str, Any]:
@@ -59,8 +63,18 @@ def validate_dealer_summary_result(data: dict[str, Any]) -> dict[str, Any]:
         except (TypeError, ValueError) as exc:
             raise AiClientError("AI result has invalid confidence") from exc
 
-        if confidence < 0 or confidence > 1:
-            raise AiClientError("AI result confidence must be between 0 and 1")
+        original_confidence = confidence
+        confidence = max(0.0, min(1.0, confidence))
+
+        if confidence != original_confidence:
+            logger.warning(
+                "AI confidence was clamped",
+                extra={
+                    "event": "ai_confidence_clamped",
+                    "original_confidence": original_confidence,
+                    "clamped_confidence": confidence,
+                },
+            )
 
     return {
         "summary": summary[:500],
@@ -75,3 +89,18 @@ def validate_dealer_summary_result(data: dict[str, Any]) -> dict[str, Any]:
         ),
         "confidence": confidence,
     }
+
+
+def safe_validate_or_fallback(data: dict) -> dict:
+    try:
+        return validate_dealer_summary_result(data)
+    except Exception:
+        return {
+            "summary": None,
+            "pros": [],
+            "cons": [],
+            "sentiment": None,
+            "languages": [],
+            "export_friendly": None,
+            "confidence": None,
+        }
