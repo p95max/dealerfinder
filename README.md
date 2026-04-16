@@ -32,6 +32,13 @@ The project is started via Docker Compose from the `docker/` directory.
 ```bash
 cp .env.example .env
 ```
+⚠️ Required: before running the project, you must provide valid API keys in .env:
+* Google APIs (Places API, Maps JS, OAuth)
+* AI provider API key (for summaries)
+* Cloudflare Turnstile
+
+> During development, OpenAI `gpt-4o-mini` was used as the AI provider for generating summaries. The system is provider-agnostic and can be switched to any compatible AI API.
+> Without these keys, core functionality (search, AI summaries, anti-bot protection) will not work.
 
 ### 2. Run project
 
