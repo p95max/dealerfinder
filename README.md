@@ -467,5 +467,7 @@ See [legal_pages.md](legal_pages.md)
 ## Contacts
 
 Author: Maksym Petrykin
+
 Email: [m.petrykin@gmx.de](mailto:m.petrykin@gmx.de)
+
 Telegram: [@max_p95](https://t.me/max_p95)
