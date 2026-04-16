@@ -38,7 +38,8 @@ cp .env.example .env
 * Cloudflare Turnstile
 
 > During development, OpenAI `gpt-4o-mini` was used as the AI provider for generating summaries. The system is provider-agnostic and can be switched to any compatible AI API.
-> Without these keys, core functionality (search, AI summaries, anti-bot protection) will not work.
+
+> ⚠️ Without these keys, core functionality (search, AI summaries, anti-bot protection) will not work.
 
 ### 2. Run project
 
