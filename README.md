@@ -458,7 +458,7 @@ services:
 
 ## Testing
 
-See [testing.md](testing.md)
+See [testing.md](docs/testing.md)
 
 - `pytest-django` + `pytest-mock`
 - Test settings: SQLite in-memory, `locmem.LocMemCache`
@@ -468,7 +468,14 @@ See [testing.md](testing.md)
 
 ## Datenschutz / GDPR
 
-See [legal_pages.md](legal_pages.md)
+See [legal_pages.md](docs/legal_pages.md)
+
+---
+
+## 📄 License
+
+
+This project is licensed under the MIT License — see the [LICENSE](docs/LICENSE) file for details.
 
 ---
 
