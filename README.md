@@ -143,6 +143,8 @@ dealerfinder/
 │   │   ├── urls.py
 │   │   ├── views.py
 │   │   ├── ai/
+│   │   │   ├── prompts.py   # prompt builders
+│   │   │   ├── parsers.py   # JSON parsing + schema validation
 │   │   │   ├── cache.py     # Redis cache for AI summary payloads
 │   │   │   ├── enqueue.py   # enqueue_ai_summaries_for_dealers()
 │   │   │   ├── locks.py     # Redis dedup lock for AI generation
@@ -187,6 +189,7 @@ dealerfinder/
 │   ├── google_oauth.py
 │   ├── telegram.py
 │   ├── email_notifications.py
+│   ├── ai_client.py              # is transport-only and does not contain dealer-specific business rules.
 │   └── turnstile.py
 │
 ├── utils/

@@ -1,103 +1,67 @@
-import json
-import logging
-import re
+from __future__ import annotations
 
+import logging
 from typing import Any
+
 from django.conf import settings
 from openai import OpenAI
 
 from common.exceptions import AiClientError
+from apps.dealers.ai.prompts import build_dealer_summary_prompt
+from apps.dealers.ai.parsers import safe_parse_json
 
 logger = logging.getLogger(__name__)
 
 client = OpenAI(api_key=settings.AI_API_KEY)
 
 
-
-
-def _safe_parse_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```[a-z]*\n?", "", text)
-        text = text.rstrip("` \n")
-    return json.loads(text)
-
-
-def _generate_with_openai(dealer_context: dict[str, Any]) -> dict[str, Any]:
-    reviews = dealer_context.get("reviews", [])
-
-    if not reviews:
-        raise AiClientError("No reviews provided for AI analysis")
-
-    prompt = f"""
-You are analyzing customer reviews of a car dealer.
-
-Based ONLY on the reviews below, generate JSON.
-
-Rules:
-- Do NOT invent facts
-- If insufficient data → return null fields
-- Max 300 chars summary
-- Max 3 pros / cons
-- Be conservative in conclusions
-
-Return ONLY JSON:
-
-{{
-  "summary": "...",
-  "pros": [...],
-  "cons": [...],
-  "sentiment": "positive | mixed | negative",
-  "languages": [...],
-  "export_friendly": true | false | null,
-  "confidence": 0.0-1.0
-}}
-
-Reviews:
-{json.dumps(reviews, ensure_ascii=False)}
-"""
-
+def _generate_with_openai(prompt: str) -> dict[str, Any]:
+    """
+    Send a prompt to OpenAI and parse raw JSON response.
+    This layer is transport-only and contains no dealer business logic.
+    """
     try:
         response = client.chat.completions.create(
             model=settings.AI_MODEL,
             temperature=0.2,
             messages=[
-                {"role": "system", "content": "You output strict JSON only."},
-                {"role": "user", "content": prompt},
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a structured data extraction assistant. "
+                        "Return JSON only."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
             ],
             timeout=settings.AI_REQUEST_TIMEOUT,
         )
-
-        content = response.choices[0].message.content
-        if not content:
-            raise AiClientError("Empty response from AI provider")
-
-        data = _safe_parse_json(content)
-
-        logger.info(
-            "AI response received",
-            extra={
-                "event": "ai_response_received",
-                "review_count": len(reviews),
-            },
-        )
-
-        return data
-
     except Exception as exc:
         logger.exception(
             "OpenAI request failed",
-            extra={
-                "event": "ai_request_failed",
-            },
+            extra={"event": "openai_request_failed"},
         )
-        raise AiClientError(str(exc))
+        raise AiClientError(f"OpenAI request failed: {exc}") from exc
+
+    try:
+        content = response.choices[0].message.content or ""
+    except (AttributeError, IndexError, TypeError) as exc:
+        raise AiClientError("OpenAI response has unexpected format") from exc
+
+    return safe_parse_json(content)
 
 
 def generate_dealer_summary(dealer_context: dict[str, Any]) -> dict[str, Any]:
-    if settings.AI_PROVIDER != "openai":
-        raise AiClientError(f"Unsupported AI provider: {settings.AI_PROVIDER}")
+    """
+    Build prompt for dealer summary generation and return parsed raw JSON.
+    Validation of domain schema stays outside this integration layer.
+    """
+    reviews = dealer_context.get("reviews", [])
+    if not reviews:
+        raise AiClientError("No reviews provided for AI analysis")
 
-    return _generate_with_openai(dealer_context)
-
-
+    prompt = build_dealer_summary_prompt(dealer_context)
+    return _generate_with_openai(prompt)

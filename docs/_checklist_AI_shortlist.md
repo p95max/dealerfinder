@@ -19,9 +19,9 @@ Quick picks based on real customer reviews
 ## План по спринтам
 
 ### [ ] Sprint 0 — move LLM-related logic into `apps/dealers/ai/`
-- [ ] вынести low-level LLM logic в `apps/dealers/ai/`
-- [ ] prompts / parsers / client держать отдельно от business logic
-- [ ] orchestration оставить в `services/`
+- [x] вынести low-level LLM logic в `apps/dealers/ai/`
+- [x] prompts / parsers / client держать отдельно от business logic
+- [x] orchestration оставить в `services/`
 
 ### [ ] Sprint 1 — UI + baseline scoring
 - [ ] добавить `smart_pick` в search view

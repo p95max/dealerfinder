@@ -30,6 +30,7 @@ from apps.users.services.ai_quota_service import (
 )
 from common.services.feature_flags import is_feature_enabled
 from integrations.ai_client import AiClientError, generate_dealer_summary
+from apps.dealers.ai.parsers import validate_dealer_summary_result
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +166,7 @@ def generate_ai_summary_for_dealer(
                 },
             )
             raw_result = generate_dealer_summary(data["context"])
-            validated = validate_ai_result(raw_result)
+            validated = validate_dealer_summary_result(raw_result)
         except (AiClientError, ValueError, TypeError) as exc:
             delete_cached_ai_summary_payload(dealer.google_place_id)
             logger.exception(
@@ -466,44 +467,6 @@ def build_source_fingerprint(context: dict) -> str:
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
-
-def validate_ai_result(data: dict) -> dict:
-    summary = str(data.get("summary") or "").strip()
-    pros = [str(x).strip() for x in (data.get("pros") or []) if str(x).strip()]
-    cons = [str(x).strip() for x in (data.get("cons") or []) if str(x).strip()]
-    sentiment = str(data.get("sentiment") or "").strip()
-    languages = [
-        str(x).strip().lower()
-        for x in (data.get("languages") or [])
-        if str(x).strip()
-    ]
-    export_friendly = data.get("export_friendly")
-    confidence = data.get("confidence")
-
-    if not summary:
-        raise ValueError("AI result missing summary")
-
-    if sentiment not in {"positive", "mixed", "negative"}:
-        raise ValueError("Invalid sentiment")
-
-    if confidence is not None:
-        confidence = float(confidence)
-        if confidence < 0 or confidence > 1:
-            raise ValueError("Confidence must be between 0 and 1")
-
-    return {
-        "summary": summary[:500],
-        "pros": pros[:3],
-        "cons": cons[:3],
-        "sentiment": sentiment,
-        "languages": languages[:5],
-        "export_friendly": (
-            export_friendly
-            if isinstance(export_friendly, bool) or export_friendly is None
-            else None
-        ),
-        "confidence": confidence,
-    }
 
 
 def _get_authenticated_quota_error_code(user) -> str:
