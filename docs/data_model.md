@@ -2,8 +2,8 @@
 
 ### `Dealer`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `google_place_id` | str (unique) |
 | `name`, `address`, `city` | str |
 | `lat`, `lng` | float |
@@ -14,16 +14,16 @@
 
 ### `SearchCache`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `query_key` | str (unique) |
 | `results_json` | json |
 | `created_at` | datetime |
 
 ### `User`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `email` | str (unique, USERNAME_FIELD) |
 | `google_sub` | str \| null (unique) |
 | `plan` | str (`free` / `premium`) |
@@ -31,12 +31,12 @@
 | `ai_daily_quota` | int (default 15) |
 | `terms_accepted` | bool |
 
-> ℹ️ Счётчики использования (`used_today`) вынесены в Redis: `quota:user:{pk}:{date}` и `quota:anon:{ip}:{date}`, TTL до следующей полуночи.
+> ℹ️ Usage counters (`used_today`) are stored in Redis: `quota:user:{pk}:{date}` and `quota:anon:{ip}:{date}`, TTL until next midnight.
 
 ### `Favorite`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `user` | FK→User |
 | `place_id` | str |
 | `name`, `address`, `city` | str |
@@ -49,16 +49,16 @@ unique_together: `(user, place_id)`
 
 ### `PopularSearch`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `city` | str (unique) |
 | `count` | int |
 | `updated_at` | datetime (auto_now) |
 
 ### `UserSearchHistory`
 
-| Поле | Тип |
-|------|-----|
+| Field | Type |
+|-------|------|
 | `user` | FK→User |
 | `city` | str |
 | `searched_at` | datetime |

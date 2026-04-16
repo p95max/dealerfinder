@@ -2,15 +2,15 @@
 
 ## 🧱 System Overview
 
-`DealerFinder` — server-rendered Django-приложение для поиска автодилеров в Германии.  
-Система ориентирована на быстрый и предсказуемый поиск с минимальной зависимостью от внешних API за счёт cache-first подхода.
+`DealerFinder` is a server-rendered Django application for searching car dealers in Germany.
+The system is optimized for fast and predictable search with minimal external API dependency via a cache-first approach.
 
-Основная внешняя зависимость — Google Places API, при этом большинство запросов обслуживаются из кэша.
-Данные в кэше имеют TTL и автоматически обновляются при cache miss или по истечении срока актуальности.
+The primary external dependency is the Google Places API; the majority of requests are served from cache.
+Cached data has a TTL and is automatically refreshed on cache miss or expiry.
 
-- Поиск только по городам Германии (валидация через Geocoding API)
-- Авторизация только через Google OAuth
-- Anti-abuse: Cloudflare Turnstile + квоты (Redis) + троттлинг
+- Search is restricted to German cities (validated via Geocoding API)
+- Authentication via Google OAuth only
+- Anti-abuse: Cloudflare Turnstile + quotas (Redis) + throttling
 
 ---
 
@@ -23,16 +23,44 @@
 
 ---
 
+## 🚀 Local Development (Docker)
+
+The project is started via Docker Compose from the `docker/` directory.
+
+### 1. Prepare environment
+
+```bash
+cp .env.example .env
+```
+
+### 2. Run project
+
+```bash
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up --build
+```
+
+### 3. Open in browser
+
+`http://localhost:8000`
+
+### Notes
+
+- Uses development overrides (`docker-compose.dev.yml`)
+- Includes: Django + PostgreSQL + Redis + Celery + Nginx
+- Hot reload enabled for development
+
+---
+
 ## 🤖 AI
 
-AI summary — это необязательный слой обогащения данных.
-Он не влияет на поиск, фильтрацию и ранжирование результатов.
+AI summary is an optional data enrichment layer.
+It has no effect on search, filtering, or result ranking.
 
-- async generation via Celery + OpenAI
-- optional, can be disabled via feature flag
-- used only for UX enrichment
+- Async generation via Celery + OpenAI
+- Optional, can be disabled via feature flag
+- Used only for UX enrichment
 
-Подробнее: [docs/ai_architecture.md](docs/ai_architecture.md)
+Details: [docs/ai_architecture.md](docs/ai_architecture.md)
 
 ---
 
@@ -62,7 +90,7 @@ Service Layer
 
 ---
 
-## 📁 Структура проекта
+## 📁 Project Structure
 
 ```
 dealerfinder/
@@ -121,14 +149,14 @@ dealerfinder/
 │   │   │       ├── process_pending_ai_summaries.py
 │   │   │       └── purge_expired_search_cache.py
 │   │   └── services/
-│   │       ├── dealer_service.py           # оркестрация: cache → Google → normalize → store
-│   │       ├── search_cache.py             # read/write SearchCache (TTL из CACHE_TTL_HOURS)
+│   │       ├── dealer_service.py           # orchestration: cache → Google → normalize → store
+│   │       ├── search_cache.py             # read/write SearchCache (TTL from CACHE_TTL_HOURS)
 │   │       ├── distance_service.py         # haversine
-│   │       ├── geocoding_service.py        # валидация города DE, кэш 30 дней
+│   │       ├── geocoding_service.py        # German city validation, 30-day cache
 │   │       ├── google_places.py            # Text Search + Place Details API
-│   │       ├── google_places_cache_service.py  # Redis кэш для Place Details
-│   │       ├── google_places_lock_service.py   # Redis lock для дедупликации Place Details
-│   │       └── search_tracking_service.py  # PopularSearch, UserSearchHistory, анон-история
+│   │       ├── google_places_cache_service.py  # Redis cache for Place Details
+│   │       ├── google_places_lock_service.py   # Redis lock for Place Details deduplication
+│   │       └── search_tracking_service.py  # PopularSearch, UserSearchHistory, anon history
 │   │
 │   └── users/
 │       ├── admin.py
@@ -154,7 +182,7 @@ dealerfinder/
 │   └── turnstile.py
 │
 ├── utils/
-│   ├── build_cities.py      # one-time: генерирует static/data/cities_de.json
+│   ├── build_cities.py      # one-time: generates static/data/cities_de.json
 │   ├── logging.py           # JsonFormatter
 │   └── http.py              # _get_client_ip()
 │
@@ -163,7 +191,7 @@ dealerfinder/
 │   ├── css/
 │   ├── js/
 │   └── data/
-│       └── cities_de.json   # ~3500 немецких городов для autocomplete
+│       └── cities_de.json   # ~3500 German cities for autocomplete
 └── tests/
 ```
 
@@ -173,7 +201,7 @@ dealerfinder/
 
 Search flow: cache-first → Google Places (on miss) → filtering → optional AI enrichment.
 
-Подробнее: [docs/request_flow.md](docs/request_flow.md)
+Details: [docs/request_flow.md](docs/request_flow.md)
 
 ---
 
@@ -181,43 +209,43 @@ Search flow: cache-first → Google Places (on miss) → filtering → optional 
 
 ### Service Layer (`apps/dealers/services/`)
 
-| Модуль | Ответственность |
+| Module | Responsibility |
 |--------|----------------|
-| `dealer_service.py` | оркестрация: cache → Google → normalize → `sync_dealers_to_db` |
-| `search_cache.py` | read/write `SearchCache` (TTL = `CACHE_TTL_HOURS`) |
+| `dealer_service.py` | Orchestration: cache → Google → normalize → `sync_dealers_to_db` |
+| `search_cache.py` | Read/write `SearchCache` (TTL = `CACHE_TTL_HOURS`) |
 | `google_places.py` | Text Search + Place Details API, global daily cap |
-| `google_places_cache_service.py` | Redis кэш для Place Details (`PLACE_DETAILS_CACHE_TTL_SECONDS`) |
-| `google_places_lock_service.py` | Redis lock для дедупликации параллельных Place Details запросов |
-| `geocoding_service.py` | валидация города DE, reverse geocode, кэш 30 дней |
-| `distance_service.py` | haversine расстояние до пользователя |
-| `search_tracking_service.py` | `PopularSearch`, `UserSearchHistory`, анон-история |
+| `google_places_cache_service.py` | Redis cache for Place Details (`PLACE_DETAILS_CACHE_TTL_SECONDS`) |
+| `google_places_lock_service.py` | Redis lock for deduplicating concurrent Place Details requests |
+| `geocoding_service.py` | German city validation, reverse geocode, 30-day cache |
+| `distance_service.py` | Haversine distance to user |
+| `search_tracking_service.py` | `PopularSearch`, `UserSearchHistory`, anon history |
 
 ### AI Layer (`apps/dealers/ai/`)
 
-| Модуль | Ответственность |
+| Module | Responsibility |
 |--------|----------------|
-| `enqueue.py` | `enqueue_ai_summaries_for_dealers()` — создаёт/обновляет `DealerAiSummary`, диспатчит Celery-задачи |
-| `service.py` | `generate_ai_summary_for_dealer()` — OpenAI вызов, запись результата; freshness/retry helpers |
+| `enqueue.py` | `enqueue_ai_summaries_for_dealers()` — creates/updates `DealerAiSummary`, dispatches Celery tasks |
+| `service.py` | `generate_ai_summary_for_dealer()` — OpenAI call, result persistence; freshness/retry helpers |
 | `queries.py` | `attach_ai_summaries_to_dealers()`, `get_dealer_ai_summary_payload()`, `generate_dealer_ai_summary_payload()` |
-| `cache.py` | Redis кэш payload (`ai_summary:{place_id}`, TTL `AI_SUMMARY_CACHE_TTL_SECONDS`) |
-| `locks.py` | Redis NX lock для дедупликации генерации (`lock:ai_summary:{place_id}`) |
-| `rate_limits.py` | AI rate limits (per-minute через `RedisRateLimiter`) |
+| `cache.py` | Redis payload cache (`ai_summary:{place_id}`, TTL `AI_SUMMARY_CACHE_TTL_SECONDS`) |
+| `locks.py` | Redis NX lock for generation deduplication (`lock:ai_summary:{place_id}`) |
+| `rate_limits.py` | AI rate limits (per-minute via `RedisRateLimiter`) |
 
 ### Cache Strategy
 
-| Параметр | Значение |
-|----------|----------|
-| Тип | read-through |
+| Parameter | Value |
+|-----------|-------|
+| Type | read-through |
 | Cache key | `dealers:{city}:{radius_int}` |
-| TTL | `CACHE_TTL_HOURS` (default 72ч) |
+| TTL | `CACHE_TTL_HOURS` (default 72h) |
 | Storage | `SearchCache` (PostgreSQL) |
-| Фильтры | применяются in-memory после cache hit/miss |
-| HIT | возврат без Google API |
+| Filters | applied in-memory after cache hit/miss |
+| HIT | return without Google API call |
 | MISS | Google API → normalize → `SearchCache.update_or_create` |
 
 ### Data Normalization
 
-`normalize()` в `dealer_service.py` → внутренний формат:
+`normalize()` in `dealer_service.py` → internal format:
 
 ```json
 {
@@ -239,70 +267,70 @@ Search flow: cache-first → Google Places (on miss) → filtering → optional 
 
 ## 🗄️ Data Model
 
-Основные сущности:
+Core entities:
 - Dealer
 - SearchCache
 - User
 - Favorite
 
-Подробнее: [docs/data_model.md](docs/data_model.md)
+Details: [docs/data_model.md](docs/data_model.md)
 
 ---
 
-## Фильтрация
+## Filtering
 
-> Поиск ограничен городами Германии. Запросы для других стран отклоняются.
+> Search is restricted to German cities. Requests for other countries are rejected.
 
-1. **radius** — радиус в км (allowed: 1, 5, 10, 20, 30, 50, 100, 200, 300; default: 20)
+1. **radius** — radius in km (allowed: 1, 5, 10, 20, 30, 50, 100, 200, 300; default: 20)
 2. **rating + reviews** — weighted score: `rating * log1p(reviews)` (confidence-adjusted)
-3. **open_now** — открыто сейчас
-4. **weekends** — работает в выходные
-5. **types** — только Händler/Autohaus (через `types`, не по названию)
-6. **contacts** — есть телефон или сайт
+3. **open_now** — currently open
+4. **weekends** — open on weekends
+5. **types** — dealer/car showroom only (via `types` field, not by name)
+6. **contacts** — has phone or website
 
-Фильтры и сортировка применяются **in-memory** (`filter_and_sort_dealers()`) после получения из кэша.
+Filters and sorting are applied **in-memory** (`filter_and_sort_dealers()`) after retrieval from cache.
 
-### Ранжирование
+### Ranking
 
-Sort modes: `score` (weighted rating × log1p reviews), `rating`, `reviews`, `distance` (если переданы координаты пользователя). Permissive filtering: если часы/выходные не заполнены — не исключается.
+Sort modes: `score` (weighted rating × log1p reviews), `rating`, `reviews`, `distance` (if user coordinates provided). Permissive filtering: if hours/weekend data is missing — the dealer is not excluded.
 
 ---
 
 ## ⚡ Performance
 
-- Cache-first, TTL настраивается через `CACHE_TTL_HOURS` (default 72ч)
-- FieldMask — только нужные поля от Google
-- Place Details — Redis кэш `PLACE_DETAILS_CACHE_TTL_SECONDS` (default 24ч) + Redis lock (дедупликация)
-- AI summary payload — Redis кэш `AI_SUMMARY_CACHE_TTL_SECONDS` (default 6ч), кэшируются только `done`/`failed`
-- Геокодирование кэшируется 30 дней
-- Пагинация: 20 результатов на страницу
-- DB индексы: `city`, `lat`, `lng`, `last_synced_at`
+- Cache-first, TTL configurable via `CACHE_TTL_HOURS` (default 72h)
+- FieldMask — only required fields from Google
+- Place Details — Redis cache `PLACE_DETAILS_CACHE_TTL_SECONDS` (default 24h) + Redis lock (deduplication)
+- AI summary payload — Redis cache `AI_SUMMARY_CACHE_TTL_SECONDS` (default 6h), only `done`/`failed` cached
+- Geocoding cached for 30 days
+- Pagination: 20 results per page
+- DB indexes: `city`, `lat`, `lng`, `last_synced_at`
 
 ---
 
 ## Auth
 
-- Единственный способ — **Google OAuth** (`django-allauth`)
-- `LoginGateMiddleware` — блокирует прямой переход на `/accounts/google/login/` без прохождения Turnstile
-- При первом входе — обязательное принятие AGB/Datenschutz (`terms_accepted`)
-- Анонимная quota: Redis-backed по IP + day bucket
-- Квота списывается в search flow/service layer
-- Session для анонима: UX-история поиска и consent-state
-- Удаление аккаунта — каскадное удаление всех данных (DSGVO)
-- ⚠️ Повторная авторизация через тот же Google-аккаунт после удаления создаёт нового User — исправить перед prod
+- Single auth method — **Google OAuth** (`django-allauth`)
+- `LoginGateMiddleware` — blocks direct access to `/accounts/google/login/` without passing Turnstile
+- On first login — mandatory AGB/Datenschutz acceptance (`terms_accepted`)
+- Anonymous quota: Redis-backed by IP + day bucket
+- Quota consumed in search flow/service layer
+- Anonymous session: UX search history and consent state
+- Account deletion — cascading delete of all user data (GDPR)
+- ⚠️ Re-authentication via the same Google account after deletion creates a new User — fix before prod
 
 ---
 
 ## 💸 Cost Control
 
-- Кэш — основной инструмент (`CACHE_TTL_HOURS=72`)
-- FieldMask на всех запросах к Google
-- Глобальный daily cap: `MAX_GOOGLE_CALLS_PER_DAY=500` → при достижении сервис работает только из кэша
-- Квота списывается только за cache MISS
-- Place Details кэшируются в Redis (не запрашиваются повторно при параллельных запросах — lock)
-- Геокодирование кэшируется 30 дней
-- AI: `MAX_AI_SUMMARIES_PER_DAY=200`, per-user/IP квоты
-- Управление кэшем через management commands: `warm_search_cache`, `purge_expired_search_cache`
+- Cache is the primary tool (`CACHE_TTL_HOURS=72`)
+- FieldMask on all Google requests
+- Global daily cap: `MAX_GOOGLE_CALLS_PER_DAY=500` → when reached, service operates from cache only
+- Quota consumed only on cache MISS
+- Place Details cached in Redis (parallel requests deduplicated via lock)
+- Geocoding cached for 30 days
+- AI: `MAX_AI_SUMMARIES_PER_DAY=200`, per-user/IP quotas
+- Cache management via management commands: `warm_search_cache`, `purge_expired_search_cache`
 
 ---
 
@@ -310,78 +338,78 @@ Sort modes: `score` (weighted rating × log1p reviews), `rating`, `reviews`, `di
 
 ### Search Quota
 
-| Тип | Лимит | Хранение |
-|-----|-------|----------|
-| Аноним | `ANON_DAILY_LIMIT` (default 5) / день | Redis `quota:anon:{ip}:{date}`, TTL до полуночи |
-| Free | `FREE_DAILY_LIMIT` (default 15) / день | Redis `quota:user:{pk}:{date}` |
-| Premium | `PREMIUM_DAILY_LIMIT` (default 50) / день | то же |
+| Type | Limit | Storage |
+|------|-------|---------|
+| Anonymous | `ANON_DAILY_LIMIT` (default 5) / day | Redis `quota:anon:{ip}:{date}`, TTL until midnight |
+| Free | `FREE_DAILY_LIMIT` (default 15) / day | Redis `quota:user:{pk}:{date}` |
+| Premium | `PREMIUM_DAILY_LIMIT` (default 50) / day | same |
 
 ### AI Quota
 
-| Тип | Лимит | Хранение |
-|-----|-------|----------|
-| Аноним | `ANON_AI_DAILY_LIMIT` (default 3) / день | Redis `quota:anon_ai:{ip}:{date}` |
-| Free | `FREE_AI_DAILY_LIMIT` (default 15) / день | Redis `quota:ai:user:{pk}:{date}` |
-| Premium | `PREMIUM_AI_DAILY_LIMIT` (default 50) / день | то же |
+| Type | Limit | Storage |
+|------|-------|---------|
+| Anonymous | `ANON_AI_DAILY_LIMIT` (default 3) / day | Redis `quota:anon_ai:{ip}:{date}` |
+| Free | `FREE_AI_DAILY_LIMIT` (default 15) / day | Redis `quota:ai:user:{pk}:{date}` |
+| Premium | `PREMIUM_AI_DAILY_LIMIT` (default 50) / day | same |
 
-**Троттлинг:** `SEARCH_THROTTLE_RATE=8` запросов/минуту на пользователя (по `user.pk`) или на IP. Скользящее окно 60с, Django cache (Redis).
+**Throttling:** `SEARCH_THROTTLE_RATE=8` requests/minute per user (`user.pk`) or per IP. Sliding 60s window, Django cache (Redis).
 
-**AI rate limit:** per-minute через `RedisRateLimiter` (`common/services/rate_limiter.py`) — ZSET sliding window.
+**AI rate limit:** per-minute via `RedisRateLimiter` (`common/services/rate_limiter.py`) — ZSET sliding window.
 
-**Глобальный Google cap:** `MAX_GOOGLE_CALLS_PER_DAY=500`, счётчик в Redis, сброс в полуночь.
+**Global Google cap:** `MAX_GOOGLE_CALLS_PER_DAY=500`, counter in Redis, reset at midnight.
 
 ---
 
 ## 🔐 Anti-abuse
 
-**Cloudflare Turnstile** (backend-верификация через siteverify):
-- логин (через `LoginGateMiddleware` + `google_oauth_start` view)
-- удаление аккаунта
-- контактная форма
+**Cloudflare Turnstile** (backend verification via siteverify):
+- Login (via `LoginGateMiddleware` + `google_oauth_start` view)
+- Account deletion
+- Contact form
 
 **`ContactThrottleMiddleware`** (Django cache):
-- аноним: 3 POST / 10 мин (по IP)
-- авторизованный: 5 POST / 10 мин (по `user.pk`)
+- Anonymous: 3 POST / 10 min (by IP)
+- Authenticated: 5 POST / 10 min (by `user.pk`)
 
 ---
 
 ## ⭐ Favorites
 
-Только для авторизованных пользователей.
+Authenticated users only.
 
-- `Favorite` — снапшот данных дилера на момент добавления
-- `POST /favorites/add/` — `get_or_create` по `(user, place_id)`
+- `Favorite` — snapshot of dealer data at the time of addition
+- `POST /favorites/add/` — `get_or_create` by `(user, place_id)`
 - `POST /favorites/remove/<place_id>/`
 - `POST /favorites/clear/`
-- `GET /favorites/` — список
-- В search results: `is_favorite` флаг в контексте
+- `GET /favorites/` — list
+- In search results: `is_favorite` flag in context
 
 ---
 
 ## 📬 Contact
 
-- `GET/POST /contact/` — форма (name, email, message)
-- Turnstile верификация при POST
-- Сохранение в `ContactMessage`
-- Telegram-уведомление на каждое новое сообщение
-- Email fallback если Telegram недоступен; ошибка уведомления не ломает запрос
-- `ContactThrottleMiddleware` — см. Anti-abuse
+- `GET/POST /contact/` — form (name, email, message)
+- Turnstile verification on POST
+- Saved to `ContactMessage`
+- Telegram notification on each new message
+- Email fallback if Telegram is unavailable; notification failure does not break the request
+- `ContactThrottleMiddleware` — see Anti-abuse
 
 ---
 
 ## 🔎 Search Discovery
 
-- **Popular cities:** `PopularSearch` инкрементируется при каждом поиске. Топ-10 на главной и в search view.
-- **Search history:** авторизованные — `UserSearchHistory` (20 записей); анонимы — `session["search_history_cities"]` (8 городов, LIFO).
-- `build_search_discovery_context(request)` — единая точка сборки для home и search view.
+- **Popular cities:** `PopularSearch` incremented on every search. Top 10 on home and search views.
+- **Search history:** authenticated users — `UserSearchHistory` (20 entries); anonymous — `session["search_history_cities"]` (8 cities, LIFO).
+- `build_search_discovery_context(request)` — single context assembly point for home and search views.
 
 ---
 
 ## 📱 Frontend
 
-Mobile-first: список дилеров → основной экран, карта → secondary, фильтры → offcanvas.
+Mobile-first: dealer list → main screen, map → secondary, filters → offcanvas.
 
-Autocomplete городов из `static/data/cities_de.json` (~3500 записей, генерируется `utils/build_cities.py`).
+City autocomplete from `static/data/cities_de.json` (~3500 entries, generated by `utils/build_cities.py`).
 
 ---
 
@@ -396,8 +424,8 @@ services:
   celery_worker # Celery worker (concurrency=2)
 ```
 
-- web healthcheck через `/health/`
-- db и redis healthchecks; переменные читаются из `.env`
+- Web healthcheck via `/health/`
+- DB and Redis healthchecks; variables read from `.env`
 
 `entrypoint.sh`: wait-for-redis → migrate → collectstatic → create superuser → configure Google SocialApp → start.
 
@@ -406,33 +434,33 @@ services:
 ## Observability
 
 - Structured JSON logging (`utils/logging.py` → `JsonFormatter`)
-- Request-level logs через `RequestLoggingMiddleware` (path, method, status, duration_ms, user_id, client_ip)
-- Domain events: `search_started`, `dealer_search_executed`, `search_quota_denied`, `ai_summary_task_dispatched`, `health_check_completed` и др.
+- Request-level logs via `RequestLoggingMiddleware` (path, method, status, duration_ms, user_id, client_ip)
+- Domain events: `search_started`, `dealer_search_executed`, `search_quota_denied`, `ai_summary_task_dispatched`, `health_check_completed`, etc.
 - Health endpoint: `/health/` → DB + Redis checks, 200/503
 
 ---
 
 ## Cookie Consent / Privacy
 
-- Cookie consent banner для third-party сервисов
-- Consent хранится в session
-- `/datenschutz/`, `/impressum/`, `/agb/` — статические legal pages (TemplateView)
+- Cookie consent banner for third-party services
+- Consent stored in session
+- `/datenschutz/`, `/impressum/`, `/agb/` — static legal pages (TemplateView)
 
 ---
 
 ## Testing
 
-см. [testing.md](testing.md)
+See [testing.md](testing.md)
 
 - `pytest-django` + `pytest-mock`
 - Test settings: SQLite in-memory, `locmem.LocMemCache`
-- `conftest.py`: autouse фикстура переопределяет CACHES на locmem
+- `conftest.py`: autouse fixture overrides CACHES to locmem
 
 ---
 
-## Datenschutz / DSGVO
+## Datenschutz / GDPR
 
-см. [legal_pages.md](legal_pages.md)
+See [legal_pages.md](legal_pages.md)
 
 ---
 

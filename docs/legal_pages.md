@@ -1,74 +1,74 @@
-# 🔐 Datenschutz (DSGVO)
+# 🔐 Datenschutz (GDPR)
 
-- политика конфиденциальности обязательна (`/datenschutz`)
-- Impressum обязателен (`/impressum`)
+- Privacy policy is mandatory (`/datenschutz`)
+- Impressum is mandatory (`/impressum`)
 
-### Категории обрабатываемых данных
+### Categories of Processed Data
 
-- IP-адрес (anti-abuse, анонимизируется или не логируется)
-- поисковые запросы (город, фильтры)
-- кэш данных Google Places
-- данные авторизации (Google OAuth: email, sub)
+- IP address (anti-abuse, anonymized or not logged)
+- Search queries (city, filters)
+- Google Places data cache
+- Authentication data (Google OAuth: email, sub)
 
-### Цели обработки данных (Art. 13 DSGVO)
+### Purposes of Processing (Art. 13 GDPR)
 
-- предоставление функции поиска
-- улучшение результатов (кэширование)
-- защита от злоупотреблений (Anti-Abuse)
-- аутентификация пользователей (Google OAuth)
+- Providing the search feature
+- Improving results (caching)
+- Anti-abuse protection
+- User authentication (Google OAuth)
 
-### Сроки хранения данных
+### Data Retention Periods
 
-- поисковые запросы и кэш: до 24 часов
-- server logs: максимум 7 дней или анонимизируются
-- auth-данные: пока аккаунт активен, удаляются при удалении аккаунта
+- Search queries and cache: up to 24 hours
+- Server logs: maximum 7 days or anonymized
+- Auth data: while account is active, deleted upon account deletion
 
 ### Cookies
 
-Technisch notwendige Cookies (обязательные, без согласия):
-- Cloudflare Turnstile (защита от ботов)
-- сессионные cookies (авторизация)
+Technically necessary cookies (mandatory, no consent required):
+- Cloudflare Turnstile (bot protection)
+- Session cookies (authentication)
 
-Optionale Cookies (требуют согласия):
+Optional cookies (require consent):
 - Google Maps JS API
 - Google OAuth
 
-Пользователь может отказаться от необязательных cookies через cookie banner.
+Users can decline optional cookies via the cookie banner.
 
-### Передача данных в США
+### Data Transfer to the US
 
-Google Maps JS API, Google Auth и Cloudflare Turnstile передают данные в США
-на основании стандартных договорных положений (Standardvertragsklauseln, Art. 46 DSGVO).
-> Существует риск того, что американские государственные органы могут получить доступ к переданным данным (Schrems II).
+Google Maps JS API, Google Auth, and Cloudflare Turnstile transfer data to the US
+based on standard contractual clauses (Standardvertragsklauseln, Art. 46 GDPR).
+> There is a risk that US government authorities may access the transferred data (Schrems II).
 
-### Права пользователя (Betroffenenrechte)
+### User Rights (Data Subject Rights)
 
-В соответствии с DSGVO пользователь имеет следующие права:
+Under GDPR, users have the following rights:
 
-- **Право на доступ** — получить информацию об обрабатываемых данных (Art. 15)
-- **Право на исправление** — потребовать исправления неточных данных (Art. 16)
-- **Право на удаление** — потребовать удаления данных (Art. 17)
-- **Право на ограничение обработки** (Art. 18)
-- **Право на переносимость данных** (Art. 20)
-- **Право на возражение** против обработки (Art. 21)
+- **Right of access** — obtain information about processed data (Art. 15)
+- **Right to rectification** — request correction of inaccurate data (Art. 16)
+- **Right to erasure** — request deletion of data (Art. 17)
+- **Right to restriction of processing** (Art. 18)
+- **Right to data portability** (Art. 20)
+- **Right to object** to processing (Art. 21)
 
-Пользователь также вправе подать жалобу в надзорный орган по защите данных (Beschwerderecht bei der Aufsichtsbehörde).
+Users also have the right to lodge a complaint with a supervisory data protection authority.
 
 
-# 📄 Nutzervereinbarung (Пользовательское соглашение)
+# 📄 Terms of Service
 
-- условия использования (`/agb`) — обязательно для платного тарифа
-- описание тарифов и лимитов
-- право изменять тарифы и лимиты
-- данные получены через Google Places API — сервис агрегирует, не изменяет исходные данные
-- пользователь соглашается с тем, что данные могут быть неточными или устаревшими
+- Terms of use (`/agb`) — mandatory for paid plan
+- Description of plans and limits
+- Right to modify plans and limits
+- Data sourced from Google Places API — the service aggregates, does not modify source data
+- User agrees that data may be inaccurate or outdated
 
 ### AI Disclaimer
 
-- AI-резюме носит информационный характер — сервис не гарантирует точность и полноту, все выводы эвристические, пользователь принимает решение самостоятельно
-- сервис не несёт ответственности за негативные оценки в AI-резюме: они формируются автоматически на основе публичных отзывов Google и не являются редакционным суждением сервиса
-- AI-резюме не предназначено для принятия юридически значимых решений
+- AI summaries are informational only — the service does not guarantee accuracy or completeness; all conclusions are heuristic and the user makes their own decisions
+- The service is not liable for negative assessments in AI summaries: they are generated automatically from public Google reviews and do not represent editorial judgment by the service
+- AI summaries are not intended for legally significant decisions
 
-### Ограничение ответственности
+### Limitation of Liability
 
-> Использование сервиса осуществляется на собственный риск пользователя. Сервис не несёт ответственности за ущерб, возникший в результате использования предоставленной информации, в частности за её точность, полноту или актуальность.
+> Use of the service is at the user's own risk. The service is not liable for damages resulting from the use of provided information, in particular regarding its accuracy, completeness, or timeliness.
