@@ -23,14 +23,14 @@ Quick picks based on real customer reviews
 - [x] prompts / parsers / client держать отдельно от business logic
 - [x] orchestration оставить в `services/`
 
-### [ ] Sprint 1 — UI + baseline scoring
-- [ ] добавить `smart_pick` в search view
-- [ ] вывести панель в UI, передавать режим через GET
-- [ ] baseline scoring: `rating * log(review_count + 1)`
+### [x] Sprint 1 — UI + baseline scoring
+- [x] добавить `smart_pick` в search view
+- [x] вывести панель в UI, передавать режим через GET
+- [x] baseline scoring: `rating * log(review_count + 1)`
 
-### [ ] Sprint 2 — deterministic scoring
-- [ ] отдельные формулы для каждого режима
-- [ ] детерминированная сортировка с tie-break по `id`
+### [x] Sprint 2 — deterministic scoring
+- [x] отдельные формулы для каждого режима
+- [x] детерминированная сортировка с tie-break по `id`
 - [ ] unit tests для каждого режима
 
 ### [ ] Sprint 3 — AI signals

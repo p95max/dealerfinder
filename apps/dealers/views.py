@@ -133,6 +133,28 @@ def search_view(request):
             sort=params["sort"],
         )
 
+        # DEBUG: deterministic sorting check
+        # if settings.DEBUG:
+        #     top = dealers[:10]
+        #
+        #     logger.info(
+        #         "DEBUG sorted dealers snapshot",
+        #         extra={
+        #             "event": "debug_sorted_snapshot",
+        #             "sort": params.get("sort"),
+        #             "count": len(dealers),
+        #             "top": [
+        #                 {
+        #                     "place_id": d.get("place_id"),
+        #                     "rating": d.get("rating"),
+        #                     "reviews": d.get("reviews"),
+        #                     "distance_km": d.get("distance_km"),
+        #                 }
+        #                 for d in top
+        #             ],
+        #         },
+        #     )
+
         # Smart pick
         smart_pick = _pick_smart_dealer(dealers)
         if smart_pick:

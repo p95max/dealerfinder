@@ -81,8 +81,12 @@ def search_dealers(city, radius) -> tuple[list, bool]:
 
     normalized = sorted(
         normalized,
-        key=lambda x: (x["rating"] or 0) * math.log1p(x["reviews"] or 0),
-        reverse=True,
+        key=lambda x: (
+            -((x.get("rating") or 0) * math.log1p(x.get("reviews") or 0)),
+            -(x.get("rating") or 0),
+            -(x.get("reviews") or 0),
+            x.get("place_id") or "",
+        ),
     )
     sync_dealers_to_db(city, normalized)
     set_cache(key, normalized)
@@ -144,6 +148,12 @@ def filter_and_sort_dealers(
     max_distance_km: float | None = None,
     sort: str = "score",
 ) -> list:
+    def _score(item: dict) -> float:
+        return (item.get("rating") or 0) * math.log1p(item.get("reviews") or 0)
+
+    def _place_id(item: dict) -> str:
+        return item.get("place_id") or ""
+
     if min_rating is not None:
         dealers = [d for d in dealers if (d.get("rating") or 0) >= min_rating]
 
@@ -158,34 +168,53 @@ def filter_and_sort_dealers(
 
     if _is_valid_lat_lng(user_lat, user_lng):
         dealers = attach_distance_to_dealers(dealers, user_lat, user_lng)
+
         if max_distance_km is not None and max_distance_km > 0:
             dealers = [
                 d for d in dealers
                 if d.get("distance_km") is not None and d["distance_km"] <= max_distance_km
             ]
 
-    for dealer in dealers:
-        dealer["score"] = _compute_dealer_score(
-            dealer,
-            prefer_open_now=open_now,
-            prefer_weekends=weekends,
-            prefer_contacts=has_contacts,
-        )
-
     if sort == "rating":
-        dealers = sorted(dealers, key=lambda x: x.get("rating") or 0, reverse=True)
+        dealers = sorted(
+            dealers,
+            key=lambda x: (
+                -(x.get("rating") or 0),
+                -(x.get("reviews") or 0),
+                -_score(x),
+                _place_id(x),
+            ),
+        )
     elif sort == "reviews":
-        dealers = sorted(dealers, key=lambda x: x.get("reviews") or 0, reverse=True)
+        dealers = sorted(
+            dealers,
+            key=lambda x: (
+                -(x.get("reviews") or 0),
+                -(x.get("rating") or 0),
+                -_score(x),
+                _place_id(x),
+            ),
+        )
     elif sort == "distance" and _is_valid_lat_lng(user_lat, user_lng):
         dealers = sorted(
             dealers,
-            key=lambda x: x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
+            key=lambda x: (
+                x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
+                -(x.get("rating") or 0),
+                -(x.get("reviews") or 0),
+                _place_id(x),
+            ),
         )
     else:
+        # default: score
         dealers = sorted(
             dealers,
-            key=lambda x: x.get("score") or 0,
-            reverse=True,
+            key=lambda x: (
+                -_score(x),
+                -(x.get("rating") or 0),
+                -(x.get("reviews") or 0),
+                _place_id(x),
+            ),
         )
 
     return dealers
