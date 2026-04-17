@@ -48,12 +48,13 @@ async function pollAiSummary(placeId, baseData, card, summaryBtn) {
     activeAiPolls.add(placeId);
 
     try {
-        const maxAttempts = 8;
+        const maxAttempts = 4;
         let attempts = 0;
         const modalEl = document.getElementById("dealerModal");
 
         while (attempts < maxAttempts) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            const delay = 2000 * (attempts + 1); // 2s → 4s → 6s → 8s
+            await new Promise((resolve) => setTimeout(resolve, delay));
 
             if (
                 !modalEl ||
@@ -63,12 +64,32 @@ async function pollAiSummary(placeId, baseData, card, summaryBtn) {
                 return;
             }
 
-            const response = await fetch(`/dealer/${placeId}/ai-summary/`, {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-            });
+            const controller = new AbortController();
+            const timeout = 5000;
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+            let response;
+            try {
+                response = await fetch(`/dealer/${placeId}/ai-summary/`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    signal: controller.signal,
+                });
+            } catch (err) {
+                if (err.name === "AbortError") {
+                    console.warn("AI polling request timed out");
+                } else {
+                    console.warn("AI polling request failed", err);
+                }
+
+                attempts += 1;
+                continue;
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             if (!response.ok) {
-                break;
+                attempts += 1;
+                continue;
             }
 
             const ai = await response.json();
