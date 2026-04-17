@@ -364,3 +364,62 @@ function initLiveSearchPanel() {
         field.addEventListener(eventName, submitLive);
     });
 }
+
+function initViewedDealersHighlight() {
+    const STORAGE_KEY = "dealerfinder_viewed";
+
+    function getViewed() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveViewed(list) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 50)));
+        } catch {
+            // ignore storage failures
+        }
+    }
+
+    function markViewed(placeId) {
+        if (!placeId) return;
+
+        const viewed = [placeId, ...getViewed().filter((id) => id !== placeId)];
+        saveViewed(viewed);
+    }
+
+    function applyViewedState(card) {
+        if (!card) return;
+        card.classList.add("dealer-viewed");
+    }
+
+    function applyHighlightFromStorage() {
+        const viewed = new Set(getViewed());
+
+        document.querySelectorAll(".dealer-card").forEach((card) => {
+            const placeId = card.dataset.dealerPlaceId || "";
+            if (viewed.has(placeId)) {
+                applyViewedState(card);
+            }
+        });
+    }
+
+    document.querySelectorAll(".dealer-card").forEach((card) => {
+        card.addEventListener("click", () => {
+            const placeId = card.dataset.dealerPlaceId || "";
+            if (!placeId) return;
+
+            markViewed(placeId);
+            applyViewedState(card);
+        });
+    });
+
+    applyHighlightFromStorage();
+}
+
+document.addEventListener("DOMContentLoaded", initViewedDealersHighlight);

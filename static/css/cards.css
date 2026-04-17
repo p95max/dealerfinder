@@ -218,3 +218,47 @@
     margin-top: 10px;
     line-height: 1.4;
 }
+
+.dealer-viewed {
+    position: relative;
+    border: 1px solid var(--df-viewed-border);
+    background: linear-gradient(
+        180deg,
+        var(--df-viewed-bg-top) 0%,
+        var(--df-viewed-bg-bottom) 100%
+    );
+}
+
+.dealer-viewed::before {
+    content: "Viewed";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(251, 146, 60, 0.12);
+    color: #ea580c; /* orange-600 */
+    letter-spacing: 0.03em;
+}
+
+.dealer-viewed:hover {
+    border-color: #fb923c;
+}
+
+.dealer-viewed {
+    border-left: 4px solid #fb923c;
+}
+
+:root {
+    --df-viewed-bg-top: #fff7ed;     /* мягкий оранж */
+    --df-viewed-bg-bottom: #fffbf7;  /* почти белый */
+    --df-viewed-border: rgba(251, 146, 60, 0.35);
+}
+
+[data-bs-theme="dark"] {
+    --df-viewed-bg-top: rgba(251, 146, 60, 0.08);
+    --df-viewed-bg-bottom: rgba(251, 146, 60, 0.02);
+    --df-viewed-border: rgba(251, 146, 60, 0.25);
+}

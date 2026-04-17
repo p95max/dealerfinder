@@ -94,14 +94,17 @@ def _get_retry_reason(summary: DealerAiSummary) -> str | None:
 
 
 @shared_task
-def retry_dealer_ai_summaries_task(limit: int = 20) -> int:
+def retry_dealer_ai_summaries_task(limit: int = 3) -> int:
     candidates = list(
-        DealerAiSummary.objects.select_related("dealer").order_by("updated_at")[: limit * 3]
+        DealerAiSummary.objects.select_related("dealer").order_by("updated_at")[: limit * 5]
     )
 
     retry_items: list[dict] = []
 
     for summary in candidates:
+        if summary.status != DealerAiSummary.STATUS_FAILED:
+            continue
+
         reason = _get_retry_reason(summary)
         if not reason:
             continue
