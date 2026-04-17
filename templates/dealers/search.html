@@ -21,7 +21,6 @@
                     {% include "includes/_search_form.html" %}
 
                     <hr class="my-4">
-
                 </div>
             </div>
 
@@ -83,15 +82,27 @@
                                                     </span>
                                                 {% endif %}
 
-                                            {% if request.GET.show_distance_from_me and d.distance_km %}
-                                                <span class="score-badge">
-                                                    📍 {{ d.distance_km }} km from you
-                                                </span>
-                                            {% elif d.distance_km and not request.GET.show_distance_from_me and request.GET.search_lat %}
-                                                <span class="score-badge">
-                                                    📍 {{ d.distance_km }} km
-                                                </span>
-                                            {% endif %}
+                                                {% if d.place_id == smart_pick_id %}
+                                                    <span
+                                                        class="score-badge"
+                                                        data-bs-toggle="tooltip"
+                                                        data-bs-placement="top"
+                                                        title="{{ smart_pick_note }}"
+                                                        style="cursor: help;"
+                                                    >
+                                                        ⭐ Recommended
+                                                    </span>
+                                                {% endif %}
+
+                                                {% if request.GET.show_distance_from_me and d.distance_km %}
+                                                    <span class="score-badge">
+                                                        📍 {{ d.distance_km }} km from you
+                                                    </span>
+                                                {% elif d.distance_km and not request.GET.show_distance_from_me and request.GET.search_lat %}
+                                                    <span class="score-badge">
+                                                        📍 {{ d.distance_km }} km
+                                                    </span>
+                                                {% endif %}
 
                                                 {% if d.website or d.phone %}
                                                     <span class="contact-badge">Contacts</span>
@@ -110,6 +121,12 @@
                                 </article>
                             {% endfor %}
                         </div>
+
+                        {% if smart_pick_note %}
+                            <p class="small text-muted mt-3 mb-0">
+                                ⭐ {{ smart_pick_note }}
+                            </p>
+                        {% endif %}
                     {% else %}
                         <div class="empty-state p-5 text-center">
                             <h3 class="h4 mb-2">No dealers found</h3>

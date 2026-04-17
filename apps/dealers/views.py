@@ -129,6 +129,9 @@ def search_view(request):
             sort=params["sort"],
         )
 
+        smart_pick = _pick_smart_dealer(dealers)
+        smart_pick_id = smart_pick.get("place_id") if smart_pick else None
+
         _enqueue_ai_summaries_if_needed(request=request, dealers=dealers)
         _attach_favorite_flags(request=request, dealers=dealers)
 
@@ -146,6 +149,11 @@ def search_view(request):
             dealers=page_obj,
             page_obj=page_obj,
             total=len(dealers),
+            smart_pick_id=smart_pick_id,
+            smart_pick_note=(
+                "Best match is selected automatically based on rating, "
+                "review count, and available dealer details."
+            ) if smart_pick_id else "",
         ),
     )
 
@@ -455,3 +463,25 @@ def _parse_min_rating(value) -> float | None:
 
 def _get_user_id(request):
     return request.user.pk if request.user.is_authenticated else None
+
+
+def _pick_smart_dealer(dealers: list[dict]) -> dict | None:
+    """
+    Select the best visible dealer from already filtered/sorted results.
+
+    Heuristic:
+    - prefer dealers with rating
+    - require a minimal review count for trust
+    - keep the first suitable item because the list is already baseline-ranked
+    """
+    if not dealers:
+        return None
+
+    for dealer in dealers:
+        rating = dealer.get("rating")
+        reviews = dealer.get("reviews") or 0
+
+        if rating is not None and reviews >= 5:
+            return dealer
+
+    return dealers[0]

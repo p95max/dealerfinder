@@ -61,7 +61,7 @@ def generate_dealer_summary(dealer_context: dict[str, Any]) -> dict[str, Any]:
     """
     reviews = dealer_context.get("reviews", [])
     if not reviews:
-        raise AiClientError("No reviews provided for AI analysis")
+        raise AiClientError("No dealer reviews available for AI analysis")
 
     prompt = build_dealer_summary_prompt(dealer_context)
     return _generate_with_openai(prompt)
