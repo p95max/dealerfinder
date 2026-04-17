@@ -95,6 +95,43 @@ def _is_valid_lat_lng(lat, lng) -> bool:
     return -90 <= lat <= 90 and -180 <= lng <= 180
 
 
+def _compute_dealer_score(
+    dealer: dict,
+    *,
+    prefer_open_now: bool = False,
+    prefer_weekends: bool = False,
+    prefer_contacts: bool = False,
+) -> float:
+    """
+    Compute ranking score for a dealer.
+
+    Base score:
+    - rating adjusted by review volume
+
+    Optional boosts:
+    - open now
+    - weekend availability
+    - available contacts
+
+    Boosts are intentionally small so they do not overpower the baseline quality.
+    """
+    rating = dealer.get("rating") or 0
+    reviews = dealer.get("reviews") or 0
+
+    score = rating * math.log1p(reviews)
+
+    if prefer_open_now and dealer.get("open_now"):
+        score += 0.35
+
+    if prefer_weekends and dealer.get("has_weekend"):
+        score += 0.25
+
+    if prefer_contacts and (dealer.get("phone") or dealer.get("website")):
+        score += 0.2
+
+    return round(score, 4)
+
+
 def filter_and_sort_dealers(
     dealers: list,
     *,
@@ -127,6 +164,14 @@ def filter_and_sort_dealers(
                 if d.get("distance_km") is not None and d["distance_km"] <= max_distance_km
             ]
 
+    for dealer in dealers:
+        dealer["score"] = _compute_dealer_score(
+            dealer,
+            prefer_open_now=open_now,
+            prefer_weekends=weekends,
+            prefer_contacts=has_contacts,
+        )
+
     if sort == "rating":
         dealers = sorted(dealers, key=lambda x: x.get("rating") or 0, reverse=True)
     elif sort == "reviews":
@@ -135,6 +180,12 @@ def filter_and_sort_dealers(
         dealers = sorted(
             dealers,
             key=lambda x: x.get("distance_km") if x.get("distance_km") is not None else float("inf"),
+        )
+    else:
+        dealers = sorted(
+            dealers,
+            key=lambda x: x.get("score") or 0,
+            reverse=True,
         )
 
     return dealers

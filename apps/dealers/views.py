@@ -47,6 +47,7 @@ def search_view(request):
     _apply_anon_terms(request)
 
     city = params["city"]
+
     if not city and params["search_lat"] is not None and params["search_lng"] is not None:
         resolved = reverse_geocode_city(params["search_lat"], params["search_lng"])
         if resolved:
@@ -55,6 +56,8 @@ def search_view(request):
 
     dealers = []
     page_obj = []
+    smart_pick_id = None
+    smart_pick_note = ""
 
     def build_context(**extra):
         context = {
@@ -102,6 +105,7 @@ def search_view(request):
             return city_validation_response
 
         raw_dealers, from_cache = search_dealers(city=city, radius=params["radius"])
+
         _log_search_executed(
             request=request,
             city=city,
@@ -129,10 +133,15 @@ def search_view(request):
             sort=params["sort"],
         )
 
+        # Smart pick
         smart_pick = _pick_smart_dealer(dealers)
-        smart_pick_id = smart_pick.get("place_id") if smart_pick else None
+        if smart_pick:
+            smart_pick_id = smart_pick.get("place_id")
+            smart_pick_note = (
+                "Best match is selected automatically based on rating, "
+                "review count, and available dealer details."
+            )
 
-        _enqueue_ai_summaries_if_needed(request=request, dealers=dealers)
         _attach_favorite_flags(request=request, dealers=dealers)
 
         page_obj = _paginate_and_attach_ai(
@@ -150,10 +159,7 @@ def search_view(request):
             page_obj=page_obj,
             total=len(dealers),
             smart_pick_id=smart_pick_id,
-            smart_pick_note=(
-                "Best match is selected automatically based on rating, "
-                "review count, and available dealer details."
-            ) if smart_pick_id else "",
+            smart_pick_note=smart_pick_note,
         ),
     )
 

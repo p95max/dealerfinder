@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     initLocationFeatures();
     initCityAutocomplete();
+    initLiveSearchPanel();
 });
 
 
@@ -310,3 +311,56 @@ document.addEventListener("DOMContentLoaded", function () {
         new bootstrap.Tooltip(el);
     });
 });
+
+function initLiveSearchPanel() {
+    const form = document.getElementById("dealerSearchForm");
+    if (!form) return;
+
+    const cityInput = document.getElementById("city");
+    const radiusInput = document.getElementById("radius");
+    const sortInput = document.getElementById("sort");
+    const minRatingInput = document.getElementById("min_rating");
+    const maxDistanceInput = document.getElementById("max_distance_km");
+    const openNowInput = document.getElementById("open_now");
+    const weekendsInput = document.getElementById("weekends");
+    const hasContactsInput = document.getElementById("has_contacts");
+    const showDistanceInput = document.getElementById("show_distance_from_me");
+
+    const liveFields = [
+        radiusInput,
+        sortInput,
+        minRatingInput,
+        maxDistanceInput,
+        openNowInput,
+        weekendsInput,
+        hasContactsInput,
+        showDistanceInput,
+    ].filter(Boolean);
+
+    let debounceTimer = null;
+
+    function hasSearchContext() {
+        return Boolean(
+            (cityInput && cityInput.value.trim()) ||
+            (document.getElementById("search_lat")?.value && document.getElementById("search_lng")?.value)
+        );
+    }
+
+    function submitLive() {
+        if (!hasSearchContext()) return;
+
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => {
+            form.requestSubmit();
+        }, 250);
+    }
+
+    liveFields.forEach((field) => {
+        const eventName =
+            field.type === "checkbox" || field.tagName === "SELECT"
+                ? "change"
+                : "input";
+
+        field.addEventListener(eventName, submitLive);
+    });
+}

@@ -18,19 +18,61 @@ def generate_dealer_ai_summary_task(self, place_id, user_id=None, client_ip=None
     try:
         dealer = Dealer.objects.get(google_place_id=place_id)
     except Dealer.DoesNotExist:
-        return
+        logger.warning(
+            "AI summary task skipped: dealer not found",
+            extra={
+                "event": "ai_summary_task_skipped_dealer_not_found",
+                "place_id": place_id,
+                "user_id": user_id,
+                "client_ip": client_ip,
+            },
+        )
+        return {
+            "place_id": place_id,
+            "status": "skipped",
+            "reason": "dealer_not_found",
+        }
 
     user = None
     if user_id:
         user = User.objects.filter(pk=user_id).first()
 
     try:
-        generate_ai_summary_for_dealer(
+        result = generate_ai_summary_for_dealer(
             dealer,
             user=user,
             client_ip=client_ip,
         )
+
+        logger.info(
+            "AI summary task finished",
+            extra={
+                "event": "ai_summary_task_finished",
+                "dealer_id": dealer.id,
+                "place_id": dealer.google_place_id,
+                "summary_status": result.status,
+                "user_id": user.id if user else None,
+                "client_ip": client_ip,
+            },
+        )
+
+        return {
+            "dealer_id": dealer.id,
+            "place_id": dealer.google_place_id,
+            "status": result.status,
+        }
     except Exception as exc:
+        logger.exception(
+            "AI summary task failed, scheduling retry",
+            extra={
+                "event": "ai_summary_task_retry_scheduled",
+                "dealer_id": dealer.id,
+                "place_id": dealer.google_place_id,
+                "user_id": user.id if user else None,
+                "client_ip": client_ip,
+                "retry_count": self.request.retries + 1,
+            },
+        )
         raise self.retry(exc=exc, countdown=60)
 
 
