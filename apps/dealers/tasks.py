@@ -6,7 +6,7 @@ from apps.dealers.models import Dealer, DealerAiSummary
 from apps.dealers.ai.service import (
     can_retry_failed_summary,
     generate_ai_summary_for_dealer,
-    is_stale_pending_summary,
+    is_stale_pending_summary, is_stale_done_summary,
 )
 from apps.users.models import User
 
@@ -94,17 +94,27 @@ def _get_retry_reason(summary: DealerAiSummary) -> str | None:
 
 
 @shared_task
-def retry_dealer_ai_summaries_task(limit: int = 3) -> int:
+def retry_dealer_ai_summaries_task(limit: int = 20) -> int:
+    """
+    Retry failed AI summaries after cooldown and stale pending summaries.
+
+    This task does not handle stale DONE summaries. That is handled by
+    resync_stale_ai_summaries_task().
+    """
     candidates = list(
-        DealerAiSummary.objects.select_related("dealer").order_by("updated_at")[: limit * 5]
+        DealerAiSummary.objects.select_related("dealer")
+        .filter(
+            status__in=[
+                DealerAiSummary.STATUS_FAILED,
+                DealerAiSummary.STATUS_PENDING,
+            ]
+        )
+        .order_by("updated_at")[: limit * 5]
     )
 
     retry_items: list[dict] = []
 
     for summary in candidates:
-        if summary.status != DealerAiSummary.STATUS_FAILED:
-            continue
-
         reason = _get_retry_reason(summary)
         if not reason:
             continue
@@ -160,6 +170,82 @@ def retry_dealer_ai_summaries_task(limit: int = 3) -> int:
             "limit": limit,
             "dispatched_count": dispatched,
             "retry_items": retry_items,
+        },
+    )
+
+    return dispatched
+
+
+@shared_task
+def resync_stale_ai_summaries_task(limit: int = 20) -> int:
+    """
+    Periodically re-generate stale successful AI summaries.
+
+    This keeps existing summaries reasonably fresh without relying only on
+    user-triggered regeneration.
+    """
+    candidates = list(
+        DealerAiSummary.objects.select_related("dealer")
+        .filter(status=DealerAiSummary.STATUS_DONE)
+        .order_by("generated_at", "updated_at")[: limit * 5]
+    )
+
+    resync_items: list[dict] = []
+
+    for summary in candidates:
+        if not is_stale_done_summary(summary):
+            continue
+
+        resync_items.append(
+            {
+                "place_id": summary.dealer.google_place_id,
+                "dealer_id": summary.dealer_id,
+                "dealer_name": summary.dealer.name,
+                "generated_at": summary.generated_at.isoformat()
+                if summary.generated_at
+                else None,
+            }
+        )
+
+        if len(resync_items) >= limit:
+            break
+
+    logger.info(
+        "AI summary stale resync sweep started",
+        extra={
+            "event": "ai_summary_stale_resync_sweep_started",
+            "candidate_count": len(candidates),
+            "resync_count": len(resync_items),
+            "place_ids": [item["place_id"] for item in resync_items],
+        },
+    )
+
+    dispatched = 0
+
+    for item in resync_items:
+        result = generate_dealer_ai_summary_task.delay(place_id=item["place_id"])
+
+        logger.info(
+            "AI summary stale resync task dispatched",
+            extra={
+                "event": "ai_summary_stale_resync_task_dispatched",
+                "place_id": item["place_id"],
+                "dealer_id": item["dealer_id"],
+                "dealer_name": item["dealer_name"],
+                "generated_at": item["generated_at"],
+                "task_id": result.id,
+            },
+        )
+
+        dispatched += 1
+
+    logger.info(
+        "AI summary stale resync sweep finished",
+        extra={
+            "event": "ai_summary_stale_resync_sweep_finished",
+            "limit": limit,
+            "dispatched_count": dispatched,
+            "resync_items": resync_items,
         },
     )
 

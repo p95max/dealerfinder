@@ -311,9 +311,14 @@ CELERY_TASK_TIME_LIMIT = 120
 CELERY_TASK_SOFT_TIME_LIMIT = 90
 
 CELERY_BEAT_SCHEDULE = {
-    "retry-dealer-ai-summaries-every-15-minutes": {
+    "retry-dealer-ai-summaries-hourly": {
         "task": "apps.dealers.tasks.retry_dealer_ai_summaries_task",
-        "schedule": 60 * 15,
+        "schedule": 60 * 60,
+        "args": (20,),
+    },
+    "resync-stale-ai-summaries-every-15-hours": {
+        "task": "apps.dealers.tasks.resync_stale_ai_summaries_task",
+        "schedule": 60 * 60 * 24,
         "args": (20,),
     },
 }

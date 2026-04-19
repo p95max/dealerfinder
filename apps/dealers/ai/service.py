@@ -234,6 +234,17 @@ def is_summary_fresh(summary_obj: DealerAiSummary) -> bool:
     return summary_obj.generated_at >= timezone.now() - ttl
 
 
+def is_stale_done_summary(summary_obj: DealerAiSummary) -> bool:
+    """
+    Return True when a successfully generated summary is no longer fresh.
+    Used by periodic background re-sync.
+    """
+    return (
+        summary_obj.status == DealerAiSummary.STATUS_DONE
+        and not is_summary_fresh(summary_obj)
+    )
+
+
 def can_retry_failed_summary(summary_obj: DealerAiSummary) -> bool:
     if summary_obj.status != DealerAiSummary.STATUS_FAILED:
         return False
@@ -279,27 +290,35 @@ def prepare_ai_generation_data(details: dict) -> dict:
 
 
 def check_and_consume_ai_quota(*, user=None, client_ip=None) -> tuple[bool, str | None]:
+    """
+    Check user/IP quota and global system quota before AI generation.
+
+    System quota applies to all AI calls, including background re-sync jobs.
+    """
+    quota_consumer = None
+
     if user and user.is_authenticated:
         quota = get_authenticated_ai_quota_status(user)
         if not quota.allowed:
             return False, _get_authenticated_quota_error_code(user)
 
-        consume_authenticated_ai_quota(user)
-        return True, None
+        quota_consumer = lambda: consume_authenticated_ai_quota(user)
 
-    if client_ip is not None:
+    elif client_ip is not None:
         quota = get_anonymous_ai_quota_status_by_ip(client_ip)
         if not quota.allowed:
             return False, "quota_exceeded_anon"
 
-        system_quota = get_ai_system_quota_status()
-        if not system_quota.allowed:
-            return False, "system_quota_exceeded"
+        quota_consumer = lambda: consume_anonymous_ai_quota_by_ip(client_ip)
 
-        consume_anonymous_ai_quota_by_ip(client_ip)
-        consume_ai_system_quota()
-        return True, None
+    system_quota = get_ai_system_quota_status()
+    if not system_quota.allowed:
+        return False, "system_quota_exceeded"
 
+    if quota_consumer:
+        quota_consumer()
+
+    consume_ai_system_quota()
     return True, None
 
 

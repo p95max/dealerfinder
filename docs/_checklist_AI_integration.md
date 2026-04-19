@@ -49,16 +49,13 @@
 - [x] Implement “limited sample” warning  
   → Show when data is insufficient
 
-- [ ] Add AI disclaimer in runtime (AGB / UI)  
+- [x] Add AI disclaimer in runtime (AGB / UI)  
   → Inform user about generated content
 
-- [ ] Update Datenschutz for AI processing  
+- [x] Update Datenschutz for AI processing  
   → Cover external API data transfer
 
 - [ ] Add periodic re-sync scheduler  
   → Keep summaries актуальными
-
-- [ ] Implement stale detection logic  
-  → Regenerate if data outdated
 
 ---
